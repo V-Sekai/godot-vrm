@@ -16,7 +16,6 @@ _global_script_class_icons={
 [application]
 
 config/name="VRM Project"
-run/main_scene="res://vrm/thirdparty/alicia/AliciaSolid_vrm-0.51.vrm"
 config/icon="res://icon.png"
 enabled=PoolStringArray( "vrm" )
 
