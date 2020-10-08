@@ -1,10 +1,12 @@
 -- MIT LICENSE iFire
--- sqlite with json1 extension
+ DROP TABLE IF EXISTS vrm;
 
-DROP TABLE IF EXISTS vrm;
 CREATE TABLE vrm(id INTEGER, vrm JSON);
-INSERT INTO vrm(id, vrm) values (1, json(
-'{
+
+INSERT
+	INTO
+	vrm(id, vrm)
+values (1, json('{
   "asset": {
     "generator": "UniGLTF-1.28",
     "version": "2.0"
@@ -11952,93 +11954,165 @@ INSERT INTO vrm(id, vrm) values (1, json(
     }
   },
   "extras": {}
-}'
-));
-select * from vrm where json_extract("vrm", '$.asset') is not null;
-select json_extract("vrm", '$.nodes') from vrm;
+}'));
 
-SELECT *
-FROM vrm, json_each(json_extract("vrm", '$.nodes'));
+DROP VIEW vrm_bone;
 
-SELECT value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.humanoid.humanBones'));
+CREATE VIEW vrm_bone AS WITH human_bones AS (
+SELECT
+	value
+FROM
+	vrm,
+	json_each(json_extract("vrm", '$.extensions.VRM.humanoid.humanBones')))
+SELECT
+	json_extract(value,
+	'$.bone') as name,
+	json_extract(value,
+	'$.node') as node
+FROM
+	human_bones;
 
-WITH human_bones AS (SELECT value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.humanoid.humanBones')))
-        SELECT json_extract(value, '$.bone' ) as name,
-     json_extract(value, '$.node' ) as node FROM human_bones;
+DROP VIEW vrm_def;
 
-SELECT key, value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.meta'));
+CREATE VIEW vrm_def AS
+SELECT
+	key,
+	value
+FROM
+	vrm,
+	json_each(json_extract("vrm", '$.extensions.VRM'));
 
-SELECT key, value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.materialProperties'));
+DROP VIEW vrm_meta;
 
-WITH material_properties AS (SELECT key, value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.materialProperties')))
-SELECT json_extract(material_properties.value, '$.name') as name,
-json_extract(material_properties.value, '$.shader') as shader,
-json_extract(material_properties.value, '$.renderQueue') as render_queue
-FROM material_properties;
+CREATE VIEW vrm_meta AS
+SELECT
+	-- https://modern-sql.com/feature/filter
+ MAX(meta.value) FILTER (
+	WHERE meta.key = 'title') as title,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'version') as version,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'author') as author,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'contactInformation') as contact_information,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'reference') as reference,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'texture') as texture,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'allowedUserName') as allowed_user_name,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'violentUssageName') as violent_usage_name,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'sexualUssageName') as sexual_usage_name,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'commercialUssageName') as commercial_usage_name,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'otherPermissionUrl') as other_permission_url,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'licenseName') as license_name,
+	MAX(meta.value) FILTER (
+	WHERE meta.key = 'otherLicenseUrl') as other_license_url
+FROM
+	vrm,
+	json_each(json_extract("vrm", '$.extensions.VRM.meta')) as meta;
 
-WITH float_properties AS (WITH material_properties AS (SELECT key, value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.materialProperties')))
-SELECT json_extract(material_properties.value, '$.name') as name,
-json_extract(material_properties.value, '$.floatProperties') as float_properties
-FROM material_properties)
-SELECT name, key
-FROM float_properties, json_each(float_properties)
-WHERE name = 'Alicia_eye';
+DROP VIEW vrm_material;
 
-WITH float_properties AS (WITH material_properties AS (SELECT key, value
-FROM vrm, json_each(json_extract("vrm", '$.extensions.VRM.materialProperties')))
-SELECT json_extract(material_properties.value, '$.name') as name,
-  	 json_extract(material_properties.value, '$.shader') as shader,
-	 json_extract(material_properties.value, '$.renderQueue') as render_queue,
-json_extract(material_properties.value, '$.floatProperties') as float_properties,
-json_extract(material_properties.value, '$.vectorProperties') as vector_properties,
-json_extract(material_properties.value, '$.textureProperties') as texture_properties,
-json_extract(material_properties.value, '$.keywordMap') as keyword_map
-FROM material_properties)
-SELECT name,
-     shader,
-     render_queue,
-     keyword_map,
-     -- https://modern-sql.com/feature/filter
-     MAX(fp.value) FILTER (WHERE fp.key = '_Cutoff') as cutoff,
-     MAX(fp.value) FILTER (WHERE fp.key = '_BumpScale') as bump_scale,
-     MAX(fp.value) FILTER (WHERE fp.key = '_ReceiveShadowRate') as recieve_shadow_rate,
-     MAX(fp.value) FILTER (WHERE fp.key = '_ShadingGradeRate') as shading_grade_rate,
-     MAX(fp.value) FILTER (WHERE fp.key = '_ShadeShift') as shade_shift,
-     MAX(fp.value) FILTER (WHERE fp.key = '_ShadeToony') as shade_toony,
-     MAX(fp.value) FILTER (WHERE fp.key = '_LightColorAttenuation') as light_color_attenuation,
-     MAX(fp.value) FILTER (WHERE fp.key = '_IndirectLightIntensity') as indirect_light_intensity,
-     MAX(fp.value) FILTER (WHERE fp.key = '_OutlineWidth') as outline_width,
-     MAX(fp.value) FILTER (WHERE fp.key = '_OutlineScaledMaxDistance') as outline_scaled_max_distance,
-     MAX(fp.value) FILTER (WHERE fp.key = '_OutlineLightingMix') as outline_lighting_mix,
-     MAX(fp.value) FILTER (WHERE fp.key = '_DebugMode') as debug_mode,
-     MAX(fp.value) FILTER (WHERE fp.key = '_BlendMode') as blend_mode,
-     MAX(fp.value) FILTER (WHERE fp.key = '_OutlineWidthMode') as outline_width_mode,
-     MAX(fp.value) FILTER (WHERE fp.key = '_OutlineColorMode') as outline_color_mode,
-     MAX(fp.value) FILTER (WHERE fp.key = '_CullMode') as cull_mode,
-     MAX(fp.value) FILTER (WHERE fp.key = '_SrcBlend') as src_blend,
-     MAX(fp.value) FILTER (WHERE fp.key = '_DstBlend') as dst_blend,
-     MAX(fp.value) FILTER (WHERE fp.key = '_ZWrite') as z_write,
-     MAX(vp.value) FILTER (WHERE vp.key = '_Color') as color,
-     MAX(vp.value) FILTER (WHERE vp.key = '_ShadeColor') as shade_color,
-     MAX(vp.value) FILTER (WHERE vp.key = '_MainTex') as main_tex,
-     MAX(vp.value) FILTER (WHERE vp.key = '_ShadeTexture') as shade_texture,
-     MAX(vp.value) FILTER (WHERE vp.key = '_BumpMap') as bump_map,
-     MAX(vp.value) FILTER (WHERE vp.key = '_ReceiveShadowTexture') as receive_shadow_texture,
-     MAX(vp.value) FILTER (WHERE vp.key = '_ShadingGradeTexture') as shading_grade_texture,
-     MAX(vp.value) FILTER (WHERE vp.key = '_SphereAdd') as sphere_add,
-     MAX(vp.value) FILTER (WHERE vp.key = '_EmissionColor') as emission_color,
-     MAX(vp.value) FILTER (WHERE vp.key = '_EmissionMap') as emission_map,
-     MAX(vp.value) FILTER (WHERE vp.key = '_OutlineWidthTexture') as outline_width_texture,
-     MAX(vp.value) FILTER (WHERE vp.key = '_OutlineColor') as outline_color,
-     MAX(tp.value) FILTER (WHERE tp.key = '_MainTex') as main_tex,
-     MAX(tp.value) FILTER (WHERE tp.key = '_ShadeTexture') as shade_texture,
-     MAX(tp.value) FILTER (WHERE tp.key = '_SphereAdd') as sphere_add
-FROM float_properties, json_each(float_properties) as fp, json_each(vector_properties) as vp
-, json_each(texture_properties) as tp, json_each(keyword_map) as km
-GROUP BY name;
+CREATE VIEW vrm_material AS WITH float_properties AS (WITH material_properties AS (
+SELECT
+	key, value
+FROM
+	vrm, json_each(json_extract("vrm", '$.extensions.VRM.materialProperties')))
+SELECT
+	json_extract(material_properties.value, '$.name') as name,
+	json_extract(material_properties.value, '$.shader') as shader,
+	json_extract(material_properties.value, '$.renderQueue') as render_queue,
+	json_extract(material_properties.value, '$.floatProperties') as float_properties,
+	json_extract(material_properties.value, '$.vectorProperties') as vector_properties,
+	json_extract(material_properties.value, '$.textureProperties') as texture_properties,
+	json_extract(material_properties.value, '$.keywordMap') as keyword_map
+FROM
+	material_properties)
+SELECT
+	name,
+	shader,
+	render_queue,
+	keyword_map,
+	-- https://modern-sql.com/feature/filter
+ MAX(fp.value) FILTER (
+	WHERE fp.key = '_Cutoff') as cutoff,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_BumpScale') as bump_scale,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_ReceiveShadowRate') as recieve_shadow_rate,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_ShadingGradeRate') as shading_grade_rate,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_ShadeShift') as shade_shift,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_ShadeToony') as shade_toony,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_LightColorAttenuation') as light_color_attenuation,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_IndirectLightIntensity') as indirect_light_intensity,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_OutlineWidth') as outline_width,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_OutlineScaledMaxDistance') as outline_scaled_max_distance,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_OutlineLightingMix') as outline_lighting_mix,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_DebugMode') as debug_mode,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_BlendMode') as blend_mode,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_OutlineWidthMode') as outline_width_mode,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_OutlineColorMode') as outline_color_mode,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_CullMode') as cull_mode,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_SrcBlend') as src_blend,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_DstBlend') as dst_blend,
+	MAX(fp.value) FILTER (
+	WHERE fp.key = '_ZWrite') as z_write,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_Color') as color,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_ShadeColor') as shade_color,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_MainTex') as main_tex,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_ShadeTexture') as shade_texture,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_BumpMap') as bump_map,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_ReceiveShadowTexture') as receive_shadow_texture,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_ShadingGradeTexture') as shading_grade_texture,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_SphereAdd') as sphere_add,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_EmissionColor') as emission_color,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_EmissionMap') as emission_map,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_OutlineWidthTexture') as outline_width_texture,
+	MAX(vp.value) FILTER (
+	WHERE vp.key = '_OutlineColor') as outline_color,
+	MAX(tp.value) FILTER (
+	WHERE tp.key = '_MainTex') as main_tex,
+	MAX(tp.value) FILTER (
+	WHERE tp.key = '_ShadeTexture') as shade_texture,
+	MAX(tp.value) FILTER (
+	WHERE tp.key = '_SphereAdd') as sphere_add
+FROM
+	float_properties,
+	json_each(float_properties) as fp,
+	json_each(vector_properties) as vp ,
+	json_each(texture_properties) as tp,
+	json_each(keyword_map) as km
+GROUP BY
+	name;
