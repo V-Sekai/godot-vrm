@@ -10,7 +10,6 @@ config_version=4
 
 _global_script_classes=[  ]
 _global_script_class_icons={
-
 }
 
 [application]
@@ -22,7 +21,3 @@ enabled=PoolStringArray( "vrm" )
 [editor_plugins]
 
 enabled=PoolStringArray( "vrm" )
-
-[rendering]
-
-environment/default_environment="res://default_env.tres"
