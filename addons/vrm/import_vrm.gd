@@ -204,14 +204,17 @@ func read_vrm(json: String):
 		name;
 	""")
 	
-	var vrm_data = db.fetch_array("SELECT * FROM vrm_material LIMIT 1")
-	print(vrm_data)
+	var vrm_data : SQLiteQuery = db.create_query("SELECT * FROM vrm_material LIMIT 1")
+	print(vrm_data.get_columns())
+	print(vrm_data.execute())
 	
-	vrm_data = db.fetch_array("SELECT * FROM vrm_meta")
-	print(vrm_data)
+	vrm_data = db.create_query("SELECT * FROM vrm_meta")
+	print(vrm_data.get_columns())
+	print(vrm_data.execute())
 	
-	vrm_data = db.fetch_array("SELECT * FROM vrm_bone LIMIT 1")
-	print(vrm_data)
+	vrm_data = db.create_query("SELECT * FROM vrm_bone LIMIT 1")
+	print(vrm_data.get_columns())
+	print(vrm_data.execute())
 	
 	# Close database
 	db.close();
