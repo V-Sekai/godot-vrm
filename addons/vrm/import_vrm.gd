@@ -52,7 +52,7 @@ func read_vrm(json: String):
 	var db : SQLite = SQLite.new();
 	
 	# Open database
-	if (!db.open("user://vrm.sqlite")):
+	if (!db.open_in_memory()):
 		return;
 	
 	var query = "";
