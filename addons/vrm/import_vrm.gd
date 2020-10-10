@@ -57,15 +57,12 @@ func read_vrm(json: String):
 	
 	var query = "";
 	var result = null;
-	
-	db.query("DROP TABLE IF EXISTS vrm;")
-	
+		
 	query = "CREATE TABLE vrm(id INTEGER, vrm JSON);";
 	db.query(query);
 		
 	db.query_with_args("INSERT INTO vrm(id, vrm) values (1, json(?));", [json])	
 	
-	db.query("DROP VIEW IF EXISTS vrm_bone;")
 	query = """
 	CREATE VIEW vrm_bone AS WITH human_bones AS (
 	SELECT value FROM vrm,
@@ -75,13 +72,10 @@ func read_vrm(json: String):
 	"""
 	db.query(query)
 
-	db.query("DROP VIEW IF EXISTS vrm_def;")
-	
 	query = "CREATE VIEW vrm_def AS SELECT key, value"
 	query += " FROM vrm, json_each(json_extract(\"vrm\", '$.extensions.VRM'));"
 	db.query(query)
 #
-	db.query("DROP VIEW IF EXISTS vrm_meta;")
 	#  https://modern-sql.com/feature/filter
 	query = """
 			CREATE VIEW vrm_meta AS SELECT
@@ -101,8 +95,6 @@ func read_vrm(json: String):
 			FROM vrm, json_each(json_extract(\"vrm\", '$.extensions.VRM.meta')) as meta;
 			"""
 	db.query(query)
-
-	db.query("""DROP VIEW IF EXISTS vrm_material;""")
 
 	db.query("""
 	CREATE VIEW vrm_material AS WITH float_properties AS (WITH material_properties AS (
