@@ -237,9 +237,17 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 		oldmat.resource_path = ""
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(oldpath, newmat)
-
-	gstate.set_materials(materials)
-
+	gstate.set_materials(materials)	
+	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
+	for shape in blend_shape_groups:
+		print("Blend shape group: " + shape["name"])
+		if !shape["binds"].size():
+			continue
+		for bind in shape["binds"]:
+			var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
+			print("Mesh name: " + mesh.resource_name)
+			print("Bind index: " + str(bind["index"]))
+			print("Bind weight: " + str(float(bind["weight"]) / 100.0))
 	for i in range(meshes.size()):
 		var gltfmesh: GLTFMesh = meshes[i]
 		var mesh: ArrayMesh = gltfmesh.mesh
