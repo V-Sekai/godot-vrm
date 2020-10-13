@@ -434,9 +434,9 @@ func read_vrm(json: String):
 		name;
 	""")
 	
-	var vrm_data : SQLiteQuery = db.create_query("SELECT * FROM vrm_material")
-	var columns: Array = vrm_data.get_columns()
-	var list_of_materials: Array = vrm_data.execute()
+#	var vrm_data : SQLiteQuery = db.create_query("SELECT * FROM vrm_material")
+#	var columns: Array = vrm_data.get_columns()
+#	var list_of_materials: Array = vrm_data.execute()
 
 	#for material in list_of_materials:
 	#	var param_dict = _to_material_param_dict(columns, material)
