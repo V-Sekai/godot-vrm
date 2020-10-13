@@ -242,7 +242,8 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 	for i in range(meshes.size()):
 		var gltfmesh: GLTFMesh = meshes[i]
-		var mesh: Mesh = gltfmesh.mesh
+		var mesh: ArrayMesh = gltfmesh.mesh
+		mesh.blend_shape_mode = ArrayMesh.BLEND_SHAPE_MODE_NORMALIZED
 		for surf_idx in range(mesh.get_surface_count()):
 			var surfmat = mesh.surface_get_material(surf_idx)
 			if spatial_to_shader_mat.has(surfmat):
