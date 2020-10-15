@@ -215,6 +215,7 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var images = gstate.get_images()
 	print(images)
 	var meshes = gstate.get_meshes()
+	var nodes = gstate.get_nodes()
 
 	var materials : Array = gstate.get_materials();
 
@@ -238,16 +239,87 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(oldpath, newmat)
 	gstate.set_materials(materials)	
+	var animplayer = AnimationPlayer.new()
+	animplayer.name = "anim"
+	root_node.add_child(animplayer)
+	animplayer.owner = root_node
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
+	# FIXME: Do we need to handle multiple references to the same mesh???
+	var mesh_idx_to_meshinstance : Dictionary = {}
+	var mesh_to_idx : Dictionary = {}
+	var material_name_to_mesh_and_surface_idx: Dictionary = {}
+	for i in range(meshes.size()):
+		var gltfmesh : GLTFMesh = meshes[i]
+		mesh_to_idx[gltfmesh.mesh] = i
+		for j in range(gltfmesh.mesh.get_surface_count()):
+			material_name_to_mesh_and_surface_idx[gltfmesh.mesh.surface_get_material(j).resource_name] = [i, j]
+			
+	for i in range(nodes.size()):
+		var gltfnode: GLTFNode = nodes[i]
+		var mesh_idx: int = gltfnode.mesh
+		print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
+		if (mesh_idx != -1):
+			var scenenode: MeshInstance = gstate.get_scene_node(i)
+			mesh_idx_to_meshinstance[mesh_idx] = scenenode
+			print("insert " + str(mesh_idx) + " node name " + scenenode.name)
+
 	for shape in blend_shape_groups:
 		print("Blend shape group: " + shape["name"])
-		if !shape["binds"].size():
-			continue
+		var anim = Animation.new()
+		
+		for matbind in shape["materialValues"]:
+			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
+			var node: MeshInstance = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
+			var surface_idx = mesh_and_surface_idx[1]
+
+			var mat: Material = node.get_surface_material(surface_idx)
+			var paramprop = "shader_param/" + matbind["parameterName"]
+			var origvalue = null
+			var tv = matbind["targetValue"]
+			var newvalue = tv[0]
+				
+			if (mat is ShaderMaterial):
+				var smat: ShaderMaterial = mat
+				var param = smat.get_shader_param(matbind["parameterName"])
+				if param is Color:
+					origvalue = param
+					newvalue = Color(tv[0], tv[1], tv[2], tv[3])
+				elif matbind["parameterName"] == "_MainTex" or matbind["parameterName"] == "_MainTex_ST":
+					origvalue = param
+					newvalue = Plane(tv[2], tv[3], tv[0], tv[1]) if matbind["parameterName"] == "_MainTex" else Plane(tv[0], tv[1], tv[2], tv[3])
+				elif param is float:
+					origvalue = param
+					newvalue = tv[0]
+				else:
+					printerr("Unknown type for parameter " + matbind["parameterName"] + " surface " + node.name + "/" + str(surface_idx))
+
+			if origvalue != null:
+				var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
+				anim.track_set_path(animtrack, animplayer.get_parent().get_path_to(node) + ":mesh:surface_" + str(surface_idx) + "/material:" + paramprop)
+				anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
+				anim.track_insert_key(animtrack, 0.0, origvalue)
+				anim.track_insert_key(animtrack, 0.0, newvalue)
 		for bind in shape["binds"]:
-			var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
-			print("Mesh name: " + mesh.resource_name)
-			print("Bind index: " + str(bind["index"]))
-			print("Bind weight: " + str(float(bind["weight"]) / 100.0))
+			# FIXME: Is this a mesh_idx or a node_idx???
+			var node: MeshInstance = mesh_idx_to_meshinstance[int(bind["mesh"])]
+			var nodeMesh: ArrayMesh = node.mesh;
+			
+			if (bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count()):
+				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + node.name)
+				continue
+			var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
+			nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
+			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":blend_shapes/" + nodeMesh.get_blend_shape_name(int(bind["index"])))
+			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
+			anim.track_insert_key(animtrack, 0.0, float(0.0))
+			anim.track_insert_key(animtrack, 1.0, float(bind["weight"]) / 100.0)
+			#var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
+			#print("Mesh name: " + mesh.resource_name)
+			#print("Bind index: " + str(bind["index"]))
+			#print("Bind weight: " + str(float(bind["weight"]) / 100.0))
+
+		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
+		animplayer.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
 	for i in range(meshes.size()):
 		var gltfmesh: GLTFMesh = meshes[i]
 		var mesh: ArrayMesh = gltfmesh.mesh
