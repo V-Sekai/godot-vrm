@@ -183,52 +183,17 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 	return new_mat
 
 
-func _import_scene(path: String, flags: int, bake_fps: int):
-	var f = File.new()
-	if f.open(path, File.READ) != OK:
-		return FAILED
-
-	var magic = f.get_32()
-	if magic != 0x46546C67:
-		return ERR_FILE_UNRECOGNIZED
-	f.get_32() # version
-	f.get_32() # length
-
-	var chunk_length = f.get_32();
-	var chunk_type = f.get_32();
-
-	if chunk_type != 0x4E4F534A:
-		return ERR_PARSE_ERROR
-	var json_data : PoolByteArray = f.get_buffer(chunk_length)
-	f.close()
-
-	var text : String = json_data.get_string_from_utf8()
-	read_vrm(text)
-	var gstate : GLTFState = GLTFState.new()
-	var gltf : PackedSceneGLTF = PackedSceneGLTF.new()
-	print(path);
-	var root_node : Node = gltf.import_gltf_scene(path, 0, 1000.0, gstate)
-
-	if (!ResourceLoader.exists(path + ".res")):
-		ResourceSaver.save(path + ".res", gstate)
-
+func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 	var images = gstate.get_images()
 	print(images)
-	var meshes = gstate.get_meshes()
-	var nodes = gstate.get_nodes()
-
 	var materials : Array = gstate.get_materials();
-
-	var gltf_json : Dictionary = gstate.json
-	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
-	
 	var spatial_to_shader_mat : Dictionary = {}
 	for i in range(materials.size()):
 		var oldmat: Material = materials[i]
 		if (oldmat is ShaderMaterial):
 			print("Material " + str(i) + ": " + oldmat.resource_name + " already is shader.")
 			continue
-		var newmat: Material = _process_khr_material(oldmat, gltf_json["materials"][i])
+		var newmat: Material = _process_khr_material(oldmat, gstate.json["materials"][i])
 		newmat = _process_vrm_material(newmat, images, vrm_extension["materialProperties"][i])
 		spatial_to_shader_mat[oldmat] = newmat
 		spatial_to_shader_mat[newmat] = newmat
@@ -238,7 +203,24 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 		oldmat.resource_path = ""
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(oldpath, newmat)
-	gstate.set_materials(materials)	
+	gstate.set_materials(materials)
+
+	var meshes = gstate.get_meshes()
+	for i in range(meshes.size()):
+		var gltfmesh: GLTFMesh = meshes[i]
+		var mesh: ArrayMesh = gltfmesh.mesh
+		mesh.blend_shape_mode = ArrayMesh.BLEND_SHAPE_MODE_NORMALIZED
+		for surf_idx in range(mesh.get_surface_count()):
+			var surfmat = mesh.surface_get_material(surf_idx)
+			if spatial_to_shader_mat.has(surfmat):
+				mesh.surface_set_material(surf_idx, spatial_to_shader_mat[surfmat])
+			else:
+				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + surfmat.resource_name + " has no replacement material.")
+
+
+func _create_animation_player(root_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> AnimationPlayer:
+	var meshes = gstate.get_meshes()
+	var nodes = gstate.get_nodes()
 	var animplayer = AnimationPlayer.new()
 	animplayer.name = "anim"
 	root_node.add_child(animplayer)
@@ -246,11 +228,9 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
 	# FIXME: Do we need to handle multiple references to the same mesh???
 	var mesh_idx_to_meshinstance : Dictionary = {}
-	var mesh_to_idx : Dictionary = {}
 	var material_name_to_mesh_and_surface_idx: Dictionary = {}
 	for i in range(meshes.size()):
 		var gltfmesh : GLTFMesh = meshes[i]
-		mesh_to_idx[gltfmesh.mesh] = i
 		for j in range(gltfmesh.mesh.get_surface_count()):
 			material_name_to_mesh_and_surface_idx[gltfmesh.mesh.surface_get_material(j).resource_name] = [i, j]
 			
@@ -320,18 +300,43 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
 		animplayer.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
-	for i in range(meshes.size()):
-		var gltfmesh: GLTFMesh = meshes[i]
-		var mesh: ArrayMesh = gltfmesh.mesh
-		mesh.blend_shape_mode = ArrayMesh.BLEND_SHAPE_MODE_NORMALIZED
-		for surf_idx in range(mesh.get_surface_count()):
-			var surfmat = mesh.surface_get_material(surf_idx)
-			if spatial_to_shader_mat.has(surfmat):
-				mesh.surface_set_material(surf_idx, spatial_to_shader_mat[surfmat])
-			else:
-				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + surfmat.resource_name + " has no replacement material.")
+	return animplayer
 
-	#var nodes = gstate.get_nodes()
+func _import_scene(path: String, flags: int, bake_fps: int):
+	var f = File.new()
+	if f.open(path, File.READ) != OK:
+		return FAILED
+
+	var magic = f.get_32()
+	if magic != 0x46546C67:
+		return ERR_FILE_UNRECOGNIZED
+	f.get_32() # version
+	f.get_32() # length
+
+	var chunk_length = f.get_32();
+	var chunk_type = f.get_32();
+
+	if chunk_type != 0x4E4F534A:
+		return ERR_PARSE_ERROR
+	var json_data : PoolByteArray = f.get_buffer(chunk_length)
+	f.close()
+
+	var text : String = json_data.get_string_from_utf8()
+	read_vrm(text)
+	var gstate : GLTFState = GLTFState.new()
+	var gltf : PackedSceneGLTF = PackedSceneGLTF.new()
+	print(path);
+	var root_node : Node = gltf.import_gltf_scene(path, 0, 1000.0, gstate)
+
+	if (!ResourceLoader.exists(path + ".res")):
+		ResourceSaver.save(path + ".res", gstate)
+
+	var gltf_json : Dictionary = gstate.json
+	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
+	
+	_update_materials(vrm_extension, gstate)
+
+	var animplayer = _create_animation_player(root_node, vrm_extension, gstate)
 
 	gltf.pack(root_node)
 	return gltf.instance()
