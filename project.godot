@@ -9,13 +9,19 @@
 config_version=4
 
 _global_script_classes=[ {
-"base": "Reference",
+"base": "Resource",
 "class": "VRMMeta",
 "language": "GDScript",
 "path": "res://addons/vrm/vrm_meta.gd"
+}, {
+"base": "Resource",
+"class": "VRMToplevel",
+"language": "GDScript",
+"path": "res://addons/vrm/vrm_toplevel.gd"
 } ]
 _global_script_class_icons={
-"VRMMeta": ""
+"VRMMeta": "",
+"VRMToplevel": ""
 }
 
 [application]

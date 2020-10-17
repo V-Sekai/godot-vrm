@@ -581,14 +581,13 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
 	var vrmmeta: VRMMeta = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
+	root_node.set_script(VRMToplevel)
+	root_node.set("vrm_meta", vrmmeta)
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
 
-	gltf.pack(root_node)
-	var ret = gltf.instance()
-	ret.set_script(vrmmeta)
-	return ret
+	return root_node
 
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):

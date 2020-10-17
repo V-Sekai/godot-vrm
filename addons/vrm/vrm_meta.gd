@@ -1,11 +1,6 @@
-extends Reference
+extends Resource
 class_name VRMMeta
-
 # Declare member variables here. Examples:
-# Toplevel schema:
-export var exporterVersion: String
-export var specVersion: String
-
 # Meta schema:
 export var title: String
 export var version: String
@@ -25,8 +20,13 @@ export var skeleton: NodePath
 export var animplayer: NodePath
 
 export var humanoid_bone_mapping: Dictionary # VRM boneName -> bone idx (within skeleton)
+
 export var eye_offset: Vector3
 export var mouth_offset: Vector3 # Inferred
+
+# Toplevel schema:
+export var exporterVersion: String
+export var specVersion: String
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
