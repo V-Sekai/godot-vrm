@@ -270,7 +270,7 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
 
 
-func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> Dictionary:
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> VRMMeta:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 	var hipsNode: GLTFNode = nodes[human_bone_to_idx["hips"]]
@@ -301,33 +301,33 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	for humanBoneName in human_bone_to_idx:
 		humanBoneDictionary[humanBoneName] = poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName])
 
-	var vrm_meta: Dictionary = {}
+	var vrm_meta: VRMMeta = VRMMeta.new()
 	
-	vrm_meta["animplayer"] = animPath
-	vrm_meta["skeleton"] = skeletonPath
+	vrm_meta.animplayer = animPath
+	vrm_meta.skeleton = skeletonPath
 	
-	vrm_meta["exporterVersion"] = vrm_extension["exporterVersion"]
-	vrm_meta["specVersion"] = vrm_extension["specVersion"]
-	vrm_meta["title"] = vrm_extension["meta"]["title"]
-	vrm_meta["version"] = vrm_extension["meta"]["version"]
-	vrm_meta["author"] = vrm_extension["meta"]["author"]
-	vrm_meta["contactInformation"] = vrm_extension["meta"]["contactInformation"]
-	vrm_meta["reference"] = vrm_extension["meta"]["reference"]
+	vrm_meta.exporterVersion = vrm_extension["exporterVersion"]
+	vrm_meta.specVersion = vrm_extension["specVersion"]
+	vrm_meta.title = vrm_extension["meta"]["title"]
+	vrm_meta.version = vrm_extension["meta"]["version"]
+	vrm_meta.author = vrm_extension["meta"]["author"]
+	vrm_meta.contactInformation = vrm_extension["meta"]["contactInformation"]
+	vrm_meta.reference = vrm_extension["meta"]["reference"]
 	var tex: int = vrm_extension["meta"]["texture"]
 	if tex >= 0:
 		var gltftex: GLTFTexture = gstate.get_textures()[tex]
-		vrm_meta["texture"] = gstate.get_images()[gltftex.src_image]
-	vrm_meta["allowedUserName"] = vrm_extension["meta"]["allowedUserName"]
-	vrm_meta["violentUsage"] = vrm_extension["meta"]["violentUssageName"]
-	vrm_meta["sexualUsage"] = vrm_extension["meta"]["sexualUssageName"]
-	vrm_meta["commercialUsage"] = vrm_extension["meta"]["commercialUssageName"]
-	vrm_meta["otherPermissionUrl"] = vrm_extension["meta"]["otherPermissionUrl"]
-	vrm_meta["licenseName"] = vrm_extension["meta"]["licenseName"]
-	vrm_meta["otherLicenseUrl"] = vrm_extension["meta"]["otherLicenseUrl"]
+		vrm_meta.texture = gstate.get_images()[gltftex.src_image]
+	vrm_meta.allowedUserName = vrm_extension["meta"]["allowedUserName"]
+	vrm_meta.violentUsage = vrm_extension["meta"]["violentUssageName"]
+	vrm_meta.sexualUsage = vrm_extension["meta"]["sexualUssageName"]
+	vrm_meta.commercialUsage = vrm_extension["meta"]["commercialUssageName"]
+	vrm_meta.otherPermissionUrl = vrm_extension["meta"]["otherPermissionUrl"]
+	vrm_meta.licenseName = vrm_extension["meta"]["licenseName"]
+	vrm_meta.otherLicenseUrl = vrm_extension["meta"]["otherLicenseUrl"]
 
-	vrm_meta["eye_offset"] = eyeOffset
-	vrm_meta["mouth_offset"] = mouthOffset
-	vrm_meta["humanoid_bone_mapping"] = humanBoneDictionary
+	vrm_meta.eye_offset = eyeOffset
+	vrm_meta.mouth_offset = mouthOffset
+	vrm_meta.humanoid_bone_mapping = humanBoneDictionary
 	return vrm_meta
 
 
@@ -580,12 +580,15 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	animplayer.owner = root_node
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
-	var vrmmeta = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
+	var vrmmeta: VRMMeta = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
-	root_node.set_meta("VRM", vrmmeta)
-	return root_node
+
+	gltf.pack(root_node)
+	var ret = gltf.instance()
+	ret.set_script(vrmmeta)
+	return ret
 
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
