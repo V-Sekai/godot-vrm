@@ -332,7 +332,7 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	vrm_meta.eye_offset = eyeOffset
 	vrm_meta.mouth_offset = mouthOffset
 	vrm_meta.humanoid_bone_mapping = humanBoneDictionary
-	return vrm_meta
+	return vrm_meta.duplicate(true)
 
 
 func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> AnimationPlayer:
@@ -593,8 +593,10 @@ export var vrm_meta:Resource"""
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
-
-	return root_node
+	# Remove references
+	var packed_scene: PackedScene = PackedScene.new()
+	packed_scene.pack(root_node)
+	return packed_scene.instance(PackedScene.GEN_EDIT_STATE_INSTANCE)
 
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
