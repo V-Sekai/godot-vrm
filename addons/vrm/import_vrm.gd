@@ -198,7 +198,7 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 
 func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 	var images = gstate.get_images()
-	print(images)
+	#print(images)
 	var materials : Array = gstate.get_materials();
 	var spatial_to_shader_mat : Dictionary = {}
 	for i in range(materials.size()):
@@ -210,7 +210,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 		newmat = _process_vrm_material(newmat, images, vrm_extension["materialProperties"][i])
 		spatial_to_shader_mat[oldmat] = newmat
 		spatial_to_shader_mat[newmat] = newmat
-		print("Replacing shader " + str(oldmat) + "/" + oldmat.resource_name + " with " + str(newmat) + "/" + newmat.resource_name)
+		#print("Replacing shader " + str(oldmat) + "/" + oldmat.resource_name + " with " + str(newmat) + "/" + newmat.resource_name)
 		materials[i] = newmat
 		var oldpath = oldmat.resource_path
 		oldmat.resource_path = ""
@@ -280,22 +280,24 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 
 	var animPath: NodePath = root_node.get_path_to(animplayer)
 
-	var firstperson = vrm_extension["firstPerson"]
-	
-	# FIXME: Technically this is supposed to be offset relative to the "firstPersonBone"
-	# However, firstPersonBone defaults to Head...
-	# and the semantics of a VR player having their viewpoint out of something which does
-	# not rotate with their head is unclear.
-	# Additionally, the spec schema says this:
-	# "It is assumed that an offset from the head bone to the VR headset is added."
-	# Which implies that the Head bone is used, not the firstPersonBone.
-	var fpboneoffsetxyz = firstperson["firstPersonBoneOffset"] # example: 0,0.06,0
-	var eyeOffset = Vector3(fpboneoffsetxyz["x"], fpboneoffsetxyz["y"], fpboneoffsetxyz["z"])
-	# Assuming this position for now.
-	# This data is not stored in any model metadata.
-	# As an alternative, we could get the centroid of vertices moved by viseme blend shapes.
-	# But for now, we'll assume this position:
-	var mouthOffset = Vector3(fpboneoffsetxyz["x"], 0.0, fpboneoffsetxyz["z"])
+	var firstperson = vrm_extension.get("firstPerson", null)
+	var eyeOffset: Vector3;
+	var mouthOffset: Vector3;
+	if firstperson:
+		# FIXME: Technically this is supposed to be offset relative to the "firstPersonBone"
+		# However, firstPersonBone defaults to Head...
+		# and the semantics of a VR player having their viewpoint out of something which does
+		# not rotate with their head is unclear.
+		# Additionally, the spec schema says this:
+		# "It is assumed that an offset from the head bone to the VR headset is added."
+		# Which implies that the Head bone is used, not the firstPersonBone.
+		var fpboneoffsetxyz = firstperson["firstPersonBoneOffset"] # example: 0,0.06,0
+		eyeOffset = Vector3(fpboneoffsetxyz["x"], fpboneoffsetxyz["y"], fpboneoffsetxyz["z"])
+		# Assuming this position for now.
+		# This data is not stored in any model metadata.
+		# As an alternative, we could get the centroid of vertices moved by viseme blend shapes.
+		# But for now, we'll assume this position:
+		mouthOffset = Vector3(fpboneoffsetxyz["x"], 0.0, fpboneoffsetxyz["z"])
 
 	var humanBoneDictionary: Dictionary = {}
 	for humanBoneName in human_bone_to_idx:
@@ -306,24 +308,26 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	vrm_meta.animplayer = animPath
 	vrm_meta.skeleton = skeletonPath
 	
-	vrm_meta.exporterVersion = vrm_extension["exporterVersion"]
-	vrm_meta.specVersion = vrm_extension["specVersion"]
-	vrm_meta.title = vrm_extension["meta"]["title"]
-	vrm_meta.version = vrm_extension["meta"]["version"]
-	vrm_meta.author = vrm_extension["meta"]["author"]
-	vrm_meta.contactInformation = vrm_extension["meta"]["contactInformation"]
-	vrm_meta.reference = vrm_extension["meta"]["reference"]
-	var tex: int = vrm_extension["meta"]["texture"]
-	if tex >= 0:
-		var gltftex: GLTFTexture = gstate.get_textures()[tex]
-		vrm_meta.texture = gstate.get_images()[gltftex.src_image]
-	vrm_meta.allowedUserName = vrm_extension["meta"]["allowedUserName"]
-	vrm_meta.violentUsage = vrm_extension["meta"]["violentUssageName"]
-	vrm_meta.sexualUsage = vrm_extension["meta"]["sexualUssageName"]
-	vrm_meta.commercialUsage = vrm_extension["meta"]["commercialUssageName"]
-	vrm_meta.otherPermissionUrl = vrm_extension["meta"]["otherPermissionUrl"]
-	vrm_meta.licenseName = vrm_extension["meta"]["licenseName"]
-	vrm_meta.otherLicenseUrl = vrm_extension["meta"]["otherLicenseUrl"]
+	vrm_meta.exporterVersion = vrm_extension.get("exporterVersion", "")
+	vrm_meta.specVersion = vrm_extension.get("specVersion", "")
+	var vrm_extension_meta = vrm_extension.get("meta")
+	if vrm_extension_meta:
+		vrm_meta.title = vrm_extension["meta"].get("title", "")
+		vrm_meta.version = vrm_extension["meta"].get("version", "")
+		vrm_meta.author = vrm_extension["meta"].get("author", "")
+		vrm_meta.contactInformation = vrm_extension["meta"].get("contactInformation", "")
+		vrm_meta.reference = vrm_extension["meta"].get("reference", "")
+		var tex: int = vrm_extension["meta"].get("texture", -1)
+		if tex >= 0:
+			var gltftex: GLTFTexture = gstate.get_textures()[tex]
+			vrm_meta.texture = gstate.get_images()[gltftex.src_image]
+		vrm_meta.allowedUserName = vrm_extension["meta"].get("allowedUserName", "")
+		vrm_meta.violentUsage = vrm_extension["meta"].get("violentUssageName", "")
+		vrm_meta.sexualUsage = vrm_extension["meta"].get("sexualUssageName", "")
+		vrm_meta.commercialUsage = vrm_extension["meta"].get("commercialUssageName", "")
+		vrm_meta.otherPermissionUrl = vrm_extension["meta"].get("otherPermissionUrl", "")
+		vrm_meta.licenseName = vrm_extension["meta"].get("licenseName", "")
+		vrm_meta.otherLicenseUrl = vrm_extension["meta"].get("otherLicenseUrl", "")
 
 	vrm_meta.eye_offset = eyeOffset
 	vrm_meta.mouth_offset = mouthOffset
@@ -352,14 +356,14 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	for i in range(nodes.size()):
 		var gltfnode: GLTFNode = nodes[i]
 		var mesh_idx: int = gltfnode.mesh
-		print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
+		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
 		if (mesh_idx != -1):
 			var scenenode: MeshInstance = gstate.get_scene_node(i)
 			mesh_idx_to_meshinstance[mesh_idx] = scenenode
-			print("insert " + str(mesh_idx) + " node name " + scenenode.name)
+			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
 
 	for shape in blend_shape_groups:
-		print("Blend shape group: " + shape["name"])
+		#print("Blend shape group: " + shape["name"])
 		var anim = Animation.new()
 		
 		for matbind in shape["materialValues"]:
@@ -403,7 +407,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + node.name)
 				continue
 			var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
-			nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
+			# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
 			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":blend_shapes/" + nodeMesh.get_blend_shape_name(int(bind["index"])))
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
 			anim.track_insert_key(animtrack, 0.0, float(0.0))
