@@ -585,9 +585,8 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
 	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
-	var vrm_top_level:GDScript = GDScript.new()
-	vrm_top_level.source_code = """extends GDScript
-export var vrm_meta:Resource"""
+	var vrm_top_level:GDScript = load("res://addons/vrm/vrm_toplevel.gd")
+
 	root_node.set_script(vrm_top_level)
 	root_node.set("vrm_meta", vrm_meta)
 
