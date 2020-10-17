@@ -584,7 +584,7 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
-	root_node.set_meta("VRMMeta", vrmmeta)
+	root_node.set_meta("VRM", vrmmeta)
 	return root_node
 
 
