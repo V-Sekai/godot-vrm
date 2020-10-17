@@ -32,6 +32,19 @@ enum CullMode {
 	Back = 2,
 }
 
+enum FirstPersonFlag {
+	Auto, # Create headlessModel
+	Both, # Default layer
+	ThirdPersonOnly,
+	FirstPersonOnly,
+}
+const FirstPersonParser: Dictionary = {
+	"Auto": FirstPersonFlag.Auto,
+	"Both": FirstPersonFlag.Both,
+	"FirstPersonOnly": FirstPersonFlag.FirstPersonOnly,
+	"ThirdPersonOnly": FirstPersonFlag.ThirdPersonOnly,
+}
+
 
 func _get_extensions():
 	return ["vrm"]
@@ -74,7 +87,7 @@ func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_
 func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float:
 	return vrm_mat_props["floatProperties"].get(key, def)
 
-
+ 
 func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_mat_props: Dictionary) -> Material:
 	var vrm_shader_name:String = vrm_mat_props["shader"]
 	if vrm_shader_name == "VRM_USE_GLTFSHADER":
@@ -218,13 +231,115 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + surfmat.resource_name + " has no replacement material.")
 
 
-func _create_animation_player(root_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> AnimationPlayer:
+func poolintarray_find(arr: PoolIntArray, val: int) -> int:
+	for i in range(arr.size()):
+		if arr[i] == val:
+			return i
+	return -1
+
+
+func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
+	# There's no working direct way to convert from skeleton_id to node_id.
+	# Bugs:
+	# GLTFNode.parent is -1 if skeleton bone.
+	# skeleton_to_node is empty
+	# get_scene_node(skeleton bone) works though might maybe return an attachment.
+	# var skel_node_idx = nodes[gltfskel.roots[0]]
+	# return gstate.get_scene_node(skel_node_idx) # as Skeleton
+	var gltfskel = skeletons[skel_id]
+	for i in range(nodes.size()):
+		if nodes[i].skeleton == skel_id:
+			return gstate.get_scene_node(i)
+	return null
+	
+
+# https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/schema/vrm.humanoid.bone.schema.json
+# vrm_extension["humanoid"]["bone"]:
+#"enum": ["hips","leftUpperLeg","rightUpperLeg","leftLowerLeg","rightLowerLeg","leftFoot","rightFoot",
+# "spine","chest","neck","head","leftShoulder","rightShoulder","leftUpperArm","rightUpperArm",
+# "leftLowerArm","rightLowerArm","leftHand","rightHand","leftToes","rightToes","leftEye","rightEye","jaw",
+# "leftThumbProximal","leftThumbIntermediate","leftThumbDistal",
+# "leftIndexProximal","leftIndexIntermediate","leftIndexDistal",
+# "leftMiddleProximal","leftMiddleIntermediate","leftMiddleDistal",
+# "leftRingProximal","leftRingIntermediate","leftRingDistal",
+# "leftLittleProximal","leftLittleIntermediate","leftLittleDistal",
+# "rightThumbProximal","rightThumbIntermediate","rightThumbDistal",
+# "rightIndexProximal","rightIndexIntermediate","rightIndexDistal",
+# "rightMiddleProximal","rightMiddleIntermediate","rightMiddleDistal",
+# "rightRingProximal","rightRingIntermediate","rightRingDistal",
+# "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
+
+
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> VRMMeta:
+	var nodes = gstate.get_nodes()
+	var skeletons = gstate.get_skeletons()
+	var hipsNode: GLTFNode = nodes[human_bone_to_idx["hips"]]
+	var gltfskel: GLTFSkeleton = skeletons[hipsNode.skeleton]
+	var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons, hipsNode.skeleton)
+	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
+
+	var animPath: NodePath = root_node.get_path_to(animplayer)
+
+	var firstperson = vrm_extension["firstPerson"]
+	
+	# FIXME: Technically this is supposed to be offset relative to the "firstPersonBone"
+	# However, firstPersonBone defaults to Head...
+	# and the semantics of a VR player having their viewpoint out of something which does
+	# not rotate with their head is unclear.
+	# Additionally, the spec schema says this:
+	# "It is assumed that an offset from the head bone to the VR headset is added."
+	# Which implies that the Head bone is used, not the firstPersonBone.
+	var fpboneoffsetxyz = firstperson["firstPersonBoneOffset"] # example: 0,0.06,0
+	var eyeOffset = Vector3(fpboneoffsetxyz["x"], fpboneoffsetxyz["y"], fpboneoffsetxyz["z"])
+	# Assuming this position for now.
+	# This data is not stored in any model metadata.
+	# As an alternative, we could get the centroid of vertices moved by viseme blend shapes.
+	# But for now, we'll assume this position:
+	var mouthOffset = Vector3(fpboneoffsetxyz["x"], 0.0, fpboneoffsetxyz["z"])
+
+	var humanBoneDictionary: Dictionary = {}
+	for humanBoneName in human_bone_to_idx:
+		humanBoneDictionary[humanBoneName] = poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName])
+
+	var vrm_meta: VRMMeta = VRMMeta.new()
+	
+	vrm_meta.animplayer = animPath
+	vrm_meta.skeleton = skeletonPath
+	
+	vrm_meta.exporterVersion = vrm_extension["exporterVersion"]
+	vrm_meta.specVersion = vrm_extension["specVersion"]
+	vrm_meta.title = vrm_extension["meta"]["title"]
+	vrm_meta.version = vrm_extension["meta"]["version"]
+	vrm_meta.author = vrm_extension["meta"]["author"]
+	vrm_meta.contactInformation = vrm_extension["meta"]["contactInformation"]
+	vrm_meta.reference = vrm_extension["meta"]["reference"]
+	var tex: int = vrm_extension["meta"]["texture"]
+	if tex >= 0:
+		var gltftex: GLTFTexture = gstate.get_textures()[tex]
+		vrm_meta.texture = gstate.get_images()[gltftex.src_image]
+	vrm_meta.allowedUserName = vrm_extension["meta"]["allowedUserName"]
+	vrm_meta.violentUsage = vrm_extension["meta"]["violentUssageName"]
+	vrm_meta.sexualUsage = vrm_extension["meta"]["sexualUssageName"]
+	vrm_meta.commercialUsage = vrm_extension["meta"]["commercialUssageName"]
+	vrm_meta.otherPermissionUrl = vrm_extension["meta"]["otherPermissionUrl"]
+	vrm_meta.licenseName = vrm_extension["meta"]["licenseName"]
+	vrm_meta.otherLicenseUrl = vrm_extension["meta"]["otherLicenseUrl"]
+
+	vrm_meta.eye_offset = eyeOffset
+	vrm_meta.mouth_offset = mouthOffset
+	vrm_meta.humanoid_bone_mapping = humanBoneDictionary
+	return vrm_meta
+
+
+func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> AnimationPlayer:
+	# Remove all glTF animation players for safety.
+	# VRM does not support animation import in this way.
+	for i in range(gstate.get_animation_players_count(0)):
+		var node: AnimationPlayer = gstate.get_animation_player(i)
+		node.get_parent().remove_child(node)
+
 	var meshes = gstate.get_meshes()
 	var nodes = gstate.get_nodes()
-	var animplayer = AnimationPlayer.new()
-	animplayer.name = "anim"
-	root_node.add_child(animplayer)
-	animplayer.owner = root_node
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
 	# FIXME: Do we need to handle multiple references to the same mesh???
 	var mesh_idx_to_meshinstance : Dictionary = {}
@@ -275,7 +390,7 @@ func _create_animation_player(root_node: Node, vrm_extension: Dictionary, gstate
 
 			if origvalue != null:
 				var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
-				anim.track_set_path(animtrack, animplayer.get_parent().get_path_to(node) + ":mesh:surface_" + str(surface_idx) + "/material:" + paramprop)
+				anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":mesh:surface_" + str(surface_idx) + "/material:" + paramprop)
 				anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
 				anim.track_insert_key(animtrack, 0.0, origvalue)
 				anim.track_insert_key(animtrack, 0.0, newvalue)
@@ -292,7 +407,9 @@ func _create_animation_player(root_node: Node, vrm_extension: Dictionary, gstate
 			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":blend_shapes/" + nodeMesh.get_blend_shape_name(int(bind["index"])))
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
 			anim.track_insert_key(animtrack, 0.0, float(0.0))
-			anim.track_insert_key(animtrack, 1.0, float(bind["weight"]) / 100.0)
+			# FIXME: Godot has weird normal/tangent singularities at weight=1.0 or weight=0.5
+			# So we multiply by 0.99999 to produce roughly the same output, avoiding these singularities.
+			anim.track_insert_key(animtrack, 1.0, 0.99999 * float(bind["weight"]) / 100.0)
 			#var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
 			#print("Mesh name: " + mesh.resource_name)
 			#print("Bind index: " + str(bind["index"]))
@@ -300,6 +417,117 @@ func _create_animation_player(root_node: Node, vrm_extension: Dictionary, gstate
 
 		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
 		animplayer.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
+
+	var firstperson = vrm_extension["firstPerson"]
+	
+	var firstpersanim: Animation = Animation.new()
+	animplayer.add_animation("FirstPerson", firstpersanim)
+
+	var thirdpersanim: Animation = Animation.new()
+	animplayer.add_animation("ThirdPerson", thirdpersanim)
+
+	var skeletons:Array = gstate.get_skeletons()
+
+	var head_bone_idx = firstperson.get("firstPersonBone", -1)
+	if (head_bone_idx >= 0):
+		var headNode: GLTFNode = nodes[head_bone_idx]
+		var gltfskel: GLTFSkeleton = skeletons[headNode.skeleton]
+		var skeletonPath:NodePath = animplayer.get_parent().get_path_to(_get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton))
+		var headBone: int = poolintarray_find(gltfskel.joints, head_bone_idx)
+		var firstperstrack = firstpersanim.add_track(Animation.TYPE_METHOD)
+		firstpersanim.track_set_path(firstperstrack, ".")
+		firstpersanim.track_insert_key(firstperstrack, 0.0, {"method": "TODO_scale_bone", "args": [skeletonPath, headBone, 0.0]})
+		var thirdperstrack = thirdpersanim.add_track(Animation.TYPE_METHOD)
+		thirdpersanim.track_set_path(thirdperstrack, ".")
+		thirdpersanim.track_insert_key(thirdperstrack, 0.0, {"method": "TODO_scale_bone", "args": [skeletonPath, headBone, 1.0]})
+
+	for meshannotation in firstperson["meshAnnotations"]:
+
+		var flag = FirstPersonParser.get(meshannotation["firstPersonFlag"], -1)
+		var first_person_visibility;
+		var third_person_visibility;
+		if flag == FirstPersonFlag.ThirdPersonOnly:
+			first_person_visibility = 0.0
+			third_person_visibility = 1.0
+		elif flag == FirstPersonFlag.FirstPersonOnly:
+			first_person_visibility = 1.0
+			third_person_visibility = 0.0
+		else:
+			continue
+		var node: MeshInstance = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
+		var firstperstrack = firstpersanim.add_track(Animation.TYPE_VALUE)
+		firstpersanim.track_set_path(firstperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
+		firstpersanim.track_insert_key(firstperstrack, 0.0, first_person_visibility)
+		var thirdperstrack = thirdpersanim.add_track(Animation.TYPE_VALUE)
+		thirdpersanim.track_set_path(thirdperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
+		thirdpersanim.track_insert_key(thirdperstrack, 0.0, third_person_visibility)
+
+	if firstperson.get("lookAtTypeName", "") == "Bone":
+		var horizout = firstperson["lookAtHorizontalOuter"]
+		var horizin = firstperson["lookAtHorizontalInner"]
+		var vertup = firstperson["lookAtVerticalUp"]
+		var vertdown = firstperson["lookAtVerticalDown"]
+		var leftEyeNode: GLTFNode = nodes[human_bone_to_idx["leftEye"]]
+		var gltfskel: GLTFSkeleton = skeletons[leftEyeNode.skeleton]
+		var skeleton:Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,leftEyeNode.skeleton)
+		var skeletonPath:NodePath = animplayer.get_parent().get_path_to(skeleton)
+		var leftEyeBone: int = poolintarray_find(gltfskel.joints, human_bone_to_idx["leftEye"])
+		var leftEyePath = str(skeletonPath) + ":" + skeleton.get_bone_name(leftEyeBone)
+		var rightEyeNode: GLTFNode = nodes[human_bone_to_idx["rightEye"]]
+		gltfskel = skeletons[rightEyeNode.skeleton]
+		skeleton = _get_skel_godot_node(gstate, nodes, skeletons,rightEyeNode.skeleton)
+		skeletonPath = animplayer.get_parent().get_path_to(skeleton)
+		var rightEyeBone: int = poolintarray_find(gltfskel.joints, human_bone_to_idx["rightEye"])
+		var rightEyePath = str(skeletonPath) + ":" + skeleton.get_bone_name(rightEyeBone)
+
+		var anim = animplayer.get_animation("LOOKLEFT")
+		var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, leftEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizout["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, rightEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizin["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+
+		anim = animplayer.get_animation("LOOKRIGHT")
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, leftEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizin["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, rightEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizout["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+
+		anim = animplayer.get_animation("LOOKUP")
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, leftEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, rightEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+
+		anim = animplayer.get_animation("LOOKDOWN")
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, leftEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+		animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+		anim.track_set_path(animtrack, rightEyePath)
+		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
+		anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
+		anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+
 	return animplayer
 
 func _import_scene(path: String, flags: int, bake_fps: int):
@@ -328,18 +556,40 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	print(path);
 	var root_node : Node = gltf.import_gltf_scene(path, 0, 1000.0, gstate)
 
+	var gltf_json : Dictionary = gstate.json
+	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
+
+	var human_bone_to_idx: Dictionary = {}
+	# Ignoring in ["humanoid"]: armStretch, legStretch, upperArmTwist
+	# lowerArmTwist, upperLegTwist, lowerLegTwist, feetSpacing,
+	# and hasTranslationDoF
+	for human_bone in vrm_extension["humanoid"]["humanBones"]:
+		human_bone_to_idx[human_bone["bone"]] = int(human_bone["node"])
+		# Unity Mecanim properties:
+		# Ignoring: useDefaultValues
+		# Ignoring: min
+		# Ignoring: max
+		# Ignoring: center
+		# Ingoring: axisLength
+
+	_update_materials(vrm_extension, gstate)
+
+	var animplayer = AnimationPlayer.new()
+	animplayer.name = "anim"
+	root_node.add_child(animplayer)
+	animplayer.owner = root_node
+	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
+
+	var vrmmeta: VRMMeta = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
+
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
 
-	var gltf_json : Dictionary = gstate.json
-	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
-	
-	_update_materials(vrm_extension, gstate)
-
-	var animplayer = _create_animation_player(root_node, vrm_extension, gstate)
-
 	gltf.pack(root_node)
-	return gltf.instance()
+	var ret = gltf.instance()
+	ret.set_script(vrmmeta)
+	return ret
+
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
 	return self._import_animation(path, flags, bake_fps)

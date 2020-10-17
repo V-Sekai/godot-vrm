@@ -8,6 +8,16 @@
 
 config_version=4
 
+_global_script_classes=[ {
+"base": "Reference",
+"class": "VRMMeta",
+"language": "GDScript",
+"path": "res://addons/vrm/vrm_meta.gd"
+} ]
+_global_script_class_icons={
+"VRMMeta": ""
+}
+
 [application]
 
 config/name="VRM Project"
