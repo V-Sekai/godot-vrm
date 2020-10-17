@@ -270,7 +270,7 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
 
 
-func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> VRMMeta:
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> Resource:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 	var hipsNode: GLTFNode = nodes[human_bone_to_idx["hips"]]
@@ -301,7 +301,7 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	for humanBoneName in human_bone_to_idx:
 		humanBoneDictionary[humanBoneName] = poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName])
 
-	var vrm_meta: VRMMeta = VRMMeta.new()
+	var vrm_meta: Resource = load("res://addons/vrm/vrm_meta.gd").new()
 	
 	vrm_meta.animplayer = animPath
 	vrm_meta.skeleton = skeletonPath
@@ -581,7 +581,9 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
 	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
-	var vrm_top_level = load("addons/vrm/vrm_toplevel.gd")
+	var vrm_top_level:GDScript = GDScript.new()
+	vrm_top_level.source_code = """extends GDScript
+export var vrm_meta:Resource"""
 	root_node.set_script(vrm_top_level)
 	root_node.set("vrm_meta", vrm_meta)
 

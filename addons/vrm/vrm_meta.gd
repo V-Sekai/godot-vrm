@@ -1,5 +1,4 @@
 extends Resource
-class_name VRMMeta
 # Declare member variables here. Examples:
 # Meta schema:
 export var title: String
