@@ -580,9 +580,10 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	animplayer.owner = root_node
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
-	var vrmmeta: VRMMeta = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
-	root_node.set_script(VRMToplevel)
-	root_node.set("vrm_meta", vrmmeta)
+	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
+	var vrm_top_level = load("addons/vrm/vrm_toplevel.gd")
+	root_node.set_script(vrm_top_level)
+	root_node.set("vrm_meta", vrm_meta)
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
