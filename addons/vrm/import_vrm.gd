@@ -584,11 +584,8 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
-
-	gltf.pack(root_node)
-	var ret = gltf.instance()
-	ret.set_script(vrmmeta)
-	return ret
+	root_node.set_script(vrmmeta)
+	return root_node
 
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
