@@ -301,7 +301,7 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 
 	var humanBoneDictionary: Dictionary = {}
 	for humanBoneName in human_bone_to_idx:
-		humanBoneDictionary[humanBoneName] = poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName])
+		humanBoneDictionary[humanBoneName] = skeleton.get_bone_name(poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName]))
 
 	var vrm_meta: Resource = load("res://addons/vrm/vrm_meta.gd").new()
 	
@@ -322,9 +322,9 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 			var gltftex: GLTFTexture = gstate.get_textures()[tex]
 			vrm_meta.texture = gstate.get_images()[gltftex.src_image]
 		vrm_meta.allowedUserName = vrm_extension["meta"].get("allowedUserName", "")
-		vrm_meta.violentUsage = vrm_extension["meta"].get("violentUssageName", "")
-		vrm_meta.sexualUsage = vrm_extension["meta"].get("sexualUssageName", "")
-		vrm_meta.commercialUsage = vrm_extension["meta"].get("commercialUssageName", "")
+		vrm_meta.violentUsage = vrm_extension["meta"].get("violentUssageName", "") # Ussage (sic.) in VRM spec
+		vrm_meta.sexualUsage = vrm_extension["meta"].get("sexualUssageName", "") # Ussage (sic.) in VRM spec
+		vrm_meta.commercialUsage = vrm_extension["meta"].get("commercialUssageName", "") # Ussage (sic.) in VRM spec
 		vrm_meta.otherPermissionUrl = vrm_extension["meta"].get("otherPermissionUrl", "")
 		vrm_meta.licenseName = vrm_extension["meta"].get("licenseName", "")
 		vrm_meta.otherLicenseUrl = vrm_extension["meta"].get("otherLicenseUrl", "")
