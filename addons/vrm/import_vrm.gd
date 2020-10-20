@@ -251,6 +251,10 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 		if nodes[i].skeleton == skel_id:
 			return gstate.get_scene_node(i)
 	return null
+
+class SkelBone:
+	var skel: Skeleton
+	var bone_name: String
 	
 
 # https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/schema/vrm.humanoid.bone.schema.json
@@ -277,12 +281,14 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	var gltfskel: GLTFSkeleton = skeletons[hipsNode.skeleton]
 	var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons, hipsNode.skeleton)
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
+	root_node.set("vrm_skeleton", skeletonPath)
 
 	var animPath: NodePath = root_node.get_path_to(animplayer)
+	root_node.set("vrm_animplayer", animPath)
 
 	var firstperson = vrm_extension.get("firstPerson", null)
 	var eyeOffset: Vector3;
-	var mouthOffset: Vector3;
+
 	if firstperson:
 		# FIXME: Technically this is supposed to be offset relative to the "firstPersonBone"
 		# However, firstPersonBone defaults to Head...
@@ -293,44 +299,36 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 		# Which implies that the Head bone is used, not the firstPersonBone.
 		var fpboneoffsetxyz = firstperson["firstPersonBoneOffset"] # example: 0,0.06,0
 		eyeOffset = Vector3(fpboneoffsetxyz["x"], fpboneoffsetxyz["y"], fpboneoffsetxyz["z"])
-		# Assuming this position for now.
-		# This data is not stored in any model metadata.
-		# As an alternative, we could get the centroid of vertices moved by viseme blend shapes.
-		# But for now, we'll assume this position:
-		mouthOffset = Vector3(fpboneoffsetxyz["x"], 0.0, fpboneoffsetxyz["z"])
 
 	var humanBoneDictionary: Dictionary = {}
 	for humanBoneName in human_bone_to_idx:
-		humanBoneDictionary[humanBoneName] = poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName])
+		humanBoneDictionary[humanBoneName] = skeleton.get_bone_name(poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName]))
 
 	var vrm_meta: Resource = load("res://addons/vrm/vrm_meta.gd").new()
-	
-	vrm_meta.animplayer = animPath
-	vrm_meta.skeleton = skeletonPath
-	
-	vrm_meta.exporterVersion = vrm_extension.get("exporterVersion", "")
-	vrm_meta.specVersion = vrm_extension.get("specVersion", "")
+
+	vrm_meta.resource_name = "CLICK TO SEE METADATA"
+	vrm_meta.exporter_version = vrm_extension.get("exporterVersion", "")
+	vrm_meta.spec_version = vrm_extension.get("specVersion", "")
 	var vrm_extension_meta = vrm_extension.get("meta")
 	if vrm_extension_meta:
 		vrm_meta.title = vrm_extension["meta"].get("title", "")
 		vrm_meta.version = vrm_extension["meta"].get("version", "")
 		vrm_meta.author = vrm_extension["meta"].get("author", "")
-		vrm_meta.contactInformation = vrm_extension["meta"].get("contactInformation", "")
+		vrm_meta.contact_information = vrm_extension["meta"].get("contactInformation", "")
 		vrm_meta.reference = vrm_extension["meta"].get("reference", "")
 		var tex: int = vrm_extension["meta"].get("texture", -1)
 		if tex >= 0:
 			var gltftex: GLTFTexture = gstate.get_textures()[tex]
 			vrm_meta.texture = gstate.get_images()[gltftex.src_image]
-		vrm_meta.allowedUserName = vrm_extension["meta"].get("allowedUserName", "")
-		vrm_meta.violentUsage = vrm_extension["meta"].get("violentUssageName", "")
-		vrm_meta.sexualUsage = vrm_extension["meta"].get("sexualUssageName", "")
-		vrm_meta.commercialUsage = vrm_extension["meta"].get("commercialUssageName", "")
-		vrm_meta.otherPermissionUrl = vrm_extension["meta"].get("otherPermissionUrl", "")
-		vrm_meta.licenseName = vrm_extension["meta"].get("licenseName", "")
-		vrm_meta.otherLicenseUrl = vrm_extension["meta"].get("otherLicenseUrl", "")
+		vrm_meta.allowed_user_name = vrm_extension["meta"].get("allowedUserName", "")
+		vrm_meta.violent_usage = vrm_extension["meta"].get("violentUssageName", "") # Ussage (sic.) in VRM spec
+		vrm_meta.sexual_usage = vrm_extension["meta"].get("sexualUssageName", "") # Ussage (sic.) in VRM spec
+		vrm_meta.commercial_usage = vrm_extension["meta"].get("commercialUssageName", "") # Ussage (sic.) in VRM spec
+		vrm_meta.other_permission_url = vrm_extension["meta"].get("otherPermissionUrl", "")
+		vrm_meta.license_name = vrm_extension["meta"].get("licenseName", "")
+		vrm_meta.other_license_url = vrm_extension["meta"].get("otherLicenseUrl", "")
 
 	vrm_meta.eye_offset = eyeOffset
-	vrm_meta.mouth_offset = mouthOffset
 	vrm_meta.humanoid_bone_mapping = humanBoneDictionary
 	return vrm_meta.duplicate(true)
 
@@ -534,6 +532,108 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 
 	return animplayer
 
+
+func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState):
+	var nodes = gstate.get_nodes()
+	var skeletons = gstate.get_skeletons()
+
+	var vrm_secondary:GDScript = load("res://addons/vrm/vrm_secondary.gd")
+	var vrm_collidergroup:GDScript = load("res://addons/vrm/vrm_collidergroup.gd")
+	var vrm_springbone:GDScript = load("res://addons/vrm/vrm_springbone.gd")
+
+	# 		humanBoneDictionary[humanBoneName] = skeleton.get_bone_name(poolintarray_find(gltfskel.joints, human_bone_to_idx[humanBoneName]))
+
+	var collider_groups: Array = Array()
+	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
+		var gltfnode: GLTFNode = nodes[int(cgroup["node"])]
+		var collider_group = vrm_collidergroup.new()
+		collider_group.sphere_colliders = Array() # HACK HACK HACK
+		if gltfnode.skeleton == -1:
+			var found_node: Node = gstate.get_scene_node(int(cgroup["node"]))
+			collider_group.skeleton_or_node = secondary_node.get_path_to(found_node)
+			collider_group.bone = ""
+			collider_group.resource_name = found_node.name
+		else:
+			var gltfskel: GLTFSkeleton = skeletons[gltfnode.skeleton]
+			var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,gltfnode.skeleton)
+			collider_group.skeleton_or_node = secondary_node.get_path_to(skeleton)
+			collider_group.bone = skeleton.get_bone_name(poolintarray_find(gltfskel.joints, int(cgroup["node"])))
+			collider_group.resource_name = collider_group.bone
+		
+		for collider_info in cgroup["colliders"]:
+			var offset_obj = collider_info.get("offset", {"x": 0.0, "y": 0.0, "z": 0.0})
+			var local_pos: Vector3 = Vector3(offset_obj["x"], offset_obj["y"], offset_obj["z"])
+			var radius: float = collider_info.get("radius", 0.0)
+			collider_group.sphere_colliders.append(Plane(local_pos, radius))
+		collider_groups.append(collider_group)
+
+	var spring_bones: Array = Array()
+	for sbone in vrm_extension["secondaryAnimation"]["boneGroups"]:
+		if sbone.get("bones", []).size() == 0:
+			continue
+		var first_bone_node: int = sbone["bones"][0]
+		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
+		var gltfskel: GLTFSkeleton = skeletons[gltfnode.skeleton]
+		var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,gltfnode.skeleton)
+
+		var spring_bone = vrm_springbone.new()
+		spring_bone.skeleton = secondary_node.get_path_to(skeleton)
+		spring_bone.comment = sbone.get("comment", "")
+		spring_bone.stiffness_force = float(sbone.get("stiffiness", 1.0))
+		spring_bone.gravity_power = float(sbone.get("gravityPower", 0.0))
+		var gravity_dir = sbone.get("gravity_dir", {"x": 0.0, "y": -1.0, "z": 0.0})
+		spring_bone.gravity_dir = Vector3(gravity_dir["x"], gravity_dir["y"], gravity_dir["z"])
+		spring_bone.drag_force = float(sbone.get("drag_force", 0.4))
+		spring_bone.hit_radius = float(sbone.get("hitRadius", 0.02))
+		
+		if spring_bone.comment != "":
+			spring_bone.resource_name = spring_bone.comment.split("\n")[0]
+		else:
+			var tmpname: String = ""
+			if sbone["bones"].size() > 1:
+				tmpname += " + " + str(sbone["bones"].size() - 1) + " roots"
+			tmpname = skeleton.get_bone_name(poolintarray_find(gltfskel.joints, int(first_bone_node))) + tmpname
+			spring_bone.resource_name = tmpname
+		
+		spring_bone.collider_groups = Array() # HACK HACK HACK
+		for cgroup_idx in sbone.get("colliderGroups", []):
+			spring_bone.collider_groups.append(collider_groups[int(cgroup_idx)])
+
+		spring_bone.root_bones = Array() # HACK HACK HACK
+		for bone_node in sbone["bones"]:
+			var bone_idx: int = poolintarray_find(gltfskel.joints, int(bone_node))
+			if bone_idx == -1:
+				# Note that we make an assumption that a given SpringBone object is
+				# only part of a single Skeleton*. This error might print if a given
+				# SpringBone references bones from multiple Skeleton's.
+				printerr("Failed to find node " + str(bone_node) + " in skel " + str(skeleton))
+			else:
+				spring_bone.root_bones.append(skeleton.get_bone_name(bone_idx))
+
+		# Center commonly points outside of the glTF Skeleton, such as the root node.
+		spring_bone.center_node = secondary_node.get_path_to(secondary_node)
+		spring_bone.center_bone = ""
+		var center_node_idx = sbone.get("center", -1)
+		if center_node_idx != -1:
+			var center_gltfnode: GLTFNode = nodes[int(center_node_idx)]
+			var bone_idx: int = poolintarray_find(gltfskel.joints, int(center_node_idx))
+			if center_gltfnode.skeleton == gltfnode.skeleton and bone_idx != -1:
+				spring_bone.center_bone = skeleton.get_bone_name(bone_idx)
+				spring_bone.center_node = NodePath()
+			else:
+				spring_bone.center_bone = ""
+				spring_bone.center_node = secondary_node.get_path_to(gstate.get_scene_node(int(center_node_idx)))
+				if spring_bone.center_node == NodePath():
+					printerr("Failed to find center scene node " + str(center_node_idx))
+					spring_bone.center_node = secondary_node.get_path_to(secondary_node) # Fallback
+
+		spring_bones.append(spring_bone)
+
+	secondary_node.set_script(vrm_secondary)
+	secondary_node.set("spring_bones", spring_bones)
+	secondary_node.set("collider_groups", collider_groups)
+
+
 func _import_scene(path: String, flags: int, bake_fps: int):
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
@@ -584,11 +684,28 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	animplayer.owner = root_node
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
-	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
 	var vrm_top_level:GDScript = load("res://addons/vrm/vrm_toplevel.gd")
-
 	root_node.set_script(vrm_top_level)
+
+	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
 	root_node.set("vrm_meta", vrm_meta)
+	root_node.set("vrm_secondary", NodePath())
+
+	if (vrm_extension.has("secondaryAnimation") and \
+			(vrm_extension["secondaryAnimation"].get("colliderGroups", []).size() > 0 or \
+			vrm_extension["secondaryAnimation"].get("boneGroups", []).size() > 0)):
+
+		var secondary_node: Node = root_node.get_node("secondary")
+		if secondary_node == null:
+			secondary_node = Spatial.new()
+			root_node.add_child(secondary_node)
+			secondary_node.set_owner(root_node)
+		
+		var secondary_path: NodePath = root_node.get_path_to(secondary_node)
+		root_node.set("vrm_secondary", secondary_path)
+
+		_parse_secondary_node(secondary_node, vrm_extension, gstate)
+
 
 	if (!ResourceLoader.exists(path + ".res")):
 		ResourceSaver.save(path + ".res", gstate)
