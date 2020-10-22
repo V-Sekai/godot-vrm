@@ -45,6 +45,8 @@ const FirstPersonParser: Dictionary = {
 	"ThirdPersonOnly": FirstPersonFlag.ThirdPersonOnly,
 }
 
+const USE_COMPAT_SHADER = false
+
 
 func _get_extensions():
 	return ["vrm"]
@@ -132,7 +134,10 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 		printerr("VRM Material " + orig_mat.resource_name + " uses screenspace outlines.")
 
 
-	var mtoon_shader_base_path = "res://MToonCompat/mtooncompat"
+	var mtooncompat_shader_base_path = "res://MToonCompat/mtooncompat"
+	var mtoon_shader_base_path = "res://Godot-MToon-Shader/mtoon"
+	if USE_COMPAT_SHADER:
+		mtoon_shader_base_path = mtooncompat_shader_base_path
 
 	var godot_outline_shader_name = null
 	if outline_width_mode != OutlineWidthMode.None:
@@ -178,7 +183,9 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 	for param_name in ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor"]:
 		if param_name in vrm_mat_props["vectorProperties"]:
 			var param_val = vrm_mat_props["vectorProperties"][param_name]
-			var color_param: Color = Color(param_val[0], param_val[1], param_val[2], param_val[3])
+			#### TODO: Use Color
+			### But we want to keep 4.0 compat which does not gamma correct color.
+			var color_param: Plane = Plane(param_val[0], param_val[1], param_val[2], param_val[3])
 			new_mat.set_shader_param(param_name, color_param)
 
 	# FIXME: setting _Cutoff to disable cutoff is a bit unusual.
