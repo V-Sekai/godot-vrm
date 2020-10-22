@@ -22,4 +22,5 @@ enabled=PoolStringArray( "vrm" )
 [rendering]
 
 quality/skinning/software_skinning_fallback=false
+quality/filters/msaa=3
 environment/default_environment="res://default_env.tres"

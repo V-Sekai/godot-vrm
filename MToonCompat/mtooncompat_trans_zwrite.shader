@@ -64,7 +64,7 @@ uniform sampler2D _EmissionMap : hint_albedo;
 uniform sampler2D _OutlineWidthTexture : hint_white;
 uniform float _OutlineWidth : hint_range(0.01, 1.0) = 0.5;
 uniform float _OutlineScaledMaxDistance : hint_range(1,10) = 1;
-uniform float _OutlineMixedLighting : hint_range(0,1,1);
+uniform float _OutlineColorMode : hint_range(0,1,1);
 uniform vec4 _OutlineColor : hint_color = vec4(0,0,0,1);
 uniform float _OutlineLightingMix : hint_range(0,1) = 0;
 uniform sampler2D _UvAnimMaskTexture : hint_white;
@@ -174,8 +174,8 @@ float SchlickFresnel(float u) {
 }
 void fragment() {
 	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
-	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineMixedLighting == 0.0;
-	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineMixedLighting == 1.0;
+	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineColorMode == 0.0;
+	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineColorMode == 1.0;
 
     // uv
     vec2 mainUv = UV; //TRANSFORM_TEX(i.uv0, _MainTex);
@@ -219,7 +219,9 @@ void fragment() {
     // Albedo color
     vec4 shade = _ShadeColor * texture(_ShadeTexture, mainUv);
     vec4 lit = _Color * mainTex;
-	
+
+    shade = min(shade, lit); ///// Mimic look of non-PBR min() clamp we commented out below.
+
 	vec3 col = vec3(0.0);
 	float lightIntensity = 1.0;
 

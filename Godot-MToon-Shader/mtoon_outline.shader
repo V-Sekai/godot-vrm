@@ -35,8 +35,8 @@ const bool CALCULATE_LIGHTING_IN_FRAGMENT = true;
 
 uniform float _EnableAlphaCutout : hint_range(0,1,1) = 0.0;
 uniform float _Cutoff : hint_range(0,1) = 0.5;
-uniform vec4 _Color : hint_color = vec4(1.0,1.0,1.0,1.0); // "Lit Texture + Alpha"
-uniform vec4 _ShadeColor : hint_color = vec4(0.97, 0.81, 0.86, 1); // "Shade Color"
+uniform vec4 _Color /*: hint_color*/ = vec4(1.0,1.0,1.0,1.0); // "Lit Texture + Alpha"
+uniform vec4 _ShadeColor /*: hint_color*/ = vec4(0.97, 0.81, 0.86, 1); // "Shade Color"
 uniform sampler2D _MainTex : hint_albedo;
 uniform vec4 _MainTex_ST = vec4(1.0,1.0,0.0,0.0);
 uniform sampler2D _ShadeTexture : hint_albedo;
@@ -51,20 +51,20 @@ uniform float _ShadeToony : hint_range(0.0, 1.0) = 0.9;
 uniform float _LightColorAttenuation : hint_range(0.0, 1.0) = 0.0;
 uniform float _IndirectLightIntensity : hint_range(0.0, 1.0) = 0.1;
 uniform sampler2D _RimTexture : hint_albedo;
-uniform vec4 _RimColor : hint_color = vec4(0,0,0,1);
+uniform vec4 _RimColor /*: hint_color*/ = vec4(0,0,0,1);
 uniform float _RimLightingMix : hint_range(0.0, 1.0) = 0.0;
 uniform float _RimFresnelPower : hint_range(0.0, 100.0) = 1.0;
 uniform float _RimLift : hint_range(0.0, 1.0) = 0.0;
 uniform sampler2D _SphereAdd : hint_black_albedo; // "Sphere Texture(Add)"
-uniform vec4 _EmissionColor : hint_color = vec4(0,0,0,1); // "Color"
+uniform vec4 _EmissionColor /*: hint_color*/ = vec4(0,0,0,1); // "Color"
 uniform sampler2D _EmissionMap : hint_albedo;
 // Not implemented:
 // uniform float _OutlineWidthScreenCoordinates : hint_range(0,1,1);
 uniform sampler2D _OutlineWidthTexture : hint_white;
 uniform float _OutlineWidth : hint_range(0.01, 1.0) = 0.5;
 uniform float _OutlineScaledMaxDistance : hint_range(1,10) = 1;
-uniform float _OutlineMixedLighting : hint_range(0,1,1);
-uniform vec4 _OutlineColor : hint_color = vec4(0,0,0,1);
+uniform float _OutlineColorMode : hint_range(0,1,1);
+uniform vec4 _OutlineColor /*: hint_color*/ = vec4(0,0,0,1);
 uniform float _OutlineLightingMix : hint_range(0,1) = 0;
 uniform sampler2D _UvAnimMaskTexture : hint_white;
 uniform float _UvAnimScrollX = 0;
@@ -181,8 +181,8 @@ vec4 GammaToLinearSpace (vec4 sRGB)
 }
 void fragment() {
 	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
-	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineMixedLighting == 0.0;
-	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineMixedLighting == 1.0;
+	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineColorMode == 0.0;
+	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineColorMode == 1.0;
 
 	ROUGHNESS = 1.0; // for now
 	SPECULAR = 0.0; // for now
@@ -231,6 +231,8 @@ void fragment() {
 	}
 	shade *= GammaToLinearSpace(_ShadeColor);
 	lit *= GammaToLinearSpace(_Color);
+
+    shade = min(shade, lit); ///// Mimic look of non-PBR min() clamp we commented out below.
 
     // normal
     vec3 viewNormal;
