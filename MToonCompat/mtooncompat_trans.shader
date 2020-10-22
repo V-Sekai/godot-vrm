@@ -173,7 +173,7 @@ float SchlickFresnel(float u) {
 	return m2 * m2 * m; // pow(m,5)
 }
 void fragment() {
-	bool _NORMALMAP = true; //textureSize(texture_normal, 0).x > 8;
+	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
 	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineMixedLighting == 0.0;
 	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineMixedLighting == 1.0;
 
@@ -295,7 +295,7 @@ void light() {
 	float addTmp;
 	vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, LIGHT_COLOR, addCol, addTmp);
 	// addLighting *= step(0, addDotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
-	DIFFUSE_LIGHT += calculateAddLighting(mainUv, addDotNL, dot(NORMAL, VIEW), length(ATTENUATION)/sqrt(3.0), addLighting, addCol);
+	DIFFUSE_LIGHT += calculateAddLighting(mainUv, addDotNL, dot(NORMAL, VIEW), length(vec3(ATTENUATION))/sqrt(3.0), addLighting, addCol);
 
     SPECULAR_LIGHT = vec3(0.0);
 }
