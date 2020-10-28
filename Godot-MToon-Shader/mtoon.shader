@@ -291,7 +291,7 @@ void fragment() {
 	
 	vec3 env_reflection_light = vec3(0.0);
 	
-	vec3 up_normal = mat3(CAMERA_MATRIX) * vec3(0.0,1.0,0.0);
+	vec3 up_normal = mat3(INV_CAMERA_MATRIX) * vec3(0.0,1.0,0.0);
 
 	vec3 ambient_light_up;
 	vec3 diffuse_light_up;
