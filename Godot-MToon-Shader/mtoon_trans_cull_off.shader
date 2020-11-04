@@ -63,7 +63,7 @@ uniform sampler2D _EmissionMap : hint_albedo;
 uniform sampler2D _OutlineWidthTexture : hint_white;
 uniform float _OutlineWidth : hint_range(0.01, 1.0) = 0.5;
 uniform float _OutlineScaledMaxDistance : hint_range(1,10) = 1;
-uniform float _OutlineColorMode : hint_range(0,1,1);
+uniform float _OutlineColorMode : hint_range(0,1,1) = 0;
 uniform vec4 _OutlineColor /*: hint_color*/ = vec4(0,0,0,1);
 uniform float _OutlineLightingMix : hint_range(0,1) = 0;
 uniform sampler2D _UvAnimMaskTexture : hint_white;
@@ -139,15 +139,13 @@ vec3 calculateLighting(vec2 mainUv, float dotNL, float lightAttenuation, vec4 sh
     lightIntensity = clamp((lightIntensity - minIntensityThreshold) / max(EPS_COL, (maxIntensityThreshold - minIntensityThreshold)),0.0,1.0);
 
     col = mix(shade.rgb, lit.rgb, lightIntensity);
-    //DEBUG_OVERRIDE = vec4(vec3(shade.rgb),1.0);
-    //DEBUG_OVERRIDE = vec4(vec3(col.rgb),1.0);
     // Direct Light
     vec3 lighting = lightColor / 3.14159;
     lighting = mix(lighting, max(vec3(EPS_COL), max(lighting.x, max(lighting.y, lighting.z))), _LightColorAttenuation); // color atten
 	return lighting;
 }
 
-vec3 calculateAddLighting(vec2 mainUv, float dotNL, float dotNV, float shadowAttenuation, vec3 lighting, vec3 col) {
+vec3 calculateAddLighting(vec2 mainUv, float dotNL, float dotNV, float shadowAttenuation, vec3 lighting, vec3 col, out vec3 specularLight) {
 //    UNITY_LIGHT_ATTENUATION(shadowAttenuation, i, posWorld.xyz);
 //#ifdef _ALPHABLEND_ON
 //    lighting *= step(0, dotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
@@ -163,7 +161,7 @@ vec3 calculateAddLighting(vec2 mainUv, float dotNL, float dotNV, float shadowAtt
 
     vec3 rimLighting = mix(staticRimLighting, mixedRimLighting, _RimLightingMix);
     vec3 rim = pow(clamp(1.0 - dotNV + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
-    col += mix(rim * rimLighting, vec3(0.0), isOutline);
+    specularLight = mix(rim * rimLighting, vec3(0.0), isOutline);
 	return col;
 }
 
@@ -179,6 +177,7 @@ vec4 GammaToLinearSpace (vec4 sRGB)
     // Approximate version from http://chilliant.blogspot.com.au/2012/08/srgb-approximations-for-hlsl.html?m=1
     return vec4(sRGB.rgb * (sRGB.rgb * (sRGB.rgb * 0.305306011 + 0.682171111) + 0.012522878), sRGB.a);
 }
+
 void fragment() {
 	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
 	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineColorMode == 0.0;
@@ -200,7 +199,6 @@ void fragment() {
     
     // main tex
     vec4 mainTex = texture(_MainTex, mainUv);
-    vec4 DEBUG_OVERRIDE = vec4(0.0);
     // alpha
 	float alpha = _Color.a * mainTex.a;
      // Albedo color
@@ -213,21 +211,20 @@ void fragment() {
 	    tangentNormal = UnpackScaleNormal(texture(_BumpMap, mainUv), _BumpScale);
 	}
 
-	for (uint i = uint(0); i < DECAL_COUNT(CLUSTER_CELL); i++) {
-		vec3 decal_emission;
-		vec4 decal_albedo;
-		vec4 decal_normal;
-		vec4 decal_orm;
-		vec3 uv_local;
-		if (DECAL_PROCESS(CLUSTER_CELL, i, VERTEX, dFdx(VERTEX), dFdy(VERTEX), NORMAL, uv_local, decal_albedo, decal_normal, decal_orm, decal_emission)) {
-			shade.rgb = mix(shade.rgb, decal_albedo.rgb, decal_albedo.a);
-			lit.rgb = mix(lit.rgb, decal_albedo.rgb, decal_albedo.a);
-			tangentNormal = normalize(mix(tangentNormal, decal_normal.rgb, decal_normal.a));
-			//AO = mix(AO, decal_orm.r, decal_orm.a);
-			ROUGHNESS = mix(ROUGHNESS, decal_orm.g, decal_orm.a);
-			//METALLIC = mix(METALLIC, decal_orm.b, decal_orm.a);
-			emission += decal_emission;
-		}
+	{
+		float ao;
+		float metallic;
+		float tmp;
+		vec3 tmp3;
+		vec3 tmpNormal = tangentNormal;
+		vec3 shade3 = shade.rgb;
+		float roughness = ROUGHNESS;
+		APPLY_DECALS(VERTEX, tangentNormal, shade3, emission, ao, roughness, metallic);
+		ROUGHNESS = roughness;
+		shade.rgb = shade3;
+		vec3 lit3 = lit.rgb;
+		APPLY_DECALS(VERTEX, tmpNormal, lit3, tmp3, ao, tmp, metallic);
+		lit.rgb = lit3;
 	}
 	shade *= GammaToLinearSpace(_ShadeColor);
 	lit *= GammaToLinearSpace(_Color);
@@ -250,110 +247,62 @@ void fragment() {
 
     // Unity lighting
 
-	vec3 lightDir = vec3(1.0,0.0,0.0); // mat3(CAMERA_MATRIX) * vec3(0.5,0.86,0.0);
-    float dotNL = 0.0;
-	float lightAttenuation = 1.0;
-	vec3 lightColor = vec3(0.0);
-	float dir_light_intensity = 0.0;
-	uint main_dir_light = uint(0);
-	for (uint i = uint(0); i < DIRECTIONAL_LIGHT_COUNT(); i++) {
-		DirectionalLightData ld = GET_DIRECTIONAL_LIGHT(i);
-		if (!SHOULD_RENDER_DIR_LIGHT(ld)) {
-			continue;
-		}
-		vec3 thisLightColor = (GET_DIR_LIGHT_COLOR_SPECULAR(ld).rgb);
-		float this_intensity = max(thisLightColor.r, max(thisLightColor.g, thisLightColor.b));
-		if (this_intensity <= dir_light_intensity + 0.00001) {
-			continue;
-		}
-		dir_light_intensity = this_intensity;
-		main_dir_light = i;
-		lightColor = thisLightColor;
-	}
-	if (dir_light_intensity > 0.0) {
-		DirectionalLightData ld = GET_DIRECTIONAL_LIGHT(main_dir_light);
-		lightDir = normalize(GET_DIR_LIGHT_DIRECTION(ld).xyz);
-		dotNL = dot(lightDir, -viewNormal);
-	    //UNITY_LIGHT_ATTENUATION(shadowAttenuation, i, posWorld.xyz);
-		vec3 shadow_color = vec3(1.0);
-		float shadow;
-		float transmittance_z = 1.0;
-		DIRECTIONAL_SHADOW_PROCESS(ld, VERTEX, NORMAL, shadow_color, shadow, transmittance_z);
-		//DEBUG_OVERRIDE = vec4(vec3(shadow),1.0);
-		float shadowAttenuation = shadow;//1.0 - shadow;
-	    lightAttenuation = shadowAttenuation * mix(1, shadowAttenuation, _ReceiveShadowRate * texture(_ReceiveShadowTexture, mainUv).r);
-	}
-
 	// Indirect Light
-    vec4 reflection_accum;
-    vec4 ambient_accum;
-	
-	vec3 env_reflection_light = vec3(0.0);
-	
 	vec3 up_normal = mat3(INV_CAMERA_MATRIX) * vec3(0.0,1.0,0.0);
 
 	vec3 ambient_light_up;
 	vec3 diffuse_light_up;
 	vec3 specular_light_up;
-	reflection_accum = vec4(0.0, 0.0, 0.0, 0.0);
-	ambient_accum = vec4(0.0, 0.0, 0.0, 0.0);
-	AMBIENT_PROCESS(VERTEX, up_normal, ROUGHNESS, SPECULAR, false, viewView, vec2(0.0), ambient_light_up, diffuse_light_up, specular_light_up);
-    for (uint idx = uint(0); idx < REFLECTION_PROBE_COUNT(CLUSTER_CELL); idx++) {
-		REFLECTION_PROCESS(CLUSTER_CELL, idx, VERTEX, up_normal, ROUGHNESS, ambient_light_up, specular_light_up, ambient_accum, reflection_accum);
-    }
-    if (ambient_accum.a > 0.0) {
-		ambient_light_up = ambient_accum.rgb / ambient_accum.a;
-    }
+	AMBIENT_PROCESS(VERTEX, up_normal, ROUGHNESS, SPECULAR, 0.0, vec2(0.0), vec4(0.0), vec4(0.0), ambient_light_up, diffuse_light_up, specular_light_up);
+
 	vec3 ambient_light_down;
 	vec3 diffuse_light_down;
 	vec3 specular_light_down;
-	reflection_accum = vec4(0.0, 0.0, 0.0, 0.0);
-	ambient_accum = vec4(0.0, 0.0, 0.0, 0.0);
-	AMBIENT_PROCESS(VERTEX, -up_normal, ROUGHNESS, SPECULAR, false, viewView, vec2(0.0), ambient_light_down, diffuse_light_down, specular_light_down);
-    for (uint idx = uint(0); idx < REFLECTION_PROBE_COUNT(CLUSTER_CELL); idx++) {
-		REFLECTION_PROCESS(CLUSTER_CELL, idx, VERTEX, -up_normal, ROUGHNESS, ambient_light_down, specular_light_down, ambient_accum, reflection_accum);
-    }
-    if (ambient_accum.a > 0.0) {
-		ambient_light_down = ambient_accum.rgb / ambient_accum.a;
-    }
+	AMBIENT_PROCESS(VERTEX, -up_normal, ROUGHNESS, SPECULAR, 0.0, vec2(0.0), vec4(0.0), vec4(0.0), ambient_light_down, diffuse_light_down, specular_light_down);
 	vec3 toonedGI = (ambient_light_up + ambient_light_down) * 0.5;
 
 	vec3 ambient_light;
 	vec3 diffuse_light;
 	vec3 specular_light;
-    reflection_accum = vec4(0.0, 0.0, 0.0, 0.0);
-    ambient_accum = vec4(0.0, 0.0, 0.0, 0.0);
-	env_reflection_light = vec3(0.0);
-	AMBIENT_PROCESS(VERTEX, NORMAL, ROUGHNESS, SPECULAR, false, viewView, vec2(0.0), ambient_light, diffuse_light, specular_light);
-    for (uint idx = uint(0); idx < REFLECTION_PROBE_COUNT(CLUSTER_CELL); idx++) {
-		REFLECTION_PROCESS(CLUSTER_CELL, idx, VERTEX, NORMAL, ROUGHNESS, ambient_light, specular_light, ambient_accum, reflection_accum);
-    }
-    if (ambient_accum.a > 0.0) {
-		ambient_light = ambient_accum.rgb / ambient_accum.a;
-    }
+	AMBIENT_PROCESS(VERTEX, NORMAL, ROUGHNESS, SPECULAR, 0.0, vec2(0.0), vec4(0.0), vec4(0.0), ambient_light, diffuse_light, specular_light);
+
+    // Emission
+    EMISSION = mix(emission, vec3(0, 0, 0), isOutline);
 
     vec3 indirectLighting = mix(toonedGI, ambient_light, _IndirectLightIntensity);
     indirectLighting = mix(indirectLighting, max(vec3(EPS_COL), max(indirectLighting.x, max(indirectLighting.y, indirectLighting.z))), _LightColorAttenuation); // color atten
 //#endif
 
-	vec3 col;
-	float lightIntensity;
-	vec3 lighting = calculateLighting(mainUv, dotNL, lightAttenuation, shade, lit, lightColor, col, lightIntensity);
+	ALBEDO = indirectLighting;
+	AMBIENT_LIGHT = vec3(0.0);
+  
+	if (!HAS_MAIN_LIGHT) {
+		// No directional light.
+		vec3 lightDir = vec3(1.0,0.0,0.0); // mat3(CAMERA_MATRIX) * vec3(0.5,0.86,0.0);
+	    float dotNL = 0.0;
+		float lightAttenuation = 1.0;
+		vec3 lightColor = vec3(0.0);
+		float dir_light_intensity = 0.0;
+		uint main_dir_light = uint(0);
 
-    // base light does not darken.
-    col *= lighting;
+		vec3 col;
+		float lightIntensity;
+		vec3 lighting = calculateLighting(mainUv, dotNL, lightAttenuation, shade, lit, lightColor, col, lightIntensity);
 
-    col += indirectLighting * lit.rgb;
-   
-    //col = min(col, lit.rgb); // comment out if you want to PBR absolutely.
+		// base light does not darken.
+		DIFFUSE_LIGHT += col * lighting;
 
-    // parametric rim lighting
-    vec3 staticRimLighting = vec3(1.0);
-    vec3 mixedRimLighting = lighting + indirectLighting;
+		//col = min(col, lit.rgb); // comment out if you want to PBR absolutely.
 
-    vec3 rimLighting = mix(staticRimLighting, mixedRimLighting, _RimLightingMix);
-    vec3 rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
-    col += mix(rim * rimLighting, vec3(0, 0, 0), isOutline);
+		// parametric rim lighting
+		vec3 staticRimLighting = vec3(1.0);
+		vec3 mixedRimLighting = lighting + indirectLighting;
+
+		vec3 rimLighting = mix(staticRimLighting, mixedRimLighting, _RimLightingMix);
+		vec3 rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
+		SPECULAR_LIGHT += mix(rim * rimLighting, vec3(0, 0, 0), isOutline);
+		AMBIENT_LIGHT = vec3(lit.rgb);
+	}
 
 
     // additive matcap
@@ -362,144 +311,43 @@ void fragment() {
     vec3 viewViewRight = normalize(cross(viewView, viewViewUp));
     vec2 matcapUv = vec2(-dot(viewViewRight, viewNormal), dot(viewViewUp, viewNormal)) * 0.5 + 0.5;
     vec3 matcapLighting = texture(_SphereAdd, matcapUv).rgb;
-    col += mix(matcapLighting, vec3(0, 0, 0), isOutline);
-
-    // Emission
-    col += mix(emission, vec3(0, 0, 0), isOutline);
-
-	//LightmapCapture lc;
-	//if (GET_LIGHTMAP_SH(lc)) {
-	//	GET_SH_COEF(lc, 0).w + GET_SH_COEF(lc, 1).w + GET_SH_COEF(lc, 2).w;
-	//}
-	vec3 vertex_ddx = dFdx(VERTEX);
-	vec3 vertex_ddy = dFdy(VERTEX);
-
-	vec3 addLightIntensity = vec3(0.0);
-	ClusterData cd = CLUSTER_CELL;
-	if (CALCULATE_LIGHTING_IN_FRAGMENT) {
-
-	    for (uint idx = uint(0); idx < DIRECTIONAL_LIGHT_COUNT(); idx++) {
-			if (idx == main_dir_light) {
-				continue;
-			}
-			DirectionalLightData ld = GET_DIRECTIONAL_LIGHT(idx);
-			if (!SHOULD_RENDER_DIR_LIGHT(ld)) {
-				continue;
-			}
-			vec3 light_rel_vec = GET_DIR_LIGHT_DIRECTION(ld).xyz;
-			vec3 light_color = GET_DIR_LIGHT_COLOR_SPECULAR(ld).rgb;
-			
-		    float transmittance_z = 0.0;
-			float shadow;
-			vec3 shadow_color_enabled;
-			if (DIRECTIONAL_SHADOW_PROCESS(ld, VERTEX, NORMAL, shadow_color_enabled, shadow, transmittance_z)) {
-				//vec3 no_shadow = OMNI_PROJECTOR_PROCESS(ld, VERTEX, vertex_ddx, vertex_ddy);
-				//shadow_attenuation = mix(shadow_color_enabled.rgb, no_shadow, shadow);
-			}
-			float addShadowAttenuation = shadow;
-
-			float addDotNL = dot(normalize(light_rel_vec), -viewNormal);
-
-			vec3 addCol = vec3(0.0);
-			float addTmp;
-			vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, light_color, addCol, addTmp);
-			addLightIntensity += addLighting * addTmp;
-			col += calculateAddLighting(mainUv, addDotNL, dot(viewNormal, viewView), addShadowAttenuation, addLighting, addCol);
-	    }
-
-	    for (uint idx = uint(0); idx < OMNI_LIGHT_COUNT(CLUSTER_CELL); idx++) {
-			LightData ld = GET_OMNI_LIGHT(cd, idx);
-			if (!SHOULD_RENDER_LIGHT(ld)) {
-				continue;
-			}
-			vec3 light_rel_vec = GET_LIGHT_POSITION(ld).xyz - VERTEX;
-			float atten = GET_OMNI_LIGHT_ATTENUATION_SIZE(ld, VERTEX).x;
-			vec3 light_color = GET_LIGHT_COLOR_SPECULAR(ld).rgb;
-			
-		    float transmittance_z = 0.0;
-			float shadow;
-			vec3 shadow_color_enabled = GET_LIGHT_SHADOW_COLOR(ld).rgb;
-			if (OMNI_SHADOW_PROCESS(ld, VERTEX, NORMAL, shadow, transmittance_z)) {
-				//vec3 no_shadow = OMNI_PROJECTOR_PROCESS(ld, VERTEX, vertex_ddx, vertex_ddy);
-				//shadow_attenuation = mix(shadow_color_enabled.rgb, no_shadow, shadow);
-			}
-			float addShadowAttenuation = atten * shadow;
-
-			float addDotNL = dot(normalize(light_rel_vec), -viewNormal);
-
-			vec3 addCol = vec3(0.0);
-			float addTmp;
-			vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, light_color, addCol, addTmp);
-			addLightIntensity += addLighting * addTmp;
-			col += calculateAddLighting(mainUv, addDotNL, dot(viewNormal, viewView), addShadowAttenuation, addLighting, addCol);
-	    }
-
-
-	    for (uint idx = uint(0); idx < SPOT_LIGHT_COUNT(CLUSTER_CELL); idx++) {
-			LightData ld = GET_SPOT_LIGHT(cd, idx);
-			if (!SHOULD_RENDER_LIGHT(ld)) {
-				continue;
-			}
-			vec3 light_rel_vec = GET_LIGHT_POSITION(ld).xyz - VERTEX;
-			float atten = GET_SPOT_LIGHT_ATTENUATION_SIZE(ld, VERTEX).x;
-			vec3 light_color = GET_LIGHT_COLOR_SPECULAR(ld).rgb;
-			
-		    float transmittance_z = 0.0;
-			float shadow;
-			vec3 shadow_color_enabled = GET_LIGHT_SHADOW_COLOR(ld).rgb;
-			if (SPOT_SHADOW_PROCESS(ld, VERTEX, NORMAL, shadow, transmittance_z)) {
-				//vec3 no_shadow = SPOT_PROJECTOR_PROCESS(ld, VERTEX, vertex_ddx, vertex_ddy);
-				//shadow_attenuation = mix(shadow_color_enabled.rgb, no_shadow, shadow);
-			}
-			
-			float addShadowAttenuation = atten * shadow;
-
-			float addDotNL = dot(normalize(light_rel_vec), -viewNormal);
-
-			vec3 addCol = vec3(0.0);
-			float addTmp;
-			vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, light_color, addCol, addTmp);
-			addLightIntensity += addLighting * addTmp;
-			col += calculateAddLighting(mainUv, addDotNL, dot(viewNormal, viewView), addShadowAttenuation, addLighting, addCol);
-	    }
-
-	}
+    SPECULAR_LIGHT += mix(matcapLighting, vec3(0, 0, 0), isOutline);
 
 
 
     // outline
 	if (isOutline == 1.0) {
 		if (MTOON_OUTLINE_COLOR_FIXED) {
-	        col = mix(col, _OutlineColor.rgb, isOutline);
+			DIFFUSE_LIGHT = vec3(0.0);
+			SPECULAR_LIGHT = vec3(0.0);
+			EMISSION = _OutlineColor.rgb;
 		} else if (MTOON_OUTLINE_COLOR_MIXED) {
-	        col = mix(col, _OutlineColor.rgb * mix(vec3(1, 1, 1), col, _OutlineLightingMix), isOutline);
-	    }
+			EMISSION = _OutlineColor.rgb * (1.0 - _OutlineLightingMix);
+			// ALBEDO *= _OutlineLightingMix;
+			DIFFUSE_LIGHT *= _OutlineLightingMix;
+			SPECULAR_LIGHT *= _OutlineLightingMix;
+		}
+		AMBIENT_LIGHT = vec3(0.0);
 	}
 
     // debug
-	if (_DebugMode == 1.0) { //MTOON_DEBUG_NORMAL
-		col = ((mat3(CAMERA_MATRIX) * -viewNormal) * 0.5 + vec3(0.5));
-	} else if (_DebugMode == 2.0) { //MTOON_DEBUG_LITSHADERATE
-		col = lightIntensity * lighting;
-	} else if (_DebugMode == 3.0) { // Add pass lighting
-		col = addLightIntensity;
+	if (_DebugMode >= 1.0) {
+		// ALBEDO = vec3(0.0);
+		SPECULAR_LIGHT = vec3(0.0);
+		DIFFUSE_LIGHT = vec3(0.0);
+		if (_DebugMode == 1.0) { //MTOON_DEBUG_NORMAL
+			EMISSION = ((mat3(CAMERA_MATRIX) * -viewNormal) * 0.5 + vec3(0.5));
+		} else if (_DebugMode == 2.0) { //MTOON_DEBUG_LITSHADERATE
+			EMISSION = vec3(0.0); // lightIntensity * lighting;
+		} else if (_DebugMode == 3.0) { // Add pass lighting
+			EMISSION = vec3(0.0); //addLightIntensity;
+		}
 	}
     //if (!LM_SCENEDATA_BOOL(lm_macro_system_enabled_)) {
     //    col.rgb = vec3(0.5 + 0.5 * sin(TIME +UV.x+UV.y),0.0,1.0);
     //}
 
-	AMBIENT_LIGHT = vec3(0.0);
-	DIFFUSE_LIGHT = vec3(0.0);
-	SPECULAR_LIGHT = vec3(0.0);
-
-    EMISSION = mix(1.0*col.rgb, DEBUG_OVERRIDE.rgb, DEBUG_OVERRIDE.a);
-
-	vec3 pass_to_light = vec3(0.5) - 0.5 * lightDir.xyz;
-	ROUGHNESS = pass_to_light.x + 0.3*pass_to_light.y + 0.1*pass_to_light.z;
-
-    ALBEDO = vec3(0.0);//lit.rgb;//vec3(0.0);
-	SPECULAR = 1.0;
-	ROUGHNESS = 0.0;
+	ROUGHNESS = 1.0;
 	METALLIC = 0.0;
 	ALPHA = alpha;
 	//if (alpha < _Cutoff) { discard; }
@@ -529,43 +377,66 @@ void light() {
     const vec2 rotatePivot = vec2(0.5, 0.5);
     mainUv = mat2(vec2(cos(rotateRad), sin(rotateRad)), vec2(-sin(rotateRad), cos(rotateRad))) * (mainUv - rotatePivot) + rotatePivot;
 
-//	if (length(abs(vec3(0.5) + 0.5 * LIGHT.xyz) - TRANSMISSION.xyz) < 0.0001) {
-	if (length(abs(vec3(0.5) + 0.5*(LIGHT.x+0.3*LIGHT.y+0.1*LIGHT.z)) - ROUGHNESS) < 0.0001) {
-		// Directional Light (we store direction into TRANSMISSION, and see if it matches).
-		// We already calculated this in the base pass.
-		DIFFUSE_LIGHT = vec3(0.0);
-	} else {
-		/*
-		// Default Godot BRDF.
-		float NdotL = dot(NORMAL, LIGHT);
-		float cNdotL = max(NdotL, 0.0); // clamped NdotL
-		float NdotV = dot(NORMAL, VIEW);
-		float cNdotV = max(NdotV, 0.0);
+	float addDotNL = dot(NORMAL, LIGHT);
+	vec4 shade = texture(_ShadeTexture, mainUv);
+	vec4 lit = texture(_MainTex, mainUv);
+	shade *= GammaToLinearSpace(_ShadeColor);
+	lit *= GammaToLinearSpace(_Color);
 
-		vec3 H = normalize(VIEW + LIGHT);
-		float cNdotH = max(dot(NORMAL, H), 0.0);
-		float cLdotH = max(dot(LIGHT, H), 0.0);
-		float diffuse_brdf_NL; // BRDF times N.L for calculating diffuse radiance
-		{
-			float FD90_minus_1 = 2.0 * cLdotH * cLdotH * ROUGHNESS - 0.5;
-			float FdV = 1.0 + FD90_minus_1 * SchlickFresnel(cNdotV);
-			float FdL = 1.0 + FD90_minus_1 * SchlickFresnel(cNdotL);
-			diffuse_brdf_NL = (1.0 / 3.1415926) * FdV * FdL * cNdotL;
-		}
-		DIFFUSE_LIGHT += 1.0 * LIGHT_COLOR * ALBEDO * diffuse_brdf_NL * ATTENUATION;
-		*/
-		if (!CALCULATE_LIGHTING_IN_FRAGMENT) {
-			float addDotNL = dot(NORMAL, LIGHT);
-		    vec4 mainTex = texture(_MainTex, mainUv);
-		    vec4 shade = _ShadeColor * texture(_ShadeTexture, mainUv);
-	    	vec4 lit = _Color * mainTex;
-
-			vec3 addCol = vec3(0.0);
-			float addTmp;
-			vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, LIGHT_COLOR, addCol, addTmp);
-			// addLighting *= step(0, addDotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
-			DIFFUSE_LIGHT += calculateAddLighting(mainUv, addDotNL, dot(NORMAL, VIEW), ATTENUATION*length(SHADOW_ATTENUATION)/length(vec3(1.0)), addLighting, addCol);
+	if (isOutline == 1.0) {
+		bool MTOON_OUTLINE_COLOR_MIXED = _OutlineColorMode == 1.0;
+		if (MTOON_OUTLINE_COLOR_MIXED) {
+			shade.rgb = _OutlineColor.rgb * _OutlineLightingMix;
+			lit.rgb = _OutlineColor.rgb * _OutlineLightingMix;
 		}
 	}
-    SPECULAR_LIGHT = vec3(0.0);
+	if (_DebugMode >= 1.0) {
+		shade = vec4(0.0);
+		lit = vec4(0.0);
+	}
+	vec3 lighting = vec3(0.0);
+	float lightIntensity = 0.0;
+	vec3 addLightIntensity = vec3(0.0);
+	
+	if (IS_MAIN_LIGHT) {
+		vec3 indirectLight = ALBEDO;
+	    //UNITY_LIGHT_ATTENUATION(shadowAttenuation, i, posWorld.xyz);
+		// FIXME: Removed duplicate SHADOW_ATTENUATION* multiplier.
+	    float lightAttenuation = mix(1.0, SHADOW_ATTENUATION, _ReceiveShadowRate * texture(_ReceiveShadowTexture, mainUv).r);
+
+		vec3 col;
+		lighting = calculateLighting(mainUv, addDotNL, lightAttenuation, shade, lit, LIGHT_COLOR, col, lightIntensity);
+
+	    // base light does not darken.
+	    DIFFUSE_LIGHT += col * lighting + indirectLight * lit.rgb;
+
+	    //col = min(col, lit.rgb); // comment out if you want to PBR absolutely.
+
+	    // parametric rim lighting
+	    vec3 staticRimLighting = vec3(1.0);
+	    vec3 mixedRimLighting = lighting + indirectLight;
+
+	    vec3 rimLighting = mix(staticRimLighting, mixedRimLighting, _RimLightingMix);
+	    vec3 rim = pow(clamp(1.0 - dot(NORMAL, VIEW) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
+	    SPECULAR_LIGHT += mix(rim * rimLighting, vec3(0, 0, 0), isOutline);
+
+	} else {
+		vec3 indirectLight = ALBEDO;
+
+		vec3 addCol = vec3(0.0);
+		float addTmp;
+		vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, shade, lit, LIGHT_COLOR, addCol, addTmp);
+		vec3 specLight;
+		// addLighting *= step(0, addDotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
+		DIFFUSE_LIGHT += PROJECTOR_COLOR * calculateAddLighting(mainUv, addDotNL, dot(NORMAL, VIEW), length(vec3(ATTENUATION*SHADOW_ATTENUATION))/length(vec3(1.0)), addLighting, addCol, specLight);
+		SPECULAR_LIGHT += specLight;
+	}
+	if (_DebugMode >= 1.0) {
+		if (_DebugMode == 2.0) { //MTOON_DEBUG_LITSHADERATE
+			DIFFUSE_LIGHT += lightIntensity * lighting;
+		} else if (_DebugMode == 3.0) { // Add pass lighting
+			DIFFUSE_LIGHT += addLightIntensity;
+		}
+		SPECULAR_LIGHT = vec3(0.0);
+	}
 }
