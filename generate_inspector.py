@@ -88,7 +88,7 @@ for xlin in sys.stdin.readlines():
         prop_to_add["usage"] = ("PROPERTY_USAGE_EDITOR",)
         prop_to_add["hint_string"] = "Texture" if typ == "sampler2D" else "Object"
         prop_to_add["name"] = name
-    elif typ in ("vec3", "vec4") and ("color" in name.lower() or name.lower().endswith("col")):
+    elif typ in ("vec3", "vec4") and ("color" in name.lower() or "tint" in name.lower() or name.lower().endswith("col")):
         iscolor = True
         prop_to_add["type"] = ("TYPE_COLOR",)
         prop_to_add["hint"] = (("PROPERTY_HINT_COLOR_NO_ALPHA" if typ == "vec3" else "PROPERTY_HINT_NONE"),)
