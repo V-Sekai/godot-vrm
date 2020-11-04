@@ -16,7 +16,7 @@ export var author: String
 export var contact_information: String
 
 # Reference of VRM model
-export var reference: String
+export var reference_information: String
 
 # Thumbnail of VRM model
 export var texture: Texture

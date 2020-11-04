@@ -322,7 +322,7 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 		vrm_meta.version = vrm_extension["meta"].get("version", "")
 		vrm_meta.author = vrm_extension["meta"].get("author", "")
 		vrm_meta.contact_information = vrm_extension["meta"].get("contactInformation", "")
-		vrm_meta.reference = vrm_extension["meta"].get("reference", "")
+		vrm_meta.reference_information = vrm_extension["meta"].get("reference", "")
 		var tex: int = vrm_extension["meta"].get("texture", -1)
 		if tex >= 0:
 			var gltftex: GLTFTexture = gstate.get_textures()[tex]
