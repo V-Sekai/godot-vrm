@@ -134,8 +134,8 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 		printerr("VRM Material " + orig_mat.resource_name + " uses screenspace outlines.")
 
 
-	var mtooncompat_shader_base_path = "res://MToonCompat/mtooncompat"
-	var mtoon_shader_base_path = "res://Godot-MToon-Shader/mtoon"
+	var mtooncompat_shader_base_path = "res://addons/MToonCompat/mtooncompat"
+	var mtoon_shader_base_path = "res://addons/Godot-MToon-Shader/mtoon"
 	if USE_COMPAT_SHADER:
 		mtoon_shader_base_path = mtooncompat_shader_base_path
 
