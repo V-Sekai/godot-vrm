@@ -8,12 +8,30 @@
 
 config_version=4
 
+_global_script_classes=[ {
+"base": "Spatial",
+"class": "VRMTopLevel",
+"language": "GDScript",
+"path": "res://addons/vrm/vrm_toplevel.gd"
+} ]
+_global_script_class_icons={
+"VRMTopLevel": ""
+}
+
 [application]
 
 config/name="VRM Project"
 run/main_scene="res://Alicia.tscn"
 config/icon="res://icon.png"
 enabled=PoolStringArray( "vrm" )
+
+[display]
+
+window/size/width=1920
+window/size/height=1080
+window/size/resizable=false
+window/size/test_width=1280
+window/size/test_height=720
 
 [editor_plugins]
 

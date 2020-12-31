@@ -697,6 +697,7 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 			secondary_node = Spatial.new()
 			root_node.add_child(secondary_node)
 			secondary_node.set_owner(root_node)
+			secondary_node.set_name("secondary")
 		
 		var secondary_path: NodePath = root_node.get_path_to(secondary_node)
 		root_node.set("vrm_secondary", secondary_path)
