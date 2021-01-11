@@ -5,38 +5,42 @@ export var spring_bones: Array
 export var collider_groups: Array
 
 # Props
+var spring_bones_internal: Array = []
+var collider_groups_internal: Array = []
 var secondary_gizmo: SecondaryGizmo
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	secondary_gizmo = SecondaryGizmo.new(self)
 	add_child(secondary_gizmo)
-	
 	if not Engine.editor_hint:
 		for collider_group in collider_groups:
-			collider_group._ready(get_node(collider_group.skeleton_or_node))
-		for bg in spring_bones:
-			bg._ready(get_node(bg.skeleton))
+			var new_collider_group = collider_group.duplicate(true)
+			new_collider_group._ready(get_node(new_collider_group.skeleton_or_node))
+			collider_groups_internal.append(new_collider_group)
+		for spring_bone in spring_bones:
+			var new_spring_bone = spring_bone.duplicate(true)
+			var tmp_colliders: Array = []
+			for i in range(collider_groups.size()):
+				if new_spring_bone.collider_groups.has(collider_groups[i]):
+					tmp_colliders.append_array(collider_groups_internal[i].colliders)
+			new_spring_bone._ready(get_node(new_spring_bone.skeleton), tmp_colliders)
+			spring_bones_internal.append(new_spring_bone)
 	return
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	if get_parent() != null && not get_parent().update_secondary_fixed:
 		if not Engine.editor_hint:
-			# HACK: Force update skeleton before call "ALL" springbones process
-			for bg in spring_bones: # HACK
-				var skeleton = get_node(bg.skeleton) # HACK
-				skeleton.set_bone_rest(0, skeleton.get_bone_rest(0)) # HACK
-	
-			for collider_group in collider_groups:
-				collider_group._process()
-	
-			for bg in spring_bones:
-				bg._process(delta, bg.skeleton)
-	
+			# force update skeleton
+			for spring_bone in spring_bones_internal:
+				get_node(spring_bone.skeleton).get_bone_global_pose_without_override(0, true)
+			for collider_group in collider_groups_internal:
+				collider_group._process(get_node(collider_group.skeleton_or_node))
+			for spring_bone in spring_bones_internal:
+				spring_bone._process(delta, get_node(spring_bone.skeleton))
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_game()
-	
 		if Engine.editor_hint:
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
@@ -46,23 +50,19 @@ func _process(delta):
 func _physics_process(delta):
 	if get_parent() != null && get_parent().update_secondary_fixed:
 		if not Engine.editor_hint:
-			# HACK: Force update skeleton before call "ALL" springbones process
-			for bg in spring_bones: # HACK
-				var skeleton = get_node(bg.skeleton) # HACK
-				skeleton.set_bone_rest(0, skeleton.get_bone_rest(0)) # HACK
-	
-			for collider_group in collider_groups:
-				collider_group._process()
-	
-			for bg in spring_bones:
-				bg._process(delta, bg.skeleton)
-	
+			# force update skeleton
+			for spring_bone in spring_bones_internal:
+				get_node(spring_bone.skeleton).get_bone_global_pose_without_override(0, true)
+			for collider_group in collider_groups_internal:
+				collider_group._process(get_node(collider_group.skeleton_or_node))
+			for spring_bone in spring_bones_internal:
+				spring_bone._process(delta, get_node(spring_bone.skeleton))
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_game()
-	
 		if Engine.editor_hint:
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
+	return
 
 
 
@@ -84,7 +84,7 @@ class SecondaryGizmo:
 		m.flags_use_point_size = true
 		m.flags_no_depth_test = true
 		m.vertex_color_use_as_albedo = true
-
+	
 	func draw_in_editor():
 		clear()
 		var selected: Array = EditorPlugin.new().get_editor_interface().get_selection().get_selected_nodes()
@@ -99,10 +99,10 @@ class SecondaryGizmo:
 	func draw_spring_bones(color: Color):
 		set_material_override(m)
 		# Spring bones
-		for spring_bone in secondary_node.spring_bones:
+		for spring_bone in secondary_node.spring_bones_internal:
 			for v in spring_bone.verlets:
-				var s_sk: Skeleton = v.skeleton
-				var s_tr: Transform = s_sk.get_bone_global_pose(v.bone_idx)
+				var s_sk: Skeleton = secondary_node.get_node(spring_bone.skeleton)
+				var s_tr: Transform = s_sk.get_bone_global_pose_without_override(v.bone_idx)
 				draw_line(
 					s_tr.origin,
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
@@ -120,7 +120,7 @@ class SecondaryGizmo:
 		set_material_override(m)						
 		for collider_group in secondary_node.collider_groups:
 			var c_sk: Skeleton = secondary_node.get_node(collider_group.skeleton_or_node)
-			var c_tr: Transform = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))
+			var c_tr: Transform = c_sk.get_bone_global_pose_without_override(c_sk.find_bone(collider_group.bone))
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
