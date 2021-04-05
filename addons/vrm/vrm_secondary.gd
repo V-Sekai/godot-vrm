@@ -4,6 +4,8 @@ extends Spatial
 export var spring_bones: Array
 export var collider_groups: Array
 
+var update_secondary_fixed: bool = false
+
 # Props
 var spring_bones_internal: Array = []
 var collider_groups_internal: Array = []
@@ -77,6 +79,9 @@ func skeleton_supports_children(skel: Skeleton) -> bool:
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	if get_parent() is VRMTopLevel:
+		update_secondary_fixed = get_parent().get("update_secondary_fixed")
+
 	if secondary_gizmo == null:
 		secondary_gizmo = SecondaryGizmo.new(self)
 		add_child(secondary_gizmo)
@@ -86,41 +91,43 @@ func _ready():
 	if true or not Engine.editor_hint:
 		for collider_group in collider_groups:
 			var new_collider_group = collider_group.duplicate(true)
-			var parent: Spatial = get_node(new_collider_group.skeleton_or_node)
+			var parent: Spatial = get_node_or_null(new_collider_group.skeleton_or_node)
 			var parent_polyfill: Object = parent
-			if skel_to_polyfill.has(parent):
-				parent_polyfill = skel_to_polyfill.get(parent)
-			elif parent.get_class() == "Skeleton":
-				if skeleton_supports_children(parent):
-					parent_polyfill = parent
-				else:
-					parent_polyfill = SkeletonMariosPolyfill.new(parent)
-				skel_to_polyfill[parent] = parent_polyfill
-			new_collider_group._ready(parent, parent_polyfill)
-			collider_groups_internal.append(new_collider_group)
+			if parent != null:
+				if skel_to_polyfill.has(parent):
+					parent_polyfill = skel_to_polyfill.get(parent)
+				elif parent.get_class() == "Skeleton":
+					if skeleton_supports_children(parent):
+						parent_polyfill = parent
+					else:
+						parent_polyfill = SkeletonMariosPolyfill.new(parent)
+					skel_to_polyfill[parent] = parent_polyfill
+				new_collider_group._ready(parent, parent_polyfill)
+				collider_groups_internal.append(new_collider_group)
 		for spring_bone in spring_bones:
 			var new_spring_bone = spring_bone.duplicate(true)
 			var tmp_colliders: Array = []
 			for i in range(collider_groups.size()):
 				if new_spring_bone.collider_groups.has(collider_groups[i]):
 					tmp_colliders.append_array(collider_groups_internal[i].colliders)
-			var skel: Skeleton = get_node(new_spring_bone.skeleton)
+			var skel: Skeleton = get_node_or_null(new_spring_bone.skeleton)
 			var parent_polyfill: Object = skel
-			if skel_to_polyfill.has(skel):
-				parent_polyfill = skel_to_polyfill.get(skel)
-			else:
-				if skeleton_supports_children(skel):
-					parent_polyfill = skel
+			if skel != null:
+				if skel_to_polyfill.has(skel):
+					parent_polyfill = skel_to_polyfill.get(skel)
 				else:
-					parent_polyfill = SkeletonMariosPolyfill.new(skel)
-				skel_to_polyfill[skel] = parent_polyfill
-			new_spring_bone._ready(skel, parent_polyfill, tmp_colliders)
-			spring_bones_internal.append(new_spring_bone)
+					if skeleton_supports_children(skel):
+						parent_polyfill = skel
+					else:
+						parent_polyfill = SkeletonMariosPolyfill.new(skel)
+					skel_to_polyfill[skel] = parent_polyfill
+				new_spring_bone._ready(skel, parent_polyfill, tmp_colliders)
+				spring_bones_internal.append(new_spring_bone)
 	return
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
-	if get_parent() != null && not get_parent().update_secondary_fixed:
+	if not update_secondary_fixed:
 		if not Engine.editor_hint:
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
@@ -139,7 +146,7 @@ func _process(delta):
 
 # All animations to the Node need to be done in the _physics_process.
 func _physics_process(delta):
-	if get_parent() != null && get_parent().update_secondary_fixed:
+	if update_secondary_fixed:
 		if not Engine.editor_hint:
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
@@ -180,12 +187,12 @@ class SecondaryGizmo:
 	func draw_in_editor():
 		clear()
 		var selected: Array = EditorPlugin.new().get_editor_interface().get_selection().get_selected_nodes()
-		if selected.has(secondary_node.get_parent()) || selected.has(secondary_node):
+		if selected.has((secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent())) || selected.has(secondary_node):
 			draw_collider_groups()
 	
 	func draw_in_game():
 		clear()
-		if secondary_node.get_parent().gizmo_spring_bone:
+		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 	
 	func draw_spring_bones(color: Color):
