@@ -1,0 +1,45 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Node3D",
+"class": @"VRMTopLevel",
+"language": @"GDScript",
+"path": "res://addons/vrm/vrm_toplevel.gd"
+} ]
+_global_script_class_icons={
+"VRMTopLevel": ""
+}
+
+[application]
+
+config/name="VRM Project [GODOT Master Branch]"
+run/main_scene="res://Alicia.tscn"
+config/icon="res://icon.png"
+enabled=PackedStringArray( "vrm" )
+
+[display]
+
+window/size/width=1920
+window/size/height=1080
+window/size/resizable=false
+window/size/test_width=1280
+window/size/test_height=720
+
+[editor_plugins]
+
+enabled=PackedStringArray( "res://addons/vrm/plugin.cfg" )
+
+[rendering]
+
+anti_aliasing/quality/msaa=3
+quality/skinning/software_skinning_fallback=false
+quality/filters/msaa=8
+environment/default_environment="res://default_env.tres"
