@@ -1,6 +1,10 @@
 @tool
 extends EditorSceneImporter
 
+# Set this to true to save a .res file with all GLTF DOM state
+# This allows exploring all JSON structure and also Godot internal GLTFState
+# Very useful for debugging.
+const SAVE_DEBUG_GLTFSTATE_RES: bool = false
 
 enum DebugMode {
 	None = 0,
@@ -238,7 +242,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 		newmat = _process_vrm_material(newmat, images, vrm_mat_props)
 		spatial_to_shader_mat[oldmat] = newmat
 		spatial_to_shader_mat[newmat] = newmat
-		print("Replacing shader " + str(oldmat) + "/" + str(oldmat.resource_name) + " with " + str(newmat) + "/" + str(newmat.resource_name))
+		# print("Replacing shader " + str(oldmat) + "/" + str(oldmat.resource_name) + " with " + str(newmat) + "/" + str(newmat.resource_name))
 		var target_render_priority = 0
 		var delta_render_queue = vrm_mat_props.get("renderQueue", 3000) - 3000
 		if delta_render_queue >= 0:
@@ -750,9 +754,9 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate)
 
-
-	if (!ResourceLoader.exists(path + ".res")):
-		ResourceSaver.save(path + ".res", gstate)
+	if SAVE_DEBUG_GLTFSTATE_RES:
+		if (!ResourceLoader.exists(path + ".res")):
+			ResourceSaver.save(path + ".res", gstate)
 	# Remove references
 	var packed_scene: PackedScene = PackedScene.new()
 	packed_scene.pack(root_node)
