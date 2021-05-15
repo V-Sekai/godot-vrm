@@ -184,14 +184,6 @@ vec3 mix_normal(vec3 X, vec3 Y, float factor) {
 	return normalize(cross(cross(X, Y), X)) * sqrt(1.0 - new_x * new_x) + new_x * normalize(X);
 }
 
-varying vec4 lit;
-varying vec4 shade;
-varying vec3 rim;
-varying vec3 fragment_albedo_output;
-varying vec4 toonedGI;
-varying vec2 mainUv;
-varying vec3 viewNormal;
-
 void fragment() {
 	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
 	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineColorMode == 0.0;
@@ -200,7 +192,7 @@ void fragment() {
 	ROUGHNESS = 1.0; // for now
 	SPECULAR = 0.0; // for now
 	// uv
-	mainUv = UV; //TRANSFORM_TEX(i.uv0, _MainTex);
+	vec2 mainUv = UV; //TRANSFORM_TEX(i.uv0, _MainTex);
 	// uv anim
 	float uvAnim = texture(_UvAnimMaskTexture, mainUv).r * TIME;
 	// translate uv in bottom-left origin coordinates.
@@ -215,8 +207,8 @@ void fragment() {
 	// alpha
 	float alpha = _Color.a * mainTex.a;
 	 // Albedo color
-	shade = texture(_ShadeTexture, mainUv);
-	lit = mainTex;
+	vec4 shade = texture(_ShadeTexture, mainUv);
+	vec4 lit = mainTex;
 	vec3 emission = texture(_EmissionMap, mainUv).rgb * _EmissionColor.rgb;
 
 	vec3 tangentNormal = vec3(0.0,0.0,1.0);
@@ -230,7 +222,7 @@ void fragment() {
 	//shade = min(shade, lit); ///// Mimic look of non-PBR min() clamp we commented out below.
 
 	// normal
-	viewNormal = vec3(0.0);
+	vec3 viewNormal = vec3(0.0);
 	if (_NORMALMAP) {
 		viewNormal.x = dot(tspace0, tangentNormal);
 		viewNormal.y = dot(tspace1, tangentNormal);
@@ -242,15 +234,16 @@ void fragment() {
 	viewNormal *= step(0.0, dot(viewView, viewNormal)) * 2.0 - 1.0; // flip if projection matrix is flipped
 	viewNormal *= mix(+1.0, -1.0, isOutline);
 	viewNormal = normalize(viewNormal);
+	TRANSMISSION = viewNormal;
 
 	// Unity lighting
 
 	// Indirect Light
 	vec3 up_normal = mat3(INV_CAMERA_MATRIX) * vec3(0.0,1.0,0.0);
 	float LIGHT_COME_FROM_UP_RATIO = mix(0.8, 1.0, sin(_IndirectLightIntensity));
-	fragment_albedo_output = max(lit.rgb, vec3(0.0001));
+	vec3 fragment_albedo_output = max(lit.rgb, vec3(0.0001));
 
-	rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
+	vec3 rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
 
 	emission += mix(rim * (1.0 - _RimLightingMix), vec3(0, 0, 0), isOutline);
 	fragment_albedo_output += mix(rim * _RimLightingMix, vec3(0, 0, 0), isOutline);
@@ -310,7 +303,6 @@ void fragment() {
 	METALLIC = 0.0;
 	ALPHA = alpha;
 	//if (_EnableAlphaCutout > 0.5 && alpha < _Cutoff) { discard; }
-	toonedGI = vec4(0.0);
 
 	//METALLIC = metallic;
 	//ROUGHNESS = roughness;
@@ -324,15 +316,31 @@ float SchlickFresnel(float u) {
 }
 
 void light() {
-	fragment_albedo_output;
+		// uv
+	vec2 mainUv = UV;
+	float uvAnim = texture(_UvAnimMaskTexture, mainUv).r * TIME;
+	mainUv += vec2(_UvAnimScrollX, -_UvAnimScrollY) * uvAnim;
+	float rotateRad = _UvAnimRotation * PI_2 * uvAnim;
+	const vec2 rotatePivot = vec2(0.5, 0.5);
+	mainUv = mat2(vec2(cos(rotateRad), sin(rotateRad)), vec2(-sin(rotateRad), cos(rotateRad))) * (mainUv - rotatePivot) + rotatePivot;
+	vec3 viewNormal = TRANSMISSION;
+	vec3 viewView = VIEW;
+	vec3 rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
+	vec4 shade = texture(_ShadeTexture, mainUv);
+	vec4 lit = texture(_MainTex, mainUv);
+	shade *= GammaToLinearSpace(_ShadeColor);
+	lit *= GammaToLinearSpace(_Color);
+	if (isOutline == 1.0 && _OutlineColorMode == 1.0) {
+		lit.rgb = GammaToLinearSpace(_OutlineColor).rgb * _OutlineLightingMix;
+		shade.rgb = lit.rgb;
+	}
+
 	bool isFirstLight = false;
 	vec3 indirectLighting = vec3(0.0);
-	if (toonedGI.a < 0.5) {
-		toonedGI += vec4(DIFFUSE_LIGHT, 1.0);
-		isFirstLight = true;
-		DIFFUSE_LIGHT = vec3(0.0);
 
-		indirectLighting = toonedGI.rgb;
+	if (dot(DIFFUSE_LIGHT,DIFFUSE_LIGHT) == 0.0) {
+		isFirstLight = true;
+
 		indirectLighting = mix(indirectLighting, max(vec3(EPS_COL), max(indirectLighting.x, max(indirectLighting.y, indirectLighting.z))), _LightColorAttenuation); // color atten
 		// indirectLighting = vec3(0.0); // Some components of ambient lighting go into indirectLighting.
 	}
