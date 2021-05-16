@@ -35,7 +35,7 @@ window/size/test_height=720
 
 [editor_plugins]
 
-enabled=PackedStringArray( "res://addons/vrm/plugin.cfg" )
+enabled=PackedStringArray( "res://addons/Godot-MToon-Shader/plugin.cfg", "res://addons/vrm/plugin.cfg" )
 
 [rendering]
 
