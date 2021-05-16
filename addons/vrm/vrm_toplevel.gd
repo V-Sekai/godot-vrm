@@ -9,6 +9,7 @@ class_name VRMTopLevel extends Node3D
 
 @export var update_secondary_fixed: bool = false
 
+@export var update_in_editor: bool = false
 @export var gizmo_spring_bone: bool = false
 @export var gizmo_spring_bone_color: Color = Color.yellow
 
