@@ -5,6 +5,7 @@ export var spring_bones: Array
 export var collider_groups: Array
 
 var update_secondary_fixed: bool = false
+var update_in_editor: bool = false
 
 # Props
 var spring_bones_internal: Array = []
@@ -29,7 +30,7 @@ class SkeletonMariosPolyfill extends Reference:
 				self.bone_to_children[par].push_back(i)
 
 	func clear_bones_global_pose_override():
-		# skel.clear_bones_global_pose_override()
+		skel.clear_bones_global_pose_override()
 		for i in range(skel.get_bone_count()):
 			overrides[i] = Transform.IDENTITY
 			override_weights[i] = 0.0
@@ -79,10 +80,12 @@ func skeleton_supports_children(skel: Skeleton) -> bool:
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	var gizmo_spring_bone: bool = false
 	if get_parent() is VRMTopLevel:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
+		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 
-	if secondary_gizmo == null:
+	if secondary_gizmo == null and (Engine.editor_hint or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
 		add_child(secondary_gizmo)
 	collider_groups_internal.clear()
@@ -125,10 +128,24 @@ func _ready():
 				spring_bones_internal.append(new_spring_bone)
 	return
 
+func check_for_editor_update():
+	if not Engine.editor_hint:
+		return false
+	var parent: Node = get_parent()
+	if parent is VRMTopLevel:
+		if parent.update_in_editor and not update_in_editor:
+			update_in_editor = true
+			_ready()
+		if not parent.update_in_editor and update_in_editor:
+			update_in_editor = false
+			for spring_bone in spring_bones_internal:
+				spring_bone.skel_polyfill.clear_bones_global_pose_override()
+	return update_in_editor
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	if not update_secondary_fixed:
-		if not Engine.editor_hint:
+		if not Engine.editor_hint or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
 				if spring_bone.skel_polyfill != null:
@@ -138,8 +155,11 @@ func _process(delta):
 			for spring_bone in spring_bones_internal:
 				spring_bone._process(delta)
 			if secondary_gizmo != null:
-				secondary_gizmo.draw_in_game()
-		if Engine.editor_hint:
+				if Engine.editor_hint:
+					secondary_gizmo.draw_in_editor(true)
+				else:
+					secondary_gizmo.draw_in_game()
+		elif Engine.editor_hint:
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 	return
@@ -147,7 +167,7 @@ func _process(delta):
 # All animations to the Node need to be done in the _physics_process.
 func _physics_process(delta):
 	if update_secondary_fixed:
-		if not Engine.editor_hint:
+		if not Engine.editor_hint or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
 				if spring_bone.skel_polyfill != null:
@@ -157,8 +177,11 @@ func _physics_process(delta):
 			for spring_bone in spring_bones_internal:
 				spring_bone._process(delta)
 			if secondary_gizmo != null:
-				secondary_gizmo.draw_in_game()
-		if Engine.editor_hint:
+				if Engine.editor_hint:
+					secondary_gizmo.draw_in_editor(true)
+				else:
+					secondary_gizmo.draw_in_game()
+		elif Engine.editor_hint:
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 	return
@@ -183,25 +206,35 @@ class SecondaryGizmo:
 		m.flags_use_point_size = true
 		m.flags_no_depth_test = true
 		m.vertex_color_use_as_albedo = true
+		m.flags_transparent = true
 	
-	func draw_in_editor():
+	func draw_in_editor(do_draw_spring_bones: bool = false):
 		clear()
 		var selected: Array = EditorPlugin.new().get_editor_interface().get_selection().get_selected_nodes()
-		if selected.has((secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent())) || selected.has(secondary_node):
-			draw_collider_groups()
+		if (secondary_node.get_parent() is VRMTopLevel && selected.has(secondary_node.get_parent())) || selected.has(secondary_node):
+			if do_draw_spring_bones:
+				draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
+			if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
+				draw_collider_groups()
 	
 	func draw_in_game():
 		clear()
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
+			draw_collider_groups()
 	
 	func draw_spring_bones(color: Color):
 		set_material_override(m)
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
 			for v in spring_bone.verlets:
+				var s_tr: Transform = Transform.IDENTITY
 				var s_sk: Skeleton = spring_bone.skel
-				var s_tr: Transform = spring_bone.skel_polyfill.get_bone_global_pose_without_override(v.bone_idx)
+				if Engine.editor_hint:
+					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
+					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+				else:
+					s_tr = spring_bone.skel_polyfill.get_bone_global_pose_without_override(v.bone_idx)
 				draw_line(
 					s_tr.origin,
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
@@ -216,10 +249,15 @@ class SecondaryGizmo:
 		return
 	
 	func draw_collider_groups():
-		set_material_override(m)						
-		for collider_group in secondary_node.collider_groups_internal:
-			var c_sk: Skeleton = collider_group.parent
-			var c_tr: Transform = collider_group.skel_polyfill.get_bone_global_pose_without_override(c_sk.find_bone(collider_group.bone))
+		set_material_override(m)
+		for collider_group in (secondary_node.collider_groups if Engine.editor_hint else secondary_node.collider_groups_internal):
+			var c_tr = Transform.IDENTITY
+			if Engine.editor_hint:
+				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
+				if c_sk is Skeleton:
+					c_tr = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))
+			elif collider_group.parent is Skeleton:
+				c_tr = collider_group.skel_polyfill.get_bone_global_pose_without_override(collider_group.parent.find_bone(collider_group.bone))
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
