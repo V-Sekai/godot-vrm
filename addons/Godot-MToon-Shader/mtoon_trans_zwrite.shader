@@ -391,5 +391,5 @@ void light() {
 		}
 		SPECULAR_LIGHT = vec3(0.0);
 	}
-	DIFFUSE_LIGHT += diffuse_output;
+	DIFFUSE_LIGHT += max(diffuse_output, vec3(1.0e-10));
 }
