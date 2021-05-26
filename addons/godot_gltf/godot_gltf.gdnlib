@@ -1,0 +1,20 @@
+[general]
+
+singleton=false
+load_once=true
+symbol_prefix="godot_gltf_"
+reloadable=true
+
+[entry]
+
+Windows.64="res://addons/godot_gltf/bin/libgodot_gltf.dll"
+OSX.64="res://addons/godot_gltf/bin/libgodot_gltf.dylib"
+X11.64="res://addons/godot_gltf/bin/libgodot_gltf.so"
+Server.64="res://addons/godot_gltf/bin/libgodot_gltf.so"
+
+[dependencies]
+
+Windows.64=[  ]
+OSX.64=[  ]
+X11.64=[  ]
+Server.64=[  ]

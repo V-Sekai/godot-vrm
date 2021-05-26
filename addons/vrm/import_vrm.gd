@@ -203,10 +203,10 @@ func _process_vrm_material(orig_mat: SpatialMaterial, gltf_images: Array, vrm_ma
 	return new_mat
 
 
-func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
-	var images = gstate.get_images()
+func _update_materials(vrm_extension: Dictionary, gstate: Resource): # GLTFState
+	var images = gstate.images
 	#print(images)
-	var materials : Array = gstate.get_materials();
+	var materials : Array = gstate.materials;
 	var spatial_to_shader_mat : Dictionary = {}
 
 	# Render priority setup
@@ -266,11 +266,11 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 		oldmat.resource_path = ""
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(oldpath, newmat)
-	gstate.set_materials(materials)
+	gstate.materials = materials
 
-	var meshes = gstate.get_meshes()
+	var meshes = gstate.meshes
 	for i in range(meshes.size()):
-		var gltfmesh: GLTFMesh = meshes[i]
+		var gltfmesh: Resource = meshes[i] # GLTFMesh
 		var mesh: ArrayMesh = gltfmesh.mesh
 		mesh.blend_shape_mode = ArrayMesh.BLEND_SHAPE_MODE_NORMALIZED
 		for surf_idx in range(mesh.get_surface_count()):
@@ -281,7 +281,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
 				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + surfmat.resource_name + " has no replacement material.")
 
 
-func _get_skel_godot_node(gstate: GLTFState, nodes: Array, _skeletons: Array, skel_id: int) -> Node:
+func _get_skel_godot_node(gstate: Resource, nodes: Array, _skeletons: Array, skel_id: int) -> Node: # GLTFState
 	# There's no working direct way to convert from skeleton_id to node_id.
 	# Bugs:
 	# GLTFNode.parent is -1 if skeleton bone.
@@ -316,10 +316,10 @@ class SkelBone:
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
 
 
-func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> Resource:
-	var nodes = gstate.get_nodes()
-	var skeletons = gstate.get_skeletons()
-	var hipsNode: GLTFNode = nodes[human_bone_to_idx["hips"]]
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: Resource, human_bone_to_idx: Dictionary) -> Resource: # GLTFState
+	var nodes = gstate.nodes
+	var skeletons = gstate.skeletons
+	var hipsNode: Resource = nodes[human_bone_to_idx["hips"]] # GLTFNode
 	var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons, hipsNode.skeleton)
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
 	root_node.set("vrm_skeleton", skeletonPath)
@@ -361,8 +361,8 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 		vrm_meta.reference_information = vrm_extension["meta"].get("reference", "")
 		var tex: int = vrm_extension["meta"].get("texture", -1)
 		if tex >= 0:
-			var gltftex: GLTFTexture = gstate.get_textures()[tex]
-			vrm_meta.texture = gstate.get_images()[gltftex.src_image]
+			var gltftex: Resource = gstate.textures[tex] # GLTFTexture
+			vrm_meta.texture = gstate.images[gltftex.src_image]
 		vrm_meta.allowed_user_name = vrm_extension["meta"].get("allowedUserName", "")
 		vrm_meta.violent_usage = vrm_extension["meta"].get("violentUssageName", "") # Ussage (sic.) in VRM spec
 		vrm_meta.sexual_usage = vrm_extension["meta"].get("sexualUssageName", "") # Ussage (sic.) in VRM spec
@@ -376,26 +376,26 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 	return vrm_meta.duplicate(true)
 
 
-func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> AnimationPlayer:
+func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: Resource, human_bone_to_idx: Dictionary) -> AnimationPlayer: # GLTFState
 	# Remove all glTF animation players for safety.
 	# VRM does not support animation import in this way.
 	for i in range(gstate.get_animation_players_count(0)):
 		var node: AnimationPlayer = gstate.get_animation_player(i)
 		node.get_parent().remove_child(node)
 
-	var meshes = gstate.get_meshes()
-	var nodes = gstate.get_nodes()
+	var meshes = gstate.meshes
+	var nodes = gstate.nodes
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
 	# FIXME: Do we need to handle multiple references to the same mesh???
 	var mesh_idx_to_meshinstance : Dictionary = {}
 	var material_name_to_mesh_and_surface_idx: Dictionary = {}
 	for i in range(meshes.size()):
-		var gltfmesh : GLTFMesh = meshes[i]
+		var gltfmesh : Resource = meshes[i] # GLTFMesh
 		for j in range(gltfmesh.mesh.get_surface_count()):
 			material_name_to_mesh_and_surface_idx[gltfmesh.mesh.surface_get_material(j).resource_name] = [i, j]
 			
 	for i in range(nodes.size()):
-		var gltfnode: GLTFNode = nodes[i]
+		var gltfnode: Resource = nodes[i] # GLTFNode
 		var mesh_idx: int = gltfnode.mesh
 		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
 		if (mesh_idx != -1):
@@ -474,11 +474,11 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	var thirdpersanim: Animation = Animation.new()
 	animplayer.add_animation("ThirdPerson", thirdpersanim)
 
-	var skeletons:Array = gstate.get_skeletons()
+	var skeletons:Array = gstate.skeletons
 
 	var head_bone_idx = firstperson.get("firstPersonBone", -1)
 	if (head_bone_idx >= 0):
-		var headNode: GLTFNode = nodes[head_bone_idx]
+		var headNode: Resource = nodes[head_bone_idx] # GLTFNode
 		var skeletonPath:NodePath = animplayer.get_parent().get_path_to(_get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton))
 		var headBone: String = headNode.resource_name
 		var firstperstrack = firstpersanim.add_track(Animation.TYPE_METHOD)
@@ -519,12 +519,12 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var leftEyePath:String = ""
 		var rightEyePath:String = ""
 		if lefteye > 0:
-			var leftEyeNode: GLTFNode = nodes[lefteye]
+			var leftEyeNode: Resource = nodes[lefteye] # GLTFNode
 			var skeleton:Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,leftEyeNode.skeleton)
 			var skeletonPath:NodePath = animplayer.get_parent().get_path_to(skeleton)
 			leftEyePath = str(skeletonPath) + ":" + nodes[human_bone_to_idx["leftEye"]].resource_name
 		if righteye > 0:
-			var rightEyeNode: GLTFNode = nodes[righteye]
+			var rightEyeNode: Resource = nodes[righteye] # GLTFNode
 			var skeleton:Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,rightEyeNode.skeleton)
 			var skeletonPath:NodePath = animplayer.get_parent().get_path_to(skeleton)
 			rightEyePath = str(skeletonPath) + ":" + nodes[human_bone_to_idx["rightEye"]].resource_name
@@ -583,9 +583,9 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	return animplayer
 
 
-func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState):
-	var nodes = gstate.get_nodes()
-	var skeletons = gstate.get_skeletons()
+func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: Resource): # GLTFState
+	var nodes = gstate.nodes
+	var skeletons = gstate.skeletons
 
 	var vrm_secondary:GDScript = load("res://addons/vrm/vrm_secondary.gd")
 	var vrm_collidergroup:GDScript = load("res://addons/vrm/vrm_collidergroup.gd")
@@ -593,7 +593,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 
 	var collider_groups: Array = Array()
 	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
-		var gltfnode: GLTFNode = nodes[int(cgroup["node"])]
+		var gltfnode: Resource = nodes[int(cgroup["node"])] # GLTFNode
 		var collider_group = vrm_collidergroup.new()
 		collider_group.sphere_colliders = Array() # HACK HACK HACK
 		if gltfnode.skeleton == -1:
@@ -619,7 +619,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		if sbone.get("bones", []).size() == 0:
 			continue
 		var first_bone_node: int = sbone["bones"][0]
-		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
+		var gltfnode: Resource = nodes[int(first_bone_node)] # GLTFNode
 		var skeleton: Skeleton = _get_skel_godot_node(gstate, nodes, skeletons,gltfnode.skeleton)
 
 		var spring_bone = vrm_springbone.new()
@@ -661,7 +661,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		spring_bone.center_bone = ""
 		var center_node_idx = sbone.get("center", -1)
 		if center_node_idx != -1:
-			var center_gltfnode: GLTFNode = nodes[int(center_node_idx)]
+			var center_gltfnode: Resource = nodes[int(center_node_idx)] # GLTFNode
 			var bone_name:String = center_gltfnode.resource_name
 			if center_gltfnode.skeleton == gltfnode.skeleton and skeleton.find_bone(bone_name) != -1:
 				spring_bone.center_bone = bone_name
@@ -699,10 +699,20 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var json_data : PoolByteArray = f.get_buffer(chunk_length)
 	f.close()
 
-	var gstate : GLTFState = GLTFState.new()
-	var gltf : PackedSceneGLTF = PackedSceneGLTF.new()
+	var gstate : Resource = null
+	var gltf : PackedScene = null
+	if type_exists("GLTFState") and type_exists("PackedSceneGLTF"):
+		print("VRM: Using builtin gltf module")
+		# if ClassDB.can_instance("GLTFState") and ClassDB.can_instance("PackedSceneGLTF"):
+		gstate = ClassDB.instance("GLTFState")
+		gltf = ClassDB.instance("PackedSceneGLTF")
+	else:
+		print("VRM: Using GDNative godot_gltf")
+		gstate = load("res://addons/godot_gltf/GLTFState.gdns").new()
+		gltf = load("res://addons/godot_gltf/PackedSceneGLTF.gdns").new()
 	print(path);
 	var root_node : Node = gltf.import_gltf_scene(path, 0, 1000.0, gstate)
+	root_node.name = path.get_basename().get_file()
 
 	var gltf_json : Dictionary = gstate.json
 	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]

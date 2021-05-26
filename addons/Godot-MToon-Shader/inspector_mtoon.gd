@@ -273,7 +273,7 @@ class MToonProperty extends EditorProperty:
 	var hide_if_value: Dictionary = {}
 
 	# Tooltips do not seem to be functional for Godot properties
-	func _make_custom_tooltip(text: String) -> Control:
+	func _make_custom_tooltip(text: String):
 		var label: Label = Label.new()
 		label.text = text + self.tooltip
 		label.rect_min_size = Vector2(200,30)

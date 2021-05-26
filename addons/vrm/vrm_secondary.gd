@@ -112,7 +112,8 @@ func _ready():
 			var tmp_colliders: Array = []
 			for i in range(collider_groups.size()):
 				if new_spring_bone.collider_groups.has(collider_groups[i]):
-					tmp_colliders.append_array(collider_groups_internal[i].colliders)
+					for collider in collider_groups_internal[i].colliders:
+						tmp_colliders.push_back(collider)
 			var skel: Skeleton = get_node_or_null(new_spring_bone.skeleton)
 			var parent_polyfill: Object = skel
 			if skel != null:
