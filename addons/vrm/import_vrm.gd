@@ -771,7 +771,6 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	f.store_32(chunk_type)
 	f.store_buffer(json_utf8)
 	f.store_buffer(rest_data)
-	f.flush()
 	f.close()
 
 	var gstate : Resource = null
