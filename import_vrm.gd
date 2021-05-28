@@ -683,6 +683,53 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	secondary_node.set("collider_groups", collider_groups)
 
 
+func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool=false):
+	var gltf_node: Dictionary = gltf_nodes[bone]
+	if not include_child_meshes and gltf_node.get("mesh", -1) != -1:
+		return
+	new_joints_set[bone] = true
+	for child_node in gltf_node.get("children", []):
+		if not new_joints_set.has(child_node):
+			_add_joints_recursive(new_joints_set, gltf_nodes, int(child_node))
+
+func _add_joint_set_as_skin(obj: Dictionary, new_joints_set: Dictionary):
+	var new_joints = [].duplicate()
+	for node in new_joints_set:
+		new_joints.push_back(node)
+	new_joints.sort()
+
+	var new_skin: Dictionary = {"joints": new_joints}
+
+	if not obj.has("skins"):
+		obj["skins"] = [].duplicate()
+
+	obj["skins"].push_back(new_skin)
+
+func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
+	var vrm_extension: Dictionary = obj.get("extensions", {}).get("VRM", {})
+	if not vrm_extension.has("humanoid"):
+		return false
+	var new_joints_set = {}.duplicate()
+
+	var secondaryAnimation = vrm_extension.get("secondaryAnimation", {})
+	for bone_group in secondaryAnimation.get("boneGroups", []):
+		for bone in bone_group["bones"]:
+			_add_joints_recursive(new_joints_set, obj["nodes"], int(bone), true)
+
+	for collider_group in secondaryAnimation.get("colliderGroups", []):
+		new_joints_set[int(collider_group["node"])] = true
+
+	var firstPerson = vrm_extension.get("firstPerson", {})
+	if firstPerson.has("firstPersonBone"):
+		new_joints_set[int(firstPerson["firstPersonBone"])] = true
+
+	for human_bone in vrm_extension["humanoid"]["humanBones"]:
+		_add_joints_recursive(new_joints_set, obj["nodes"], int(human_bone["node"]), false)
+
+	_add_joint_set_as_skin(obj, new_joints_set)
+
+	return true
+
 func _import_scene(path: String, flags: int, bake_fps: int):
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
@@ -691,21 +738,53 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var magic = f.get_32()
 	if magic != 0x46546C67:
 		return ERR_FILE_UNRECOGNIZED
-	f.get_32() # version
-	f.get_32() # length
+	var version = f.get_32() # version
+	var full_length = f.get_32() # length
 
 	var chunk_length = f.get_32();
 	var chunk_type = f.get_32();
 
 	if chunk_type != 0x4E4F534A:
 		return ERR_PARSE_ERROR
-	var json_data : PackedByteArray = f.get_buffer(chunk_length)
+	var orig_json_utf8 : PackedByteArray = f.get_buffer(chunk_length)
+	var rest_data : PackedByteArray = f.get_buffer(full_length - chunk_length - 20)
+	if (f.get_length() != full_length):
+		push_error("Incorrect full_length in " + str(path))
+
+	f.close()
+
+	var gltf_json_parsed_result: JSONParseResult = JSON.parse(orig_json_utf8.get_string_from_utf8())
+	if gltf_json_parsed_result.error:
+		push_error("Failed to parse JSON part of glTF file in " + str(path) + ":" + str(gltf_json_parsed_result.error_line) + ": " + gltf_json_parsed_result.error_string)
+		return ERR_FILE_UNRECOGNIZED
+	var gltf_json_parsed: Dictionary = gltf_json_parsed_result.result
+	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
+		push_error("Failed to find required VRM keys in " + str(path))
+		return ERR_FILE_UNRECOGNIZED
+	var json_utf8: PackedByteArray = JSON.print(gltf_json_parsed).to_utf8_buffer()
+
+	f = File.new()
+	var tmp_path = path + ".tmp"
+	if f.open(tmp_path, File.WRITE) != OK:
+		return FAILED
+	f.store_32(magic)
+	f.store_32(version)
+	f.store_32(full_length + len(json_utf8) - len(orig_json_utf8))
+	f.store_32(len(json_utf8))
+	f.store_32(chunk_type)
+	f.store_buffer(json_utf8)
+	f.store_buffer(rest_data)
+	f.flush()
 	f.close()
 
 	var gstate : GLTFState = GLTFState.new()
 	var gltf : PackedSceneGLTF = PackedSceneGLTF.new()
 	print(path);
-	var root_node : Node = gltf.import_gltf_scene(path, 0, 1000.0, gstate)
+	var root_node : Node = gltf.import_gltf_scene(tmp_path, 0, 1000.0, gstate)
+	root_node.name = path.get_basename().get_file()
+	var d: Directory = Directory.new()
+	d.open("res://")
+	d.remove(tmp_path)
 
 	var gltf_json : Dictionary = gstate.json
 	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
