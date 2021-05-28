@@ -20,7 +20,7 @@ extends Resource
 @export  var sphere_colliders: Array # DO NOT INITIALIZE HERE
  # (Array, Plane)
 # Only use in editor
-@export var gizmo_color: Color = Color.magenta
+@export var gizmo_color: Color = Color.MAGENTA
 
 # Props
 var colliders: Array = []

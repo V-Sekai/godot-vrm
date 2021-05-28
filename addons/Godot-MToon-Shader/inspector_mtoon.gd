@@ -46,7 +46,7 @@ var property_text: Dictionary = {
 	"_Cutoff": ["Alpha Cutoff", "Discard pixels below this value in Cutout mode"],
 	"_SphereAdd": ["MatCap", "Additive Sphere map / MatCap Texture (RGB)", false],
 	"_ShadeToony": ["Shading Toony", "0.0 is Lambert. Higher value get toony shading."],
-	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normal map"],
+	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normals in tangent space"],
 	"_ShadeShift": ["Shading Shift", "Zero is Default. Negative value increase lit area. Positive value increase shade area."],
 	"_ReceiveShadowRate": ["Shadow Receive", "Texture (R) * Rate. White is Default. Black attenuates shadows."],
 	"_ShadingGradeRate": ["Shading Grade", "Lit & Shade Mixing Multiplier: Texture (R) * Rate. Compatible with UTS2 ShadingGradeMap. White is Default. Black amplifies shade."],

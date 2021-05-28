@@ -194,7 +194,7 @@ class StubImmediateGeometry3D:
 		color_array = PackedColorArray()
 
 	var line_strip: int = 0
-	var cur_color: Color = Color.white
+	var cur_color: Color = Color.WHITE
 	var last_vert: Vector3 = Vector3.ZERO
 	var is_dirty: bool = false
 
