@@ -249,7 +249,7 @@ func parse_property(object: Object, type: int, path: String, hint: int, hint_tex
 			elif param == "_DebugMode":
 				property_editor = DebugModeInspector.new(tooltip)
 			elif color_properties.has(param):
-				property_editor = LinearColorInspector.new(tooltip, path == "shader_param/_Color")
+				property_editor = LinearColorInspector.new(tooltip, param == "_Color")
 			elif param == "_MToonVersion":
 				return true
 			elif param.ends_with("_ST"):
