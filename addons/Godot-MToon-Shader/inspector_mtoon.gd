@@ -47,7 +47,7 @@ const property_text: Dictionary = {
 	"_Cutoff": ["Alpha Cutoff", "Discard pixels below this value in Cutout mode"],
 	"_SphereAdd": ["MatCap", "Additive Sphere map / MatCap Texture (RGB)", false],
 	"_ShadeToony": ["Shading Toony", "0.0 is Lambert. Higher value get toony shading."],
-	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normal map"],
+	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normals in tangent space"],
 	"_ShadeShift": ["Shading Shift", "Zero is Default. Negative value increase lit area. Positive value increase shade area."],
 	"_ReceiveShadowRate": ["Shadow Receive", "Texture (R) * Rate. White is Default. Black attenuates shadows."],
 	"_ShadingGradeRate": ["Shading Grade", "Lit & Shade Mixing Multiplier: Texture (R) * Rate. Compatible with UTS2 ShadingGradeMap. White is Default. Black amplifies shade."],
@@ -245,7 +245,7 @@ func parse_property(object: Object, type: int, path: String, hint: int, hint_tex
 			elif param == "_DebugMode":
 				property_editor = DebugModeInspector.new(tooltip)
 			elif color_properties.has(param):
-				property_editor = LinearColorInspector.new(tooltip, path == "shader_param/_Color")
+				property_editor = LinearColorInspector.new(tooltip, param == "_Color")
 			elif param == "_MToonVersion":
 				return true
 			elif param.ends_with("_ST"):
