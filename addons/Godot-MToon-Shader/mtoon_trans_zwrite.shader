@@ -270,7 +270,7 @@ void fragment() {
 		} else if (MTOON_OUTLINE_COLOR_MIXED) {
 			emission = outlineColor.rgb * (1.0 - _OutlineLightingMix);
 			// ALBEDO *= _OutlineLightingMix;
-			lit.rgb = outlineColor.rgb * _OutlineLightingMix;
+			lit.rgb *= outlineColor.rgb * _OutlineLightingMix;
 			shade.rgb = lit.rgb;
 			fragment_albedo_output = lit.rgb;
 			albedo = LIGHT_COME_FROM_UP_RATIO * fragment_albedo_output;
@@ -331,7 +331,8 @@ void light() {
 	shade *= GammaToLinearSpace(_ShadeColor);
 	lit *= GammaToLinearSpace(_Color);
 	if (isOutline == 1.0 && _OutlineColorMode == 1.0) {
-		lit.rgb = GammaToLinearSpace(_OutlineColor).rgb * _OutlineLightingMix;
+		vec3 outlineColor = GammaToLinearSpace(_OutlineColor).rgb;
+		lit.rgb *= outlineColor * _OutlineLightingMix;
 		shade.rgb = lit.rgb;
 	}
 

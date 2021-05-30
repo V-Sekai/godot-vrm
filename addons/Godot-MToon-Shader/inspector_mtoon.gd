@@ -65,6 +65,7 @@ const property_text: Dictionary = {
 	"_OutlineColor": ["Outline Color", "Outline Color (RGB)"],
 	"_OutlineLightingMix": ["Outline Mix", "Outline Lighting Mix"],
 	"_MainTex_ST": ["Offset", "UV Scale (X,Y), UV Offset (X,Y)"],
+	"_UvAnimMaskTexture": ["UV Anim Mask", "Auto Animation Mask Texture (R)", false],
 	"_UvAnimScrollX": ["UV Scroll X", "Scroll X (per second)"],
 	"_UvAnimScrollY": ["UV Scroll Y", "Scroll Y (per second)"],
 	"_UvAnimRotation": ["UV Rotation", "Rotation value (per second)"],
