@@ -21,7 +21,7 @@ _global_script_class_icons={
 [application]
 
 config/name="VRM Project [GODOT Master Branch]"
-run/main_scene="res://Alicia.tscn"
+run/main_scene="res://vrm_samples/sample_scene.tscn"
 config/icon="res://icon.png"
 enabled=PackedStringArray( "vrm" )
 
@@ -42,4 +42,3 @@ enabled=PackedStringArray( "res://addons/Godot-MToon-Shader/plugin.cfg", "res://
 anti_aliasing/quality/msaa=3
 quality/skinning/software_skinning_fallback=false
 quality/filters/msaa=8
-environment/default_environment="res://default_env.tres"

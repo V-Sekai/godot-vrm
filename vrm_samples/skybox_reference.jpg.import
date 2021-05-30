@@ -2,8 +2,8 @@
 
 importer="texture"
 type="StreamTexture2D"
-path.s3tc="res://.godot/imported/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.s3tc.stex"
-path.etc2="res://.godot/imported/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.etc2.stex"
+path.s3tc="res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.s3tc.stex"
+path.etc2="res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.etc2.stex"
 metadata={
 "imported_formats": [ "s3tc", "etc2" ],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://vrm/thirdparty/sky/compatible_skybox.exr"
-dest_files=[ "res://.godot/imported/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.s3tc.stex", "res://.godot/imported/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.etc2.stex" ]
+source_file="res://vrm_samples/skybox_reference.jpg"
+dest_files=[ "res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.s3tc.stex", "res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.etc2.stex" ]
 
 [params]
 

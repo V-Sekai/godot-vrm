@@ -1,0 +1,296 @@
+[gd_scene load_steps=39 format=2]
+
+[ext_resource path="res://vrm_samples/AliciaSolid_vrm-0.51.vrm" type="PackedScene" id=1]
+[ext_resource path="res://vrm_samples/Godette_vrm_v4.vrm" type="PackedScene" id=2]
+[ext_resource path="res://vrm_samples/sample_script.gd" type="Script" id=3]
+
+[sub_resource type="ProceduralSkyMaterial" id=68]
+sky_top_color = Color( 0.454902, 0.678431, 0.87451, 1 )
+sky_horizon_color = Color( 0.894118, 0.952941, 1, 1 )
+sky_curve = 0.0731028
+ground_bottom_color = Color( 0.454902, 0.470588, 0.490196, 1 )
+ground_horizon_color = Color( 1, 1, 1, 1 )
+ground_curve = 7.77931e-07
+
+[sub_resource type="Sky" id=69]
+sky_material = SubResource( 68 )
+
+[sub_resource type="Environment" id=70]
+background_mode = 2
+sky = SubResource( 69 )
+
+[sub_resource type="Animation" id=71]
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Skeleton3D:Armature_rootJoint")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=72]
+length = 4.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Skeleton3D:Armature_rootJoint")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=73]
+length = 5.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Skeleton3D:Armature_rootJoint")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=74]
+length = 6.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Skeleton3D:Armature_rootJoint")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=75]
+length = 10.0
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:translation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( -1, 0, 0 ), Vector3( 1, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 1 ), Vector3( 0, 0, -1 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PackedFloat32Array( 0, 4, 6, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+}
+
+[sub_resource type="Animation" id=76]
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=77]
+length = 4.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=78]
+length = 5.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=79]
+length = 6.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=80]
+length = 10.0
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:translation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 0.2, 0, 0 ), Vector3( 2.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 1 ), Vector3( 1.2, 0, -1 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PackedFloat32Array( 0, 4, 6, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+}
+
+[sub_resource type="Animation" id=81]
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=82]
+length = 4.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=83]
+length = 5.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=84]
+length = 6.0
+loop = true
+tracks/0/type = "transform"
+tracks/0/path = NodePath("Root/Skeleton3D:Hips")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+
+[sub_resource type="Animation" id=85]
+length = 10.0
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath(".:translation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 1.5, 0, 0 ), Vector3( 3.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 1 ), Vector3( 2.5, 0, -1 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ) ]
+}
+tracks/1/type = "value"
+tracks/1/path = NodePath(".:rotation_degrees")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/keys = {
+"times": PackedFloat32Array( 0, 4, 6, 10 ),
+"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"update": 0,
+"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+}
+
+[sub_resource type="BoxMesh" id=86]
+size = Vector3( 0, 1, 0 )
+
+[node name="Spatial" type="Node3D"]
+script = ExtResource( 3 )
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 1.06225, 1, -2 )
+fov = 60.0
+script = null
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource( 70 )
+script = null
+
+[node name="DirectionalLight" type="DirectionalLight3D" parent="."]
+transform = Transform( 0.290669, 0.307523, 0.906058, -0.819219, -0.40927, 0.40172, 0.494361, -0.859027, 0.132967, 0, 2.83314, 0 )
+light_color = Color( 1, 0.956863, 0.839216, 1 )
+shadow_bias = 0.03
+script = null
+
+[node name="Godette_vrm_v4" parent="." instance=ExtResource( 2 )]
+
+[node name="anim" parent="Godette_vrm_v4" index="2"]
+anims/idle = SubResource( 71 )
+anims/wiggle = SubResource( 72 )
+anims/wiggle2 = SubResource( 73 )
+anims/wiggle3 = SubResource( 74 )
+anims/wiggle4 = SubResource( 75 )
+blend_times = [  ]
+
+[node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.35, 0, 0 )
+
+[node name="anim" parent="AliciaSolid_vrm-051" index="3"]
+anims/idle = SubResource( 76 )
+anims/wiggle = SubResource( 77 )
+anims/wiggle2 = SubResource( 78 )
+anims/wiggle3 = SubResource( 79 )
+anims/wiggle4 = SubResource( 80 )
+blend_times = [  ]
+
+[node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0, 0 )
+
+[node name="anim" parent="AliciaSolid_vrm-052" index="3"]
+anims/idle = SubResource( 81 )
+anims/wiggle = SubResource( 82 )
+anims/wiggle2 = SubResource( 83 )
+anims/wiggle3 = SubResource( 84 )
+anims/wiggle4 = SubResource( 85 )
+blend_times = [  ]
+
+[node name="Cube" type="MeshInstance3D" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0 )
+mesh = SubResource( 86 )
+surface_material_override/0 = null
+script = null
+
+[editable path="Godette_vrm_v4"]
+[editable path="AliciaSolid_vrm-051"]
+[editable path="AliciaSolid_vrm-052"]
