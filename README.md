@@ -1,4 +1,4 @@
-EN / [JP](README.ja.md)
+- [日本語](README.ja.md)
 
 # VRM addon for Godot Engine
 
