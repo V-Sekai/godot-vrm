@@ -684,6 +684,8 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 
 
 func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool=false):
+	if bone < 0:
+		return
 	var gltf_node: Dictionary = gltf_nodes[bone]
 	if not include_child_meshes and gltf_node.get("mesh", -1) != -1:
 		return
@@ -717,10 +719,11 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 			_add_joints_recursive(new_joints_set, obj["nodes"], int(bone), true)
 
 	for collider_group in secondaryAnimation.get("colliderGroups", []):
-		new_joints_set[int(collider_group["node"])] = true
+		if int(collider_group["node"]) >= 0:
+			new_joints_set[int(collider_group["node"])] = true
 
 	var firstPerson = vrm_extension.get("firstPerson", {})
-	if firstPerson.has("firstPersonBone"):
+	if firstPerson.get("firstPersonBone", -1) >= 0:
 		new_joints_set[int(firstPerson["firstPersonBone"])] = true
 
 	for human_bone in vrm_extension["humanoid"]["humanBones"]:
@@ -786,6 +789,10 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	d.open("res://")
 	d.remove(tmp_path)
 
+	if SAVE_DEBUG_GLTFSTATE_RES:
+		if (!ResourceLoader.exists(path + ".res")):
+			ResourceSaver.save(path + ".res", gstate)
+
 	var gltf_json : Dictionary = gstate.json
 	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
 
@@ -833,9 +840,6 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate)
 
-	if SAVE_DEBUG_GLTFSTATE_RES:
-		if (!ResourceLoader.exists(path + ".res")):
-			ResourceSaver.save(path + ".res", gstate)
 	# Remove references
 	var packed_scene: PackedScene = PackedScene.new()
 	packed_scene.pack(root_node)
