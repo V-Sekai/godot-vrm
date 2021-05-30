@@ -1,3 +1,5 @@
+- [日本語](README.ja.md)
+
 # VRM addon for Godot Engine
 
 This Godot addon fully implements an importer for models with the [VRM specification, version 0.0](https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0).
@@ -31,6 +33,7 @@ It is based on [glTF 2.0](https://www.khronos.org/gltf/). Anyone is free to use 
   * humanBones: implemented (Metadata dictionary)
   * Unity HumanDescription values: **unsupported**
   * Automatic mesh retargeting: **planned**
+  * humanBones renamer: **planned**
 * vrm.material
   * shader
     * `VRM/MToon`: fully implemented
@@ -52,7 +55,7 @@ EXPORT is completely unsupported. Support will be added using the Godot 4.x GLTF
 
 For VRM, use this **godot3** branch.
 
-Runtime VRM usage (springbones, metadata) works out-of-the-box with any official Godot engine 3.2 or above.
+Runtime VRM usage (springbones, metadata) works out-of-the-box with any official Godot engine 3.2.2 or above.
 
 To import VRM files and use the Editor Plugin, this addon includes a GDNative port of the upcoming
 extensible Godot 4.x GLTF module. This modules supports Windows, macos, and Linux (tested on CentOS 8).
@@ -99,3 +102,4 @@ Special thanks to the authors of UniVRM, MToon and other VRM tooling
 - https://github.com/Santarh
 - https://github.com/ousttrue
 - https://github.com/saturday06
+- https://github.com/FMS-Cat
