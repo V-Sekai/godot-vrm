@@ -529,7 +529,11 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var skeletonPath:NodePath = animplayer.get_parent().get_path_to(skeleton)
 			rightEyePath = str(skeletonPath) + ":" + nodes[human_bone_to_idx["rightEye"]].resource_name
 
-		var anim = animplayer.get_animation("LOOKLEFT")
+		var anim: Animation = null
+		if not animplayer.has_animation("LOOKLEFT"):
+			anim = Animation.new()
+			animplayer.add_animation("LOOKLEFT", anim)
+		anim = animplayer.get_animation("LOOKLEFT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -542,6 +546,9 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
 			anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizin["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
 
+		if not animplayer.has_animation("LOOKRIGHT"):
+			anim = Animation.new()
+			animplayer.add_animation("LOOKRIGHT", anim)
 		anim = animplayer.get_animation("LOOKRIGHT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
@@ -555,6 +562,9 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
 			anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizout["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
 
+		if not animplayer.has_animation("LOOKUP"):
+			anim = Animation.new()
+			animplayer.add_animation("LOOKUP", anim)
 		anim = animplayer.get_animation("LOOKUP")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
@@ -568,6 +578,9 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
 			anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
 
+		if not animplayer.has_animation("LOOKDOWN"):
+			anim = Animation.new()
+			animplayer.add_animation("LOOKDOWN", anim)
 		anim = animplayer.get_animation("LOOKDOWN")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
