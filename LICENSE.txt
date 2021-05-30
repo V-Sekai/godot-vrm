@@ -1,6 +1,11 @@
-MIT License
+Note: Specific licenses apply to .vrm sample models. See vrm_samples/LICENSE_SAMPLES.txt for details
 
-Copyright (c) 2020 V-Sekai
+MIT License
+Copyright (c) 2020-2021 V-Sekai Contributors (see credits in README.md)
+Copyright (c) 2020 VRM Consortium
+Copyright (c) 2018 Masataka SUMI for MToon
+Copyright (c) 2007-2021 Juan Linietsky, Ariel Manzur.
+Copyright (c) 2014-2021 Godot Engine contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

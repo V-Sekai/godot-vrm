@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.stex"
+path="res://.import/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://vrm/thirdparty/sky/compatible_skybox.exr"
-dest_files=[ "res://.import/compatible_skybox.exr-914f7e11fa4782813da6f5e4b31dcbd4.stex" ]
+source_file="res://vrm_samples/skybox_reference.jpg"
+dest_files=[ "res://.import/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.stex" ]
 
 [params]
 
@@ -23,7 +23,7 @@ flags/repeat=0
 flags/filter=true
 flags/mipmaps=false
 flags/anisotropic=false
-flags/srgb=0
+flags/srgb=2
 process/fix_alpha_border=true
 process/premult_alpha=false
 process/HDR_as_SRGB=false
