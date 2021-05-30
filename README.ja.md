@@ -69,8 +69,6 @@ godot_gltf アドオンの GDNative ソースコードおよびモジュール�
 * https://github.com/V-Sekai/godot branch `improve_skeleton_for_vrm_3.2`
 
 
-
-
 ## Godot 4.x
 
 Godot 4.x は、このリポジトリの **master** ブランチを利用して下さい。
