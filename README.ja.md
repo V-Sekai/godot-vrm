@@ -1,4 +1,4 @@
-[英語](README.md) / 日本語
+- [English](README.md)
 
 # VRM addon for Godot Engine
 
@@ -50,18 +50,28 @@ VRM が持つデータは全てインポートされ、インスペクタに表�
 
 エクスポートには未対応です。将来的に Godot 4.0 で GLTF Export 機能が実装された場合に対応する予定です。
 
-## Godot 4.x
-
-VRM は最新の Godot のマスターブランチでも動作しますが、現在、以下のパッチを適用する必要があります。
-
-* https://github.com/godotengine/godot/pull/48253
-* https://github.com/godotengine/godot/pull/48014
-
-警告：現在の実装において、リアルタイムのオムニライトやスポットライトがあるシーンで、どれが指向性のライトなのかを判別する事は出来ないため、クラスタリングでアーティファクトが発生します。この問題に関しては、いくつかの不足している変数が Godot 本体側で追加実装された場合に解決すると考えられます。
-
 ## Godot 3.x
 
-Godot 3.x（3.2.2 以降）は、このリポジトリの `godot3` ブランチを利用して下さい。
+この **godot3** ブランチを利用して下さい。
+
+VRM をランタイムで使用する場合は、Godot 3.2.2 以降であれば、すぐに動作します。
+
+エディターにおいては、インポート後に EditorPlugin を利用するため、このアドオンには近日公開予定である Godot 4.x 用の GLTF モジュール（GDNative）を移植した物が含まれています（Windows、MacOS、Linux CentOS 8でテスト済み）。このモジュールはリリースビルドでは基本的に必要ありません。
+
+GLTF モジュールはカスタムモジュールとしてエンジンに組み込むことも可能です。
+
+godot_gltf アドオンの GDNative ソースコードおよびモジュール版は下記リポジトリの該当のブランチから入手して下さい。
+
+* gltf module: https://github.com/V-Sekai/godot-gltf-module (`gdnative` branch)
+
+また、SpringBone のパフォーマンス改善のためには、以下のブランチを Godot 本体のパッチとして利用して下さい。（ボーン操作最適化パッチ）
+
+* https://github.com/V-Sekai/godot branch `improve_skeleton_for_vrm_3.2`
+
+
+## Godot 4.x
+
+Godot 4.x は、このリポジトリの **master** ブランチを利用して下さい。
 
 https://github.com/V-Sekai/godot-vrm
 

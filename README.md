@@ -1,4 +1,4 @@
-EN / [JP](README.ja.md)
+- [日本語](README.ja.md)
 
 # VRM addon for Godot Engine
 
@@ -55,7 +55,7 @@ EXPORT is completely unsupported. Support will be added using the Godot 4.x GLTF
 
 For VRM, use this **godot3** branch.
 
-Runtime VRM usage (springbones, metadata) works out-of-the-box with any official Godot engine 3.2 or above.
+Runtime VRM usage (springbones, metadata) works out-of-the-box with any official Godot engine 3.2.2 or above.
 
 To import VRM files and use the Editor Plugin, this addon includes a GDNative port of the upcoming
 extensible Godot 4.x GLTF module. This modules supports Windows, macos, and Linux (tested on CentOS 8).
