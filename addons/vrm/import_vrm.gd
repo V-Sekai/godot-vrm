@@ -136,9 +136,6 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 	if cull_mode == int(CullMode.Front) || (outl_cull_mode != int(CullMode.Front) && outline_width_mode != int(OutlineWidthMode.None)):
 		printerr("VRM Material " + str(orig_mat.resource_name) + " has unsupported front-face culling mode: " +
 			str(cull_mode) + "/" + str(outl_cull_mode))
-	if outline_width_mode == int(OutlineWidthMode.ScreenCoordinates):
-		printerr("VRM Material " + str(orig_mat.resource_name) + " uses screenspace outlines.")
-
 
 	var mtoon_shader_base_path = "res://addons/Godot-MToon-Shader/mtoon"
 
@@ -402,7 +399,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var mesh_idx: int = gltfnode.mesh
 		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
 		if (mesh_idx != -1):
-			var scenenode: MeshInstance3D = gstate.get_scene_node(i)
+			var scenenode: EditorSceneImporterMeshNode3D = gstate.get_scene_node(i)
 			mesh_idx_to_meshinstance[mesh_idx] = scenenode
 			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
 
@@ -412,7 +409,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		
 		for matbind in shape["materialValues"]:
 			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
-			var node: MeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
+			var node: EditorSceneImporterMeshNode3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
 			var surface_idx = mesh_and_surface_idx[1]
 
 			var mat: Material = node.get_surface_material(surface_idx)
@@ -504,7 +501,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			third_person_visibility = 0.0
 		else:
 			continue
-		var node: MeshInstance3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
+		var node: EditorSceneImporterMeshNode3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
 		var firstperstrack = firstpersanim.add_track(Animation.TYPE_VALUE)
 		firstpersanim.track_set_path(firstperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
 		firstpersanim.track_insert_key(firstperstrack, 0.0, first_person_visibility)
