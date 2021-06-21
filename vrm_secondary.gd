@@ -12,7 +12,7 @@ var spring_bones_internal: Array = []
 var collider_groups_internal: Array = []
 var secondary_gizmo: SecondaryGizmo
 
-class SkeletonMariosPolyfill extends Reference:
+class SkeletonMariosPolyfill extends RefCounted:
 	var skel: Skeleton3D
 	var bone_to_children: Dictionary = {}.duplicate()
 	var overrides: Array = [].duplicate()
@@ -35,7 +35,7 @@ class SkeletonMariosPolyfill extends Reference:
 			overrides[i] = Transform.IDENTITY
 			override_weights[i] = 0.0
 
-	func set_bone_global_pose_override(bone_idx: int, transform: Transform, weight: float, persistent: bool=false) -> void:
+	func set_bone_global_pose_override(bone_idx: int, transform: Transform3D, weight: float, persistent: bool=false) -> void:
 		# persistent makes no sense - it seems to reset weight unless it is true
 		# so we ignore the default and always pass true in.
 		skel.set_bone_global_pose_override(bone_idx, transform, weight, true)
@@ -47,7 +47,7 @@ class SkeletonMariosPolyfill extends Reference:
 			return Transform.IDENTITY
 		if override_weights[bone_idx] == 1.0:
 			return overrides[bone_idx]
-		var transform: Transform = skel.get_bone_rest(bone_idx) * skel.get_bone_custom_pose(bone_idx) * skel.get_bone_pose(bone_idx)
+		var transform: Transform3D = skel.get_bone_rest(bone_idx) * skel.get_bone_custom_pose(bone_idx) * skel.get_bone_pose(bone_idx)
 		transform = transform * (1.0 - override_weights[bone_idx]) + overrides[bone_idx] * override_weights[bone_idx]
 		var par_bone: int = skel.get_bone_parent(bone_idx)
 		if par_bone == -1:
@@ -59,14 +59,14 @@ class SkeletonMariosPolyfill extends Reference:
 
 	func get_bone_global_pose_without_override(bone_idx: int, force_update: bool=false) -> Transform:
 		var par_bone: int = bone_idx
-		#var transform: Transform = Transform.IDENTITY
+		#var transform: Transform3D = Transform.IDENTITY
 		#var i: int = 0
 		#while par_bone != -1 and i < 128:
 		#	transform = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone) * transform
 		#	par_bone = skel.get_bone_parent(par_bone)
 		#	i += 1
 		#return transform
-		var transform: Transform = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone)
+		var transform: Transform3D = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone)
 		var par: int = skel.get_bone_parent(bone_idx)
 		if par == -1:
 			return transform
@@ -275,7 +275,7 @@ class SecondaryGizmo:
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
 			for v in spring_bone.verlets:
-				var s_tr: Transform = Transform.IDENTITY
+				var s_tr: Transform3D = Transform.IDENTITY
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.editor_hint:
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
