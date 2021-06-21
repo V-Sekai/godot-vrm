@@ -535,64 +535,64 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			animplayer.add_animation("LOOKLEFT", anim)
 		anim = animplayer.get_animation("LOOKLEFT")
 		if anim and lefteye > 0 and righteye > 0:
-			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizout["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
-			animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizout["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
+			animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizin["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), horizin["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
 
 		if not animplayer.has_animation("LOOKRIGHT"):
 			anim = Animation.new()
 			animplayer.add_animation("LOOKRIGHT", anim)
 		anim = animplayer.get_animation("LOOKRIGHT")
 		if anim and lefteye > 0 and righteye > 0:
-			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizin["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
-			animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, horizin["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizin["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
+			animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizout["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, horizout["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(0,1,0), -horizout["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
 
 		if not animplayer.has_animation("LOOKUP"):
 			anim = Animation.new()
 			animplayer.add_animation("LOOKUP", anim)
 		anim = animplayer.get_animation("LOOKUP")
 		if anim and lefteye > 0 and righteye > 0:
-			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
-			animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
+			animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, vertup["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), vertup["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
 
 		if not animplayer.has_animation("LOOKDOWN"):
 			anim = Animation.new()
 			animplayer.add_animation("LOOKDOWN", anim)
 		anim = animplayer.get_animation("LOOKDOWN")
 		if anim and lefteye > 0 and righteye > 0:
-			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			var animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
-			animtrack = anim.add_track(Animation.TYPE_TRANSFORM)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
+			animtrack = anim.add_track(Animation.TYPE_TRANSFORM3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quat.IDENTITY, Vector3.ONE)
-			anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quat(), Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, 0.0, Vector3.ZERO, Quaternion.IDENTITY, Vector3.ONE)
+			anim.transform_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Vector3.ZERO, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quaternion(), Vector3.ONE)
 	return animplayer
 
 
@@ -765,16 +765,16 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 		push_error("Incorrect full_length in " + str(path))
 
 	f.close()
-
-	var gltf_json_parsed_result: JSONParseResult = JSON.parse(orig_json_utf8.get_string_from_utf8())
-	if gltf_json_parsed_result.error:
+	var gltf_json_parsed_result = JSON.new()
+	
+	if gltf_json_parsed_result.parse(orig_json_utf8.get_string_from_utf8()) != OK:
 		push_error("Failed to parse JSON part of glTF file in " + str(path) + ":" + str(gltf_json_parsed_result.error_line) + ": " + gltf_json_parsed_result.error_string)
 		return ERR_FILE_UNRECOGNIZED
-	var gltf_json_parsed: Dictionary = gltf_json_parsed_result.result
+	var gltf_json_parsed: Dictionary = gltf_json_parsed_result.get_data()
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
 		push_error("Failed to find required VRM keys in " + str(path))
 		return ERR_FILE_UNRECOGNIZED
-	var json_utf8: PackedByteArray = JSON.print(gltf_json_parsed).to_utf8_buffer()
+	var json_utf8: PackedByteArray = gltf_json_parsed_result.stringify(gltf_json_parsed, "", true, true).to_utf8_buffer()
 
 	f = File.new()
 	var tmp_path = path + ".tmp"
@@ -853,7 +853,7 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	# Remove references
 	var packed_scene: PackedScene = PackedScene.new()
 	packed_scene.pack(root_node)
-	return packed_scene.instance(PackedScene.GEN_EDIT_STATE_INSTANCE)
+	return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
 
 
 func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):

@@ -1,13 +1,13 @@
 @tool
 extends EditorInspectorPlugin
 
-const mtoon: Shader = preload("mtoon.shader")
-const mtoon_cull_off: Shader = preload("mtoon_cull_off.shader")
-const mtoon_trans: Shader = preload("mtoon_trans.shader")
-const mtoon_trans_cull_off: Shader = preload("mtoon_trans_cull_off.shader")
-const mtoon_trans_zwrite: Shader = preload("mtoon_trans_zwrite.shader")
-const mtoon_trans_zwrite_cull_off: Shader = preload("mtoon_trans_zwrite_cull_off.shader")
-const mtoon_outline: Shader = preload("mtoon_outline.shader")
+const mtoon: Shader = preload("mtoon.gdshader")
+const mtoon_cull_off: Shader = preload("mtoon_cull_off.gdshader")
+const mtoon_trans: Shader = preload("mtoon_trans.gdshader")
+const mtoon_trans_cull_off: Shader = preload("mtoon_trans_cull_off.gdshader")
+const mtoon_trans_zwrite: Shader = preload("mtoon_trans_zwrite.gdshader")
+const mtoon_trans_zwrite_cull_off: Shader = preload("mtoon_trans_zwrite_cull_off.gdshader")
+const mtoon_outline: Shader = preload("mtoon_outline.gdshader")
 
 func can_handle(object: Object) -> bool:
 	if object is ShaderMaterial:
