@@ -8,12 +8,12 @@
 
 config_version=4
 
-_global_script_classes=[ {
+_global_script_classes=[{
 "base": "Node3D",
-"class": @"VRMTopLevel",
-"language": @"GDScript",
+"class": &"VRMTopLevel",
+"language": &"GDScript",
 "path": "res://addons/vrm/vrm_toplevel.gd"
-} ]
+}]
 _global_script_class_icons={
 "VRMTopLevel": ""
 }
@@ -23,7 +23,7 @@ _global_script_class_icons={
 config/name="VRM Project [GODOT Master Branch]"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
 config/icon="res://icon.png"
-enabled=PackedStringArray( "vrm" )
+enabled=PackedStringArray("vrm")
 
 [display]
 
@@ -35,7 +35,7 @@ window/size/test_height=720
 
 [editor_plugins]
 
-enabled=PackedStringArray( "res://addons/Godot-MToon-Shader/plugin.cfg", "res://addons/vrm/plugin.cfg" )
+enabled=PackedStringArray("res://addons/Godot-MToon-Shader/plugin.cfg", "res://addons/vrm/plugin.cfg")
 
 [rendering]
 

@@ -8,7 +8,7 @@ path="res://.godot/imported/AliciaSolid_vrm-0.51.vrm-c9e900691069ab8ef0f12ff91e9
 [deps]
 
 source_file="res://vrm_samples/AliciaSolid_vrm-0.51.vrm"
-dest_files=[ "res://.godot/imported/AliciaSolid_vrm-0.51.vrm-c9e900691069ab8ef0f12ff91e9425da.scn" ]
+dest_files=["res://.godot/imported/AliciaSolid_vrm-0.51.vrm-c9e900691069ab8ef0f12ff91e9425da.scn"]
 
 [params]
 

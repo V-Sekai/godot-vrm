@@ -110,23 +110,23 @@ class VRMSpringBoneLogic:
 	var current_tail: Vector3 
 	var prev_tail: Vector3
 	
-	var initial_transform: Transform
+	var initial_transform: Transform3D
 	
-	func get_transform(skel: Skeleton3D, skel_polyfill: Object) -> Transform:
+	func get_transform(skel: Skeleton3D, skel_polyfill: Object) -> Transform3D:
 		return skel.global_transform * skel_polyfill.get_bone_global_pose_without_override(bone_idx)
-	func get_rotation(skel: Skeleton3D, skel_polyfill: Object) -> Quat:
-		return get_transform(skel, skel_polyfill).basis.get_rotation_quat()
+	func get_rotation(skel: Skeleton3D, skel_polyfill: Object) -> Quaternion:
+		return get_transform(skel, skel_polyfill).basis.get_rotation_quaternion()
 	
-	func get_local_transform(skel_polyfill: Object) -> Transform:
+	func get_local_transform(skel_polyfill: Object) -> Transform3D:
 		return skel_polyfill.get_bone_global_pose_without_override(bone_idx)
-	func get_local_rotation(skel_polyfill: Object) -> Quat:
-		return get_local_transform(skel_polyfill).basis.get_rotation_quat()
+	func get_local_rotation(skel_polyfill: Object) -> Quaternion:
+		return get_local_transform(skel_polyfill).basis.get_rotation_quaternion()
 	
 	func reset(skel_polyfill: Object) -> void:
 		skel_polyfill.set_bone_global_pose_override(bone_idx, initial_transform, 1.0)
 		return
 	
-	func _init(skel: Skeleton3D, skel_polyfill: Object, idx: int, center, local_child_position: Vector3, default_pose: Transform):
+	func _init(skel: Skeleton3D, skel_polyfill: Object, idx: int, center, local_child_position: Vector3, default_pose: Transform3D):
 		initial_transform = default_pose
 		bone_idx = idx
 		var world_child_position: Vector3 = VRMTopLevel.VRMUtil.transform_point(get_transform(skel, skel_polyfill), local_child_position)
@@ -170,9 +170,9 @@ class VRMSpringBoneLogic:
 		# Apply rotation
 		var ft = VRMTopLevel.VRMUtil.from_to_rotation((get_rotation(skel, skel_polyfill) * (bone_axis)), next_tail - get_transform(skel, skel_polyfill).origin)
 		if typeof(ft) != TYPE_NIL:
-			ft = skel.global_transform.basis.get_rotation_quat().inverse() * ft
-			var qt: Quat = ft * get_rotation(skel, skel_polyfill)
-			var tr: Transform = get_local_transform(skel_polyfill)
+			ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
+			var qt: Quaternion = ft * get_rotation(skel, skel_polyfill)
+			var tr: Transform3D = get_local_transform(skel_polyfill)
 			tr.basis = Basis(qt.normalized())
 			skel_polyfill.set_bone_global_pose_override(bone_idx, tr, 1.0)
 		

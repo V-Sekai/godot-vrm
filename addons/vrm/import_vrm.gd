@@ -157,10 +157,10 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 		if cull_mode == int(CullMode.Off):
 			godot_shader_name = mtoon_shader_base_path + "_trans_zwrite_cull_off"
 
-	var godot_shader: Shader = ResourceLoader.load(godot_shader_name + ".shader")
+	var godot_shader: Shader = ResourceLoader.load(godot_shader_name + ".gdshader")
 	var godot_shader_outline: Shader = null
 	if godot_outline_shader_name:
-		godot_shader_outline = ResourceLoader.load(godot_outline_shader_name + ".shader")
+		godot_shader_outline = ResourceLoader.load(godot_outline_shader_name + ".gdshader")
 
 	var new_mat = ShaderMaterial.new()
 	new_mat.resource_name = orig_mat.resource_name

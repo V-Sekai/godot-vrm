@@ -8,7 +8,7 @@ path="res://.godot/imported/Godette_vrm_v4.vrm-1a2ca6e7be5caea1e98f4dbd2f3c4108.
 [deps]
 
 source_file="res://vrm_samples/Godette_vrm_v4.vrm"
-dest_files=[ "res://.godot/imported/Godette_vrm_v4.vrm-1a2ca6e7be5caea1e98f4dbd2f3c4108.scn" ]
+dest_files=["res://.godot/imported/Godette_vrm_v4.vrm-1a2ca6e7be5caea1e98f4dbd2f3c4108.scn"]
 
 [params]
 
