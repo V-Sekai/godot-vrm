@@ -21,7 +21,7 @@ class SkeletonMariosPolyfill extends RefCounted:
 	func _init(skel: Skeleton3D):
 		self.skel = skel
 		for i in range(skel.get_bone_count()):
-			overrides.push_back(Transform.IDENTITY)
+			overrides.push_back(Transform3D.IDENTITY)
 			override_weights.push_back(0.0)
 			var par: int = skel.get_bone_parent(i)
 			if par != -1:
@@ -32,7 +32,7 @@ class SkeletonMariosPolyfill extends RefCounted:
 	func clear_bones_global_pose_override():
 		skel.clear_bones_global_pose_override()
 		for i in range(skel.get_bone_count()):
-			overrides[i] = Transform.IDENTITY
+			overrides[i] = Transform3D.IDENTITY
 			override_weights[i] = 0.0
 
 	func set_bone_global_pose_override(bone_idx: int, transform: Transform3D, weight: float, persistent: bool=false) -> void:
@@ -42,9 +42,9 @@ class SkeletonMariosPolyfill extends RefCounted:
 		overrides[bone_idx] = transform
 		override_weights[bone_idx] = weight
 
-	func get_bone_global_pose(bone_idx: int, lvl: int=0) -> Transform:
+	func get_bone_global_pose(bone_idx: int, lvl: int=0) -> Transform3D:
 		if lvl == 128:
-			return Transform.IDENTITY
+			return Transform3D.IDENTITY
 		if override_weights[bone_idx] == 1.0:
 			return overrides[bone_idx]
 		var transform: Transform3D = skel.get_bone_rest(bone_idx) * skel.get_bone_custom_pose(bone_idx) * skel.get_bone_pose(bone_idx)
@@ -57,9 +57,9 @@ class SkeletonMariosPolyfill extends RefCounted:
 	func get_bone_children(bone_idx) -> Array[int]:
 		return self.bone_to_children.get(bone_idx, [])
 
-	func get_bone_global_pose_without_override(bone_idx: int, force_update: bool=false) -> Transform:
+	func get_bone_global_pose_without_override(bone_idx: int, force_update: bool=false) -> Transform3D:
 		var par_bone: int = bone_idx
-		#var transform: Transform3D = Transform.IDENTITY
+		#var transform: Transform3D3D = Transform3D.IDENTITY
 		#var i: int = 0
 		#while par_bone != -1 and i < 128:
 		#	transform = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone) * transform
@@ -275,7 +275,7 @@ class SecondaryGizmo:
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
 			for v in spring_bone.verlets:
-				var s_tr: Transform3D = Transform.IDENTITY
+				var s_tr: Transform3D = Transform3D.IDENTITY
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.editor_hint:
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
@@ -298,7 +298,7 @@ class SecondaryGizmo:
 	func draw_collider_groups():
 		set_material_override(m)
 		for collider_group in (secondary_node.collider_groups if Engine.editor_hint else secondary_node.collider_groups_internal):
-			var c_tr = Transform.IDENTITY
+			var c_tr = Transform3D.IDENTITY
 			if Engine.editor_hint:
 				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
 				if c_sk is Skeleton3D:
