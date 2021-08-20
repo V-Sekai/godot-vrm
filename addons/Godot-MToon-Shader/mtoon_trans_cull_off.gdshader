@@ -188,7 +188,6 @@ varying vec4 lit;
 varying vec4 shade;
 varying vec3 rim;
 varying vec3 fragment_albedo_output;
-varying vec4 toonedGI;
 varying vec2 mainUv;
 varying vec3 viewNormal;
 
@@ -311,7 +310,6 @@ void fragment() {
 	METALLIC = 0.0;
 	ALPHA = alpha;
 	//if (_EnableAlphaCutout > 0.5 && alpha < _Cutoff) { discard; }
-	toonedGI = vec4(0.0);
 
 	//METALLIC = metallic;
 	//ROUGHNESS = roughness;
@@ -327,17 +325,10 @@ float SchlickFresnel(float u) {
 void light() {
 	bool isDirectional = true; // TODO: Generates clustered forward artifacts unless godotegnine/godot#48012 is applied
 	// isDirectional = (RIM == 1.0);
-	bool isFirstLight = false;
 	vec3 indirectLighting = vec3(0.0);
-	if (toonedGI.a < 0.5 && isDirectional) {
-		toonedGI += vec4(DIFFUSE_LIGHT, 1.0);
-		isFirstLight = true;
-		DIFFUSE_LIGHT = vec3(0.0);
-
-		indirectLighting = toonedGI.rgb / fragment_albedo_output;
-		indirectLighting = mix(indirectLighting, max(vec3(EPS_COL), max(indirectLighting.x, max(indirectLighting.y, indirectLighting.z))), _LightColorAttenuation); // color atten
-		// indirectLighting = vec3(0.0); // Some components of ambient lighting go into indirectLighting.
-	}
+	// TODO if isFirstLight:
+	//indirectLighting = DIFFUSE_LIGHT.rgb / fragment_albedo_output;
+	//indirectLighting = mix(indirectLighting, max(vec3(EPS_COL), max(indirectLighting.x, max(indirectLighting.y, indirectLighting.z))), _LightColorAttenuation); // color atten
 	// in light():
 
 	float addDotNL =  dot(normalize(viewNormal), LIGHT);
