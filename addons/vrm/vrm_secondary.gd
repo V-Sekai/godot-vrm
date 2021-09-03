@@ -12,7 +12,10 @@ var spring_bones_internal: Array = []
 var collider_groups_internal: Array = []
 var secondary_gizmo: SecondaryGizmo
 
-class SkeletonMariosPolyfill extends RefCounted:
+# When `get_bone_global_pose` is invoked, it blocks on the RenderingServer
+# which adds a huge round trip overhead when doing lots of bone updates.
+# This class keeps its own hierarchy and transform cache to avoid blocking.
+class CachedSkeletonPolyfill extends RefCounted:
 	var skel: Skeleton3D
 	var bone_to_children: Dictionary = {}.duplicate()
 	var overrides: Array = [].duplicate()
@@ -94,10 +97,7 @@ func _ready():
 				if skel_to_polyfill.has(parent):
 					parent_polyfill = skel_to_polyfill.get(parent)
 				elif parent.get_class() == "Skeleton3D":
-					if typeof(parent.get("animate_physical_bones")) == TYPE_NIL:
-						parent_polyfill = parent
-					else:
-						parent_polyfill = SkeletonMariosPolyfill.new(parent)
+					parent_polyfill = CachedSkeletonPolyfill.new(parent)
 					skel_to_polyfill[parent] = parent_polyfill
 				new_collider_group._ready(parent, parent_polyfill)
 				collider_groups_internal.append(new_collider_group)
@@ -113,10 +113,7 @@ func _ready():
 				if skel_to_polyfill.has(skel):
 					parent_polyfill = skel_to_polyfill.get(skel)
 				else:
-					if typeof(skel.get("animate_physical_bones")) == TYPE_NIL:
-						parent_polyfill = skel
-					else:
-						parent_polyfill = SkeletonMariosPolyfill.new(skel)
+					parent_polyfill = CachedSkeletonPolyfill.new(skel)
 					skel_to_polyfill[skel] = parent_polyfill
 				new_spring_bone._ready(skel, parent_polyfill, tmp_colliders)
 				spring_bones_internal.append(new_spring_bone)
