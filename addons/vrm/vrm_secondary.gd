@@ -211,12 +211,9 @@ class SecondaryGizmo:
 	
 	func draw_in_editor(do_draw_spring_bones: bool = false):
 		clear()
-		var selected: Array = EditorPlugin.new().get_editor_interface().get_selection().get_selected_nodes()
-		if (secondary_node.get_parent() is VRMTopLevel && selected.has(secondary_node.get_parent())) || selected.has(secondary_node):
-			if do_draw_spring_bones:
-				draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
-			if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
-				draw_collider_groups()
+		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
+			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
+			draw_collider_groups()
 	
 	func draw_in_game():
 		clear()
