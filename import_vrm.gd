@@ -399,7 +399,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var mesh_idx: int = gltfnode.mesh
 		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
 		if (mesh_idx != -1):
-			var scenenode: EditorSceneImporterMeshNode3D = gstate.get_scene_node(i)
+			var scenenode: ImporterMeshInstance3D = gstate.get_scene_node(i)
 			mesh_idx_to_meshinstance[mesh_idx] = scenenode
 			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
 
@@ -409,7 +409,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		
 		for matbind in shape["materialValues"]:
 			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
-			var node: EditorSceneImporterMeshNode3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
+			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
 			var surface_idx = mesh_and_surface_idx[1]
 
 			var mat: Material = node.get_surface_material(surface_idx)
@@ -441,8 +441,8 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 				anim.track_insert_key(animtrack, 0.0, newvalue)
 		for bind in shape["binds"]:
 			# FIXME: Is this a mesh_idx or a node_idx???
-			var node: EditorSceneImporterMeshNode3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
-			var nodeMesh: EditorSceneImporterMesh = node.mesh;
+			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
+			var nodeMesh: ImporterMesh = node.mesh;
 			
 			if (bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count()):
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
@@ -501,7 +501,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			third_person_visibility = 0.0
 		else:
 			continue
-		var node: EditorSceneImporterMeshNode3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
+		var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
 		var firstperstrack = firstpersanim.add_track(Animation.TYPE_VALUE)
 		firstpersanim.track_set_path(firstperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
 		firstpersanim.track_insert_key(firstperstrack, 0.0, first_person_visibility)
