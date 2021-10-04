@@ -1,25 +1,88 @@
-[gd_scene load_steps=39 format=2]
+[gd_scene load_steps=39 format=3 uid="uid://c3wc05xvfpxsx"]
 
-[ext_resource path="res://vrm_samples/AliciaSolid_vrm-0.51.vrm" type="PackedScene" id=1]
-[ext_resource path="res://vrm_samples/Godette_vrm_v4.vrm" type="PackedScene" id=2]
-[ext_resource path="res://vrm_samples/sample_script.gd" type="Script" id=3]
+[ext_resource type="PackedScene" uid="uid://d0op4fuesc1lc" path="res://vrm_samples/AliciaSolid_vrm-0.51.vrm" id="1"]
+[ext_resource type="PackedScene" uid="uid://d3ds8k14pun3h" path="res://vrm_samples/Godette_vrm_v4.vrm" id="2"]
+[ext_resource type="Script" path="res://vrm_samples/sample_script.gd" id="3"]
+[ext_resource type="Script" path="res://addons/vrm/vrm_collidergroup.gd" id="3_2xdrw"]
+[ext_resource type="Script" path="res://addons/vrm/vrm_springbone.gd" id="4_47wpj"]
 
-[sub_resource type="ProceduralSkyMaterial" id=68]
-sky_top_color = Color( 0.454902, 0.678431, 0.87451, 1 )
-sky_horizon_color = Color( 0.894118, 0.952941, 1, 1 )
+[sub_resource type="ProceduralSkyMaterial" id="68"]
+sky_top_color = Color(0.454902, 0.678431, 0.87451, 1)
+sky_horizon_color = Color(0.894118, 0.952941, 1, 1)
 sky_curve = 0.0731028
-ground_bottom_color = Color( 0.454902, 0.470588, 0.490196, 1 )
-ground_horizon_color = Color( 1, 1, 1, 1 )
+ground_bottom_color = Color(0.454902, 0.470588, 0.490196, 1)
+ground_horizon_color = Color(1, 1, 1, 1)
 ground_curve = 7.77931e-07
 
-[sub_resource type="Sky" id=69]
-sky_material = SubResource( 68 )
+[sub_resource type="Sky" id="69"]
+sky_material = SubResource( "68" )
 
-[sub_resource type="Environment" id=70]
+[sub_resource type="Environment" id="70"]
 background_mode = 2
-sky = SubResource( 69 )
+sky = SubResource( "69" )
 
-[sub_resource type="Animation" id=71]
+[sub_resource type="Resource" id="Resource_xvka1"]
+resource_name = "head_Armature"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Skeleton3D")
+bone = "head_Armature"
+sphere_colliders = [Plane(1.13273e-09, 0.2, 6.70552e-08, 0.15), Plane(1.59839e-09, 1.31, 0.0700001, 1)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_02uhj"]
+resource_name = "FrontHair_Center_L + 3 roots"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 2.5
+gravity_power = 0.0
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.02
+root_bones = ["FrontHair_Center_L", "FrontHair_Center_R", "FrontHair_R", "FrontHair_L"]
+collider_groups = [SubResource( "Resource_xvka1" )]
+
+[sub_resource type="Resource" id="Resource_kgvf1"]
+resource_name = "chest_Armature"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Skeleton3D")
+bone = "chest_Armature"
+sphere_colliders = [Plane(1.60712e-10, 0.0600001, -0.04, 0.1), Plane(-7.212e-11, 0.34, 0.04, 0.217)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_6ckcv"]
+resource_name = "Ribbon"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 2.0
+gravity_power = 0.0
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.02
+root_bones = ["Ribbon"]
+collider_groups = [SubResource( "Resource_kgvf1" )]
+
+[sub_resource type="Resource" id="Resource_kbmfl"]
+resource_name = "HairBall_L + 2 roots"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 4.0
+gravity_power = 0.0
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.02
+root_bones = ["HairBall_L", "HairBall_R", "HairBall_Center"]
+collider_groups = []
+
+[sub_resource type="Animation" id="71"]
 loop = true
 tracks/0/type = "transform"
 tracks/0/path = NodePath("Skeleton3D:Armature_rootJoint")
@@ -27,9 +90,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=72]
+[sub_resource type="Animation" id="72"]
 length = 4.0
 loop = true
 tracks/0/type = "transform"
@@ -38,9 +101,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=73]
+[sub_resource type="Animation" id="73"]
 length = 5.0
 loop = true
 tracks/0/type = "transform"
@@ -49,9 +112,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=74]
+[sub_resource type="Animation" id="74"]
 length = 6.0
 loop = true
 tracks/0/type = "transform"
@@ -60,9 +123,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=75]
+[sub_resource type="Animation" id="75"]
 length = 10.0
 loop = true
 tracks/0/type = "value"
@@ -72,10 +135,10 @@ tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( -1, 0, 0 ), Vector3( 1, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 1 ), Vector3( 0, 0, -1 ), Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ) ]
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(-1, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(0, 0, 0), Vector3(0, 0, 0)]
 }
 tracks/1/type = "value"
 tracks/1/path = NodePath(".:rotation_degrees")
@@ -84,13 +147,106 @@ tracks/1/loop_wrap = true
 tracks/1/imported = false
 tracks/1/enabled = true
 tracks/1/keys = {
-"times": PackedFloat32Array( 0, 4, 6, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 4, 6, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 360, 0), Vector3(0, 360, 0)]
 }
 
-[sub_resource type="Animation" id=76]
+[sub_resource type="Resource" id="Resource_wy5id"]
+resource_name = "LeftHand"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "LeftHand"
+sphere_colliders = [Plane(-0.035997, -0.0188315, 0.00566167, 0.04), Plane(-0.0993169, -0.0240914, -0.00134999, 0.035)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_p2mmr"]
+resource_name = "Head"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "Head"
+sphere_colliders = [Plane(0, 0.0746348, -0.0117006, 0.084)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_je1dj"]
+resource_name = "RightHand"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "RightHand"
+sphere_colliders = [Plane(0.035997, -0.0188315, 0.00566167, 0.04), Plane(0.0993169, -0.0240914, -0.00134999, 0.035)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_arhdk"]
+resource_name = "hair_01_01 + 4 roots"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 2.0
+gravity_power = 0.0
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Root/Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.02
+root_bones = ["hair_01_01", "hair_02_01", "hair_03_01", "ribbon_L", "ribbon_R"]
+collider_groups = [SubResource( "Resource_wy5id" ), SubResource( "Resource_p2mmr" ), SubResource( "Resource_je1dj" )]
+
+[sub_resource type="Resource" id="Resource_4x88k"]
+resource_name = "hair1_L + 2 roots"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 1.6
+gravity_power = 0.0
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Root/Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.02
+root_bones = ["hair1_L", "hair1_R", "mituami1"]
+collider_groups = [SubResource( "Resource_wy5id" ), SubResource( "Resource_p2mmr" ), SubResource( "Resource_je1dj" )]
+
+[sub_resource type="Resource" id="Resource_jaafy"]
+resource_name = "Hips"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "Hips"
+sphere_colliders = [Plane(0.0258843, -0.12, 0, 0.05), Plane(-0.0258843, -0.12, 0, 0.05), Plane(0, -0.0220816, 0, 0.08)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_lword"]
+resource_name = "LeftUpLeg"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "LeftUpLeg"
+sphere_colliders = [Plane(-0.011983, -0.0446, 0.00390054, 0.05), Plane(-0.011983, -0.118151, 0.00976522, 0.05), Plane(-0.011983, -0.204597, 0.00976337, 0.06)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_0xfpp"]
+resource_name = "RightUpLeg"
+script = ExtResource( "3_2xdrw" )
+skeleton_or_node = NodePath("../Root/Skeleton3D")
+bone = "RightUpLeg"
+sphere_colliders = [Plane(0.011983, -0.0446, 0.00390054, 0.05), Plane(0.011983, -0.118151, 0.00976522, 0.05), Plane(0.011983, -0.204597, 0.00976337, 0.06)]
+gizmo_color = Color(1, 0, 1, 1)
+
+[sub_resource type="Resource" id="Resource_1leut"]
+resource_name = "skirt_01_01 + 9 roots"
+script = ExtResource( "4_47wpj" )
+comment = ""
+stiffness_force = 1.0
+gravity_power = 0.05
+gravity_dir = Vector3(0, -1, 0)
+drag_force = 0.4
+skeleton = NodePath("../Root/Skeleton3D")
+center_bone = ""
+center_node = NodePath(".")
+hit_radius = 0.05
+root_bones = ["skirt_01_01", "skirt_02_01", "skirt_03_01", "skirt_04_01", "skirt_05_01", "skirt_06_01", "skirt_07_01", "skirt_08_01", "skirt_09_01", "skirt_10_01"]
+collider_groups = [SubResource( "Resource_jaafy" ), SubResource( "Resource_lword" ), SubResource( "Resource_0xfpp" ), SubResource( "Resource_wy5id" ), SubResource( "Resource_je1dj" )]
+
+[sub_resource type="Animation" id="76"]
 loop = true
 tracks/0/type = "transform"
 tracks/0/path = NodePath("Root/Skeleton3D:Hips")
@@ -98,9 +254,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=77]
+[sub_resource type="Animation" id="77"]
 length = 4.0
 loop = true
 tracks/0/type = "transform"
@@ -109,9 +265,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=78]
+[sub_resource type="Animation" id="78"]
 length = 5.0
 loop = true
 tracks/0/type = "transform"
@@ -120,9 +276,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=79]
+[sub_resource type="Animation" id="79"]
 length = 6.0
 loop = true
 tracks/0/type = "transform"
@@ -131,9 +287,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=80]
+[sub_resource type="Animation" id="80"]
 length = 10.0
 loop = true
 tracks/0/type = "value"
@@ -143,10 +299,10 @@ tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 0.2, 0, 0 ), Vector3( 2.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 1 ), Vector3( 1.2, 0, -1 ), Vector3( 1.2, 0, 0 ), Vector3( 1.2, 0, 0 ) ]
+"values": [Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(0.2, 0, 0), Vector3(2.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 1), Vector3(1.2, 0, -1), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0)]
 }
 tracks/1/type = "value"
 tracks/1/path = NodePath(".:rotation_degrees")
@@ -155,13 +311,13 @@ tracks/1/loop_wrap = true
 tracks/1/imported = false
 tracks/1/enabled = true
 tracks/1/keys = {
-"times": PackedFloat32Array( 0, 4, 6, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 4, 6, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 360, 0), Vector3(0, 360, 0)]
 }
 
-[sub_resource type="Animation" id=81]
+[sub_resource type="Animation" id="81"]
 loop = true
 tracks/0/type = "transform"
 tracks/0/path = NodePath("Root/Skeleton3D:Hips")
@@ -169,9 +325,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=82]
+[sub_resource type="Animation" id="82"]
 length = 4.0
 loop = true
 tracks/0/type = "transform"
@@ -180,9 +336,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1.5, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2.5, 1, -1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 3, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=83]
+[sub_resource type="Animation" id="83"]
 length = 5.0
 loop = true
 tracks/0/type = "transform"
@@ -191,9 +347,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0.924, 0, 0.383, 0, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=84]
+[sub_resource type="Animation" id="84"]
 length = 6.0
 loop = true
 tracks/0/type = "transform"
@@ -202,9 +358,9 @@ tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/keys = PackedFloat32Array( 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1 )
+tracks/0/keys = PackedFloat32Array(0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0.5, 1, 0, 0, 0, 0, 0.707, 0, -0.707, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 3.5, 1, 0, 0, 0, 0, 0.707, 0, 0.707, 1, 1, 1, 4, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1)
 
-[sub_resource type="Animation" id=85]
+[sub_resource type="Animation" id="85"]
 length = 10.0
 loop = true
 tracks/0/type = "value"
@@ -214,10 +370,10 @@ tracks/0/loop_wrap = true
 tracks/0/imported = false
 tracks/0/enabled = true
 tracks/0/keys = {
-"times": PackedFloat32Array( 0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 1.5, 0, 0 ), Vector3( 3.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 1 ), Vector3( 2.5, 0, -1 ), Vector3( 2.5, 0, 0 ), Vector3( 2.5, 0, 0 ) ]
+"values": [Vector3(2.5, 0, 0), Vector3(2.5, 0, 0), Vector3(1.5, 0, 0), Vector3(3.5, 0, 0), Vector3(2.5, 0, 0), Vector3(2.5, 0, 0), Vector3(2.5, 0, 1), Vector3(2.5, 0, -1), Vector3(2.5, 0, 0), Vector3(2.5, 0, 0)]
 }
 tracks/1/type = "value"
 tracks/1/path = NodePath(".:rotation_degrees")
@@ -226,68 +382,80 @@ tracks/1/loop_wrap = true
 tracks/1/imported = false
 tracks/1/enabled = true
 tracks/1/keys = {
-"times": PackedFloat32Array( 0, 4, 6, 10 ),
-"transitions": PackedFloat32Array( 1, 1, 1, 1 ),
+"times": PackedFloat32Array(0, 4, 6, 10),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [ Vector3( 0, 0, 0 ), Vector3( 0, 0, 0 ), Vector3( 0, 360, 0 ), Vector3( 0, 360, 0 ) ]
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 360, 0), Vector3(0, 360, 0)]
 }
 
-[sub_resource type="BoxMesh" id=86]
-size = Vector3( 0, 1, 0 )
+[sub_resource type="BoxMesh" id="86"]
+size = Vector3(0, 1, 0)
 
 [node name="Spatial" type="Node3D"]
-script = ExtResource( 3 )
+script = ExtResource( "3" )
 
 [node name="Camera" type="Camera3D" parent="."]
-transform = Transform( -1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 1.06225, 1, -2 )
+transform = Transform3D(-1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 1.06225, 1, -2)
 fov = 60.0
 script = null
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 70 )
+environment = SubResource( "70" )
 script = null
 
 [node name="DirectionalLight" type="DirectionalLight3D" parent="."]
-transform = Transform( 0.290669, 0.307523, 0.906058, -0.819219, -0.40927, 0.40172, 0.494361, -0.859027, 0.132967, 0, 2.83314, 0 )
-light_color = Color( 1, 0.956863, 0.839216, 1 )
+transform = Transform3D(0.290669, 0.307523, 0.906058, -0.819219, -0.40927, 0.40172, 0.494361, -0.859027, 0.132967, 0, 2.83314, 0)
+light_color = Color(1, 0.956863, 0.839216, 1)
 shadow_bias = 0.03
 script = null
 
-[node name="Godette_vrm_v4" parent="." instance=ExtResource( 2 )]
+[node name="Godette_vrm_v4" parent="." instance=ExtResource( "2" )]
+
+[node name="secondary" parent="Godette_vrm_v4" index="1"]
+spring_bones = [SubResource( "Resource_02uhj" ), SubResource( "Resource_6ckcv" ), SubResource( "Resource_kbmfl" )]
+collider_groups = [SubResource( "Resource_kgvf1" ), SubResource( "Resource_xvka1" )]
 
 [node name="anim" parent="Godette_vrm_v4" index="2"]
-anims/idle = SubResource( 71 )
-anims/wiggle = SubResource( 72 )
-anims/wiggle2 = SubResource( 73 )
-anims/wiggle3 = SubResource( 74 )
-anims/wiggle4 = SubResource( 75 )
-blend_times = [  ]
+anims/idle = SubResource( "71" )
+anims/wiggle = SubResource( "72" )
+anims/wiggle2 = SubResource( "73" )
+anims/wiggle3 = SubResource( "74" )
+anims/wiggle4 = SubResource( "75" )
+blend_times = []
 
-[node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.35, 0, 0 )
+[node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( "1" )]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.35, 0, 0)
+
+[node name="secondary" parent="AliciaSolid_vrm-051" index="2"]
+spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
+collider_groups = [SubResource( "Resource_jaafy" ), SubResource( "Resource_lword" ), SubResource( "Resource_0xfpp" ), SubResource( "Resource_wy5id" ), SubResource( "Resource_p2mmr" ), SubResource( "Resource_je1dj" )]
 
 [node name="anim" parent="AliciaSolid_vrm-051" index="3"]
-anims/idle = SubResource( 76 )
-anims/wiggle = SubResource( 77 )
-anims/wiggle2 = SubResource( 78 )
-anims/wiggle3 = SubResource( 79 )
-anims/wiggle4 = SubResource( 80 )
-blend_times = [  ]
+anims/idle = SubResource( "76" )
+anims/wiggle = SubResource( "77" )
+anims/wiggle2 = SubResource( "78" )
+anims/wiggle3 = SubResource( "79" )
+anims/wiggle4 = SubResource( "80" )
+blend_times = []
 
-[node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0, 0 )
+[node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( "1" )]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0, 0)
+
+[node name="secondary" parent="AliciaSolid_vrm-052" index="2"]
+spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
+collider_groups = [SubResource( "Resource_jaafy" ), SubResource( "Resource_lword" ), SubResource( "Resource_0xfpp" ), SubResource( "Resource_wy5id" ), SubResource( "Resource_p2mmr" ), SubResource( "Resource_je1dj" )]
 
 [node name="anim" parent="AliciaSolid_vrm-052" index="3"]
-anims/idle = SubResource( 81 )
-anims/wiggle = SubResource( 82 )
-anims/wiggle2 = SubResource( 83 )
-anims/wiggle3 = SubResource( 84 )
-anims/wiggle4 = SubResource( 85 )
-blend_times = [  ]
+anims/idle = SubResource( "81" )
+anims/wiggle = SubResource( "82" )
+anims/wiggle2 = SubResource( "83" )
+anims/wiggle3 = SubResource( "84" )
+anims/wiggle4 = SubResource( "85" )
+blend_times = []
 
 [node name="Cube" type="MeshInstance3D" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0 )
-mesh = SubResource( 86 )
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0)
+mesh = SubResource( "86" )
 surface_material_override/0 = null
 script = null
 

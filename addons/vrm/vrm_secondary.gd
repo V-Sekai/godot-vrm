@@ -82,13 +82,13 @@ func _ready():
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 
-	if secondary_gizmo == null and (Engine.editor_hint or gizmo_spring_bone):
+	if secondary_gizmo == null and (Engine.is_editor_hint() or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
 		add_child(secondary_gizmo)
 	collider_groups_internal.clear()
 	spring_bones_internal.clear()
 	var skel_to_polyfill: Dictionary = {}.duplicate()
-	if true or not Engine.editor_hint:
+	if true or not Engine.is_editor_hint():
 		for collider_group in collider_groups:
 			var new_collider_group = collider_group.duplicate(true)
 			var parent: Node3D = get_node_or_null(new_collider_group.skeleton_or_node)
@@ -120,7 +120,7 @@ func _ready():
 	return
 
 func check_for_editor_update():
-	if not Engine.editor_hint:
+	if not Engine.is_editor_hint():
 		return false
 	var parent: Node = get_parent()
 	if parent is VRMTopLevel:
@@ -136,7 +136,7 @@ func check_for_editor_update():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	if not update_secondary_fixed:
-		if not Engine.editor_hint or check_for_editor_update():
+		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
 				if spring_bone.skel_polyfill != null:
@@ -146,18 +146,18 @@ func _process(delta):
 			for spring_bone in spring_bones_internal:
 				spring_bone._process(delta)
 			if secondary_gizmo != null:
-				if Engine.editor_hint:
+				if Engine.is_editor_hint():
 					secondary_gizmo.draw_in_editor(true)
 				else:
 					secondary_gizmo.draw_in_game()
-		elif Engine.editor_hint:
+		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 
 # All animations to the Node need to be done in the _physics_process.
 func _physics_process(delta):
 	if update_secondary_fixed:
-		if not Engine.editor_hint or check_for_editor_update():
+		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
 				if spring_bone.skel_polyfill != null:
@@ -167,11 +167,11 @@ func _physics_process(delta):
 			for spring_bone in spring_bones_internal:
 				spring_bone._process(delta)
 			if secondary_gizmo != null:
-				if Engine.editor_hint:
+				if Engine.is_editor_hint():
 					secondary_gizmo.draw_in_editor(true)
 				else:
 					secondary_gizmo.draw_in_game()
-		elif Engine.editor_hint:
+		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 
@@ -274,7 +274,7 @@ class SecondaryGizmo:
 			for v in spring_bone.verlets:
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				var s_sk: Skeleton3D = spring_bone.skel
-				if Engine.editor_hint:
+				if Engine.is_editor_hint():
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
 					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				else:
@@ -294,9 +294,9 @@ class SecondaryGizmo:
 	
 	func draw_collider_groups():
 		set_material_override(m)
-		for collider_group in (secondary_node.collider_groups if Engine.editor_hint else secondary_node.collider_groups_internal):
+		for collider_group in (secondary_node.collider_groups if Engine.is_editor_hint() else secondary_node.collider_groups_internal):
 			var c_tr = Transform3D.IDENTITY
-			if Engine.editor_hint:
+			if Engine.is_editor_hint():
 				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
 				if c_sk is Skeleton3D:
 					c_tr = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))

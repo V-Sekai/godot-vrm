@@ -2,17 +2,18 @@
 
 importer="texture"
 type="StreamTexture2D"
+uid="uid://bklxfuuu03836"
 path.s3tc="res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.s3tc.stex"
 path.etc2="res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.etc2.stex"
 metadata={
-"imported_formats": [ "s3tc", "etc2" ],
+"imported_formats": ["s3tc", "etc2"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://icon.png"
-dest_files=[ "res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.s3tc.stex", "res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.etc2.stex" ]
+dest_files=["res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.s3tc.stex", "res://.godot/imported/icon.png-487276ed1e3a0c39cad0279d744ee560.etc2.stex"]
 
 [params]
 
@@ -29,7 +30,7 @@ roughness/mode=0
 roughness/src_normal=""
 process/fix_alpha_border=true
 process/premult_alpha=false
-process/invert_color=false
+process/normal_map_invert_y=false
 process/HDR_as_SRGB=false
 process/size_limit=0
 detect_3d/compress_to=0

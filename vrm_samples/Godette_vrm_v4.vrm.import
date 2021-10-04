@@ -3,6 +3,7 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
+uid="uid://d3ds8k14pun3h"
 path="res://.godot/imported/Godette_vrm_v4.vrm-1a2ca6e7be5caea1e98f4dbd2f3c4108.scn"
 
 [deps]
@@ -22,6 +23,7 @@ meshes/light_baking=2
 meshes/lightmap_texel_size=0.1
 skins/use_named_skins=true
 animation/import=true
+animation/bake_reset_animation=true
 animation/fps=15
 import_script/path=""
 _subresources={

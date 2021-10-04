@@ -2,6 +2,7 @@
 
 importer="texture"
 type="StreamTexture2D"
+uid="uid://kltsf1ds5ufu"
 path.s3tc="res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.s3tc.stex"
 path.etc2="res://.godot/imported/skybox_reference.jpg-b7fc99fec1e5b3baefabefa051c26d03.etc2.stex"
 metadata={
