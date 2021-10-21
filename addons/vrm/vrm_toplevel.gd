@@ -1,4 +1,5 @@
-class_name VRMTopLevel extends Node3D
+class_name VRMTopLevel
+extends Node3D
 
 
 @export var vrm_skeleton: NodePath
