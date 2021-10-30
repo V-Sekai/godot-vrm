@@ -12,9 +12,6 @@ var spring_bones_internal: Array = []
 var collider_groups_internal: Array = []
 var secondary_gizmo: SecondaryGizmo
 
-# When `get_bone_global_pose` is invoked, it blocks on the RenderingServer
-# which adds a huge round trip overhead when doing lots of bone updates.
-# This class keeps its own hierarchy and transform cache to avoid blocking.
 class CachedSkeletonPolyfill extends RefCounted:
 	var skel: Skeleton3D
 	var bone_to_children: Dictionary = {}.duplicate()
@@ -50,7 +47,7 @@ class CachedSkeletonPolyfill extends RefCounted:
 			return Transform3D.IDENTITY
 		if override_weights[bone_idx] == 1.0:
 			return overrides[bone_idx]
-		var transform: Transform3D = skel.get_bone_rest(bone_idx) * skel.get_bone_custom_pose(bone_idx) * skel.get_bone_pose(bone_idx)
+		var transform: Transform3D = skel.get_bone_pose(bone_idx)
 		transform = transform * (1.0 - override_weights[bone_idx]) + overrides[bone_idx] * override_weights[bone_idx]
 		var par_bone: int = skel.get_bone_parent(bone_idx)
 		if par_bone == -1:
@@ -65,11 +62,11 @@ class CachedSkeletonPolyfill extends RefCounted:
 		#var transform: Transform3D3D = Transform3D.IDENTITY
 		#var i: int = 0
 		#while par_bone != -1 and i < 128:
-		#	transform = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone) * transform
+		#	transform = skel.get_bone_pose(par_bone) * transform
 		#	par_bone = skel.get_bone_parent(par_bone)
 		#	i += 1
 		#return transform
-		var transform: Transform3D = skel.get_bone_rest(par_bone) * skel.get_bone_custom_pose(par_bone) * skel.get_bone_pose(par_bone)
+		var transform: Transform3D = skel.get_bone_pose(par_bone)
 		var par: int = skel.get_bone_parent(bone_idx)
 		if par == -1:
 			return transform
