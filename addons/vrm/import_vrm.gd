@@ -455,9 +455,9 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			if (bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count()):
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
 				continue
-			var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
+			var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
 			# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
-			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":blend_shapes/" + str(nodeMesh.get_blend_shape_name(int(bind["index"]))))
+			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":" + str(nodeMesh.get_blend_shape_name(int(bind["index"]))))
 			var interpolation: int = Animation.INTERPOLATION_LINEAR
 			if shape.has("isBinary") and bool(shape["isBinary"]):
 				interpolation = Animation.INTERPOLATION_NEAREST
