@@ -495,7 +495,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		firstpersanim.scale_track_insert_key(firstperstrack, 0.0, Vector3(0.00001, 0.00001, 0.00001))
 		var thirdperstrack = thirdpersanim.add_track(Animation.TYPE_SCALE_3D)
 		thirdpersanim.track_set_path(thirdperstrack, headPath)
-		firstpersanim.scale_track_insert_key(firstperstrack, 0.0, Vector3.ONE)
+		thirdpersanim.scale_track_insert_key(thirdperstrack, 0.0, Vector3.ONE)
 
 	for meshannotation in firstperson["meshAnnotations"]:
 
