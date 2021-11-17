@@ -800,8 +800,27 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 		print("VRM: Using GDNative godot_gltf")
 		gstate = load("res://addons/godot_gltf/GLTFState.gdns").new()
 		gltf = load("res://addons/godot_gltf/PackedSceneGLTF.gdns").new()
-	print(path);
-	var root_node : Node = gltf.import_gltf_scene(tmp_path, 0, 1000.0, gstate)
+
+	var import_config_file = ConfigFile.new()
+	import_config_file.load(path + ".import")
+	var compression_flags: int = import_config_file.get_value("params", "meshes/compress", 0) # ARRAY_COMPRESS_BASE = (ARRAY_INDEX + 1)]
+	compression_flags = compression_flags << (VisualServer.ARRAY_INDEX + 1)
+	if import_config_file.get_value("params", "meshes/octahedral_compression", false):
+		compression_flags |= VisualServer.ARRAY_FLAG_USE_OCTAHEDRAL_COMPRESSION
+
+	var root_node : Node
+	if type_exists("GLTFState") and type_exists("PackedSceneGLTF"):
+		print("VRM: Using builtin gltf module")
+		# if ClassDB.can_instance("GLTFState") and ClassDB.can_instance("PackedSceneGLTF"):
+		gstate = ClassDB.instance("GLTFState")
+		gltf = ClassDB.instance("PackedSceneGLTF")
+		root_node = gltf.import_gltf_scene(tmp_path, 0, 1000.0, compression_flags, gstate)
+	else:
+		print("VRM: Using GDNative godot_gltf")
+		gstate = load("res://addons/godot_gltf/GLTFState.gdns").new()
+		gltf = load("res://addons/godot_gltf/PackedSceneGLTF.gdns").new()
+		root_node = gltf.import_gltf_scene(tmp_path, 0, 1000.0, gstate)
+
 	root_node.name = path.get_basename().get_file()
 	var d: Directory = Directory.new()
 	d.open("res://")
@@ -862,14 +881,6 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var packed_scene: PackedScene = PackedScene.new()
 	packed_scene.pack(root_node)
 	return packed_scene.instance(PackedScene.GEN_EDIT_STATE_INSTANCE)
-
-
-func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
-	return self._import_animation(path, flags, bake_fps)
-
-
-func import_scene_from_other_importer(path: String, flags: int, bake_fps: int):
-	return self._import_scene(path, flags, bake_fps)
 
 func _convert_sql_to_material_param(column_name: String, value):
 	if "color" in column_name:
