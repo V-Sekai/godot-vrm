@@ -35,6 +35,7 @@ func setup():
 		for collider in sphere_colliders:
 			colliders.append(SphereCollider.new(bone_idx, collider.normal, collider.d))
 
+
 func _ready(parent: Node3D, skel: Object):
 	self.parent = parent
 	if parent.get_class() == "Skeleton3D":
@@ -42,12 +43,10 @@ func _ready(parent: Node3D, skel: Object):
 		bone_idx = parent.find_bone(bone)
 	setup()
 
+
 func _process():
 	for collider in colliders:
 		collider.update(parent, skel)
-
-
-
 
 
 class SphereCollider:

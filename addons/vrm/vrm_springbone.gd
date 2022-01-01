@@ -52,6 +52,7 @@ func setup(force: bool = false) -> void:
 				if typeof(go) != TYPE_NIL and not go.is_empty():
 					setup_recursive(skel.find_bone(go), center)
 
+
 func setup_recursive(id: int, center_tr) -> void:
 	if skel.get_bone_children(id).is_empty():
 		var delta: Vector3 = skel.get_bone_rest(id).origin
@@ -66,12 +67,14 @@ func setup_recursive(id: int, center_tr) -> void:
 	for child in skel.get_bone_children(id):
 		setup_recursive(child, center_tr)
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready(skel: Object, colliders_ref: Array):
 	if skel != null:
 		self.skel = skel
 	setup()
 	colliders = colliders_ref.duplicate(true)
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -86,6 +89,7 @@ func _process(delta):
 	for verlet in verlets:
 		verlet.radius = hit_radius
 		verlet.update(skel, center, stiffness, drag_force, external, colliders)
+
 
 # Individual spring bone entries.
 class VRMSpringBoneLogic:
@@ -103,17 +107,24 @@ class VRMSpringBoneLogic:
 	
 	func get_transform(skel: Skeleton3D) -> Transform3D:
 		return skel.global_pose_to_world_transform(skel.get_bone_global_pose_no_override(bone_idx))
+
+
 	func get_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_transform(skel).basis.get_rotation_quaternion()
-	
+
+
 	func get_local_transform(skel: Skeleton3D) -> Transform3D:
 		return skel.get_bone_global_pose_no_override(bone_idx)
+
+
 	func get_local_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_local_transform(skel).basis.get_rotation_quaternion()
-	
+
+
 	func reset(skel: Skeleton3D) -> void:
 		skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0, true)
-	
+
+
 	func _init(skel: Skeleton3D, idx: int, center, local_child_position: Vector3, default_pose: Transform3D):
 		initial_transform = default_pose
 		bone_idx = idx
@@ -125,7 +136,8 @@ class VRMSpringBoneLogic:
 		prev_tail = current_tail
 		bone_axis = local_child_position.normalized()
 		length = local_child_position.length()
-	
+
+
 	func update(skel: Skeleton3D, center, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
 		var tmp_current_tail: Vector3
 		var tmp_prev_tail: Vector3
@@ -162,7 +174,8 @@ class VRMSpringBoneLogic:
 			var tr: Transform3D = get_local_transform(skel)
 			tr.basis = Basis(qt.normalized())
 			skel.set_bone_global_pose_override(bone_idx, tr, 1.0, true)
-	
+
+
 	func collision(skel: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
 		var out: Vector3 = _next_tail
 		for collider in colliders:

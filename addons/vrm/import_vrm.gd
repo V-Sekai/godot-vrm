@@ -890,9 +890,3 @@ func _to_material_param_dict(columns: Array, values: Array):
 	for i in range(min(columns.size(), values.size())):
 		dict[columns[i]] = _convert_sql_to_material_param(columns[i], values[i])
 	return dict
-
-
-
-
-
-
