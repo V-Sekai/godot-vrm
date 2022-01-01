@@ -90,10 +90,10 @@ func _process(delta):
 # Individual spring bone entries.
 class VRMSpringBoneLogic:
 	var force_update: bool = true
-	var bone_idx: int
+	var bone_idx: int = -1
 	
-	var radius: float
-	var length: float
+	var radius: float = 0
+	var length: float = 0
 	
 	var bone_axis: Vector3
 	var current_tail: Vector3 
