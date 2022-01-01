@@ -5,18 +5,17 @@ extends Resource
 @export var comment: String
 
 # The resilience of the swaying object (the power of returning to the initial pose).
-@export  var stiffness_force: float = 1.0
- # (float, 0, 4)
+@export_range(0, 4)  var stiffness_force: float = 1.0
 # The strength of gravity.
-@export  var gravity_power: float = 0.0
- # (float, 0, 2)
+@export_range(0, 2)  var gravity_power: float = 0.0
+
 # The direction of gravity. Set (0, -1, 0) for simulating the gravity.
 # Set (1, 0, 0) for simulating the wind.
 @export var gravity_dir: Vector3 = Vector3(0.0, -1.0, 0.0)
 
 # The resistance (deceleration) of automatic animation.
-@export  var drag_force: float = 0.4
- # (float, 0, 1)
+@export_range(0, 1) var drag_force: float = 0.4
+
 # Bone name references are only valid within a given Skeleton.
 @export var skeleton: NodePath
 
@@ -28,11 +27,11 @@ extends Resource
 @export var center_node: NodePath
 
 # The radius of the sphere used for the collision detection with colliders.
-@export  var hit_radius: float = 0.02
- # (float, 0.0, 0.5)
+@export_range(0.0, 0.5)  var hit_radius: float = 0.02
+
 # bone name of the root bone of the swaying object, within skeleton.
-@export  var root_bones : Array = [].duplicate() # DO NOT INITIALIZE HERE
- # (Array, String)
+@export var root_bones : Array[String] = [].duplicate() # DO NOT INITIALIZE HERE
+
 # Reference to the vrm_collidergroup for collisions with swaying objects.
 @export var collider_groups : Array = [].duplicate() # DO NOT INITIALIZE HERE
 
@@ -121,8 +120,7 @@ class VRMSpringBoneLogic:
 		return get_local_transform(skel).basis.get_rotation_quaternion()
 	
 	func reset(skel: Skeleton3D) -> void:
-		skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0)
-		return
+		skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0, true)
 	
 	func _init(skel: Skeleton3D, idx: int, center, local_child_position: Vector3, default_pose: Transform3D):
 		initial_transform = default_pose
@@ -135,7 +133,6 @@ class VRMSpringBoneLogic:
 		prev_tail = current_tail
 		bone_axis = local_child_position.normalized()
 		length = local_child_position.length()
-		return
 	
 	func update(skel: Skeleton3D, center, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
 		var tmp_current_tail: Vector3
@@ -172,9 +169,7 @@ class VRMSpringBoneLogic:
 			var qt: Quaternion = ft * get_rotation(skel)
 			var tr: Transform3D = get_local_transform(skel)
 			tr.basis = Basis(qt.normalized())
-			skel.set_bone_global_pose_override(bone_idx, tr, 1.0)
-		
-		return
+			skel.set_bone_global_pose_override(bone_idx, tr, 1.0, true)
 	
 	func collision(skel: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
 		var out: Vector3 = _next_tail
