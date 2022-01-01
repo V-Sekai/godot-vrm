@@ -58,13 +58,13 @@ func setup_recursive(id: int, center_tr) -> void:
 	if skel.get_bone_children(id).is_empty():
 		var delta: Vector3 = skel.get_bone_rest(id).origin
 		var child_position: Vector3 = delta.normalized() * 0.07
-		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, child_position, skel.get_bone_global_pose_without_override(id, true)))
+		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, child_position, skel.get_bone_global_pose_no_override(id)))
 	else:
 		var first_child: int = skel.get_bone_children(id)[0]
 		var local_position: Vector3 = skel.get_bone_rest(first_child).origin
 		var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
 		var pos: Vector3 = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
-		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, pos, skel.get_bone_global_pose_without_override(id, true)))
+		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, pos, skel.get_bone_global_pose_no_override(id)))
 	for child in skel.get_bone_children(id):
 		setup_recursive(child, center_tr)
 	return
@@ -89,7 +89,7 @@ func _process(delta):
 	
 	for verlet in verlets:
 		verlet.radius = hit_radius
-		verlet.update(skel, skel, center, stiffness, drag_force, external, colliders)
+		verlet.update(skel, center, stiffness, drag_force, external, colliders)
 	return
 
 
@@ -111,12 +111,12 @@ class VRMSpringBoneLogic:
 	var initial_transform: Transform3D
 	
 	func get_transform(skel: Skeleton3D) -> Transform3D:
-		return skel.global_transform * skel.get_bone_global_pose_without_override(bone_idx)
+		return skel.global_transform * skel.get_bone_global_pose_no_override(bone_idx)
 	func get_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_transform(skel).basis.get_rotation_quaternion()
 	
 	func get_local_transform(skel: Skeleton3D) -> Transform3D:
-		return skel.get_bone_global_pose_without_override(bone_idx)
+		return skel.get_bone_global_pose_no_override(bone_idx)
 	func get_local_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_local_transform(skel).basis.get_rotation_quaternion()
 	
