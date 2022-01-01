@@ -50,19 +50,19 @@ const FirstPersonParser: Dictionary = {
 }
 
 
-func _get_importer_name():
+func _get_importer_name() -> String:
 	return "Godot-VRM"
 
 
-func _get_recognized_extensions():
+func _get_recognized_extensions() -> Array:
 	return ["vrm"]
 
 
-func _get_extensions():
+func _get_extensions() -> Array:
 	return ["vrm"]
 
 
-func _get_import_flags():
+func _get_import_flags() -> int:
 	return IMPORT_SCENE
 
 
@@ -80,7 +80,7 @@ func _process_khr_material(orig_mat: StandardMaterial3D, gltf_mat_props: Diction
 	return orig_mat
 
 
-func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_tex_name: String):
+func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
 	var texture_info: Dictionary = {}
 	texture_info["tex"] = null
 	texture_info["offset"] = Vector3(0.0, 0.0, 0.0)
@@ -209,7 +209,7 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 	return new_mat
 
 
-func _update_materials(vrm_extension: Dictionary, gstate: GLTFState):
+func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var images = gstate.get_images()
 	#print(images)
 	var materials : Array = gstate.get_materials();
@@ -605,7 +605,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	return animplayer
 
 
-func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState):
+func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 
@@ -702,7 +702,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	secondary_node.set("collider_groups", collider_groups)
 
 
-func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool=false):
+func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool=false) -> void:
 	if bone < 0:
 		return
 	var gltf_node: Dictionary = gltf_nodes[bone]
@@ -713,7 +713,7 @@ func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: 
 		if not new_joints_set.has(child_node):
 			_add_joints_recursive(new_joints_set, gltf_nodes, int(child_node))
 
-func _add_joint_set_as_skin(obj: Dictionary, new_joints_set: Dictionary):
+func _add_joint_set_as_skin(obj: Dictionary, new_joints_set: Dictionary) -> void:
 	var new_joints = [].duplicate()
 	for node in new_joints_set:
 		new_joints.push_back(node)
@@ -752,14 +752,14 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 
 	return true
 
-func _import_scene(path: String, flags: int, bake_fps: int):
+func _import_scene(path: String, flags: int, bake_fps: int) -> Node:
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
-		return FAILED
+		return null
 
 	var magic = f.get_32()
 	if magic != 0x46546C67:
-		return ERR_FILE_UNRECOGNIZED
+		return null
 	var version = f.get_32() # version
 	var full_length = f.get_32() # length
 
@@ -767,7 +767,7 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	var chunk_type = f.get_32();
 
 	if chunk_type != 0x4E4F534A:
-		return ERR_PARSE_ERROR
+		return null
 	var orig_json_utf8 : PackedByteArray = f.get_buffer(chunk_length)
 	var rest_data : PackedByteArray = f.get_buffer(full_length - chunk_length - 20)
 	if (f.get_length() != full_length):
@@ -778,17 +778,17 @@ func _import_scene(path: String, flags: int, bake_fps: int):
 	
 	if gltf_json_parsed_result.parse(orig_json_utf8.get_string_from_utf8()) != OK:
 		push_error("Failed to parse JSON part of glTF file in " + str(path) + ":" + str(gltf_json_parsed_result.error_line) + ": " + gltf_json_parsed_result.error_string)
-		return ERR_FILE_UNRECOGNIZED
+		return null
 	var gltf_json_parsed: Dictionary = gltf_json_parsed_result.get_data()
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
 		push_error("Failed to find required VRM keys in " + str(path))
-		return ERR_FILE_UNRECOGNIZED
+		return null
 	var json_utf8: PackedByteArray = gltf_json_parsed_result.stringify(gltf_json_parsed, "", true, true).to_utf8_buffer()
 
 	f = File.new()
 	var tmp_path = path + ".tmp"
 	if f.open(tmp_path, File.WRITE) != OK:
-		return FAILED
+		return null
 	f.store_32(magic)
 	f.store_32(version)
 	f.store_32(full_length + len(json_utf8) - len(orig_json_utf8))
@@ -890,3 +890,9 @@ func _to_material_param_dict(columns: Array, values: Array):
 	for i in range(min(columns.size(), values.size())):
 		dict[columns[i]] = _convert_sql_to_material_param(columns[i], values[i])
 	return dict
+
+
+
+
+
+
