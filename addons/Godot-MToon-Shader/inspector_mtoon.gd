@@ -166,7 +166,7 @@ func do_unfold_section(editor_inspector_section: Node) -> void:
 
 #func parse_category(object: Object, category: String) -> void:
 #	print("Category " + str(category))
-func parse_end():
+func parse_end() -> void:
 	if last_tex_property != "":
 		_process_tex_property()
 		last_tex_property = ""
@@ -326,7 +326,7 @@ class MToonProperty extends EditorProperty:
 		slider.rect_min_size = Vector2(50.0, 20.0)
 		slider.connect("value_changed", self._value_changed)
 
-	func emit_changed(prop, val):
+	func emit_changed(prop, val) -> void:
 		get_edited_object()[prop] = val
 
 class RenderingTypeInspector extends MToonProperty:
@@ -334,7 +334,7 @@ class RenderingTypeInspector extends MToonProperty:
 	var cull_off_checkbox: CheckBox = CheckBox.new()
 	var rendering_type_box: VBoxContainer = VBoxContainer.new()
 
-	func _init(tooltip: String):
+	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
 		add_child(rendering_type_box)
 		dropdown.add_item("Opaque")
@@ -396,7 +396,7 @@ class RenderingTypeInspector extends MToonProperty:
 class OutlineModeInspector extends MToonProperty:
 	var dropdown: OptionButton = OptionButton.new()
 
-	func _init(tooltip: String):
+	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
 		dropdown.add_item("None")
 		dropdown.add_item("WorldCoordinates")
@@ -434,7 +434,7 @@ class OutlineModeInspector extends MToonProperty:
 class OutlineColorModeInspector extends MToonProperty:
 	var dropdown: OptionButton = OptionButton.new()
 
-	func _init(tooltip: String):
+	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
 		dropdown.add_item("FixedColor")
 		dropdown.add_item("MixedLighting")
@@ -458,7 +458,7 @@ class OutlineColorModeInspector extends MToonProperty:
 class DebugModeInspector extends MToonProperty:
 	var dropdown: OptionButton = OptionButton.new()
 
-	func _init(tooltip: String):
+	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
 		dropdown.add_item("None")
 		dropdown.add_item("Normal")
@@ -482,7 +482,7 @@ class DebugModeInspector extends MToonProperty:
 
 class ReserveInspector extends MToonProperty:
 	var hbox: HBoxContainer = HBoxContainer.new()
-	func _init(tooltip: String):
+	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
 		add_child(hbox)
 
@@ -492,7 +492,7 @@ class ReserveInspector extends MToonProperty:
 class SpinInspector extends MToonProperty:
 	var x_input: Range = EditorSpinSlider.new()
 
-	func _init(tooltip: String, minval: float, maxval: float, step: float):
+	func _init(tooltip: String, minval: float, maxval: float, step: float) -> void:
 		self.tooltip = tooltip
 		set_tooltip(tooltip)
 		_setup_slider(x_input, "")
@@ -537,7 +537,7 @@ class ScaleOffsetInspector extends MToonProperty:
 	var z_input: Range = EditorSpinSlider.new()
 	var d_input: Range = EditorSpinSlider.new()
 
-	func _init(tooltip: String, reserve: ReserveInspector):
+	func _init(tooltip: String, reserve: ReserveInspector) -> void:
 		self.tooltip = tooltip
 		var hbox_scale = reserve.hbox
 		_setup_slider(x_input, "x")
@@ -575,7 +575,7 @@ class LinearColorInspector extends MToonProperty:
 	var color_picker2: ColorPickerButton = ColorPickerButton.new()
 	var picker_box: HBoxContainer = HBoxContainer.new()
 
-	func _init(tooltip: String, allow_alpha: bool):
+	func _init(tooltip: String, allow_alpha: bool) -> void:
 		self.tooltip = tooltip
 		add_child(color_picker) # picker_box)
 		#picker_box.add_child(color_picker)

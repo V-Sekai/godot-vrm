@@ -13,7 +13,7 @@ var collider_groups_internal: Array = []
 var secondary_gizmo: SecondaryGizmo
 
 # Called when the node enters the scene tree for the first time.
-func _ready():
+func _ready() -> void:
 	var gizmo_spring_bone: bool = false
 	if get_parent() is VRMTopLevel:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
@@ -41,8 +41,7 @@ func _ready():
 			new_spring_bone._ready(skel, tmp_colliders)
 			spring_bones_internal.append(new_spring_bone)
 
-
-func check_for_editor_update():
+func check_for_editor_update() -> bool:
 	if not Engine.is_editor_hint():
 		return false
 	var parent: Node = get_parent()
@@ -56,9 +55,8 @@ func check_for_editor_update():
 				spring_bone.skel.clear_bones_global_pose_override()
 	return update_in_editor
 
-
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(delta) -> void:
 	if not update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
@@ -78,9 +76,8 @@ func _process(delta):
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 
-
 # All animations to the Node need to be done in the _physics_process.
-func _physics_process(delta):
+func _physics_process(delta) -> void:
 	if update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
@@ -101,6 +98,7 @@ func _physics_process(delta):
 				secondary_gizmo.draw_in_editor()
 
 
+
 # Remove when Godot 4.x implements support for ImmediateGometry3D
 class StubImmediateGeometry3D:
 	extends MeshInstance3D
@@ -108,7 +106,7 @@ class StubImmediateGeometry3D:
 	var verts_array: PackedVector3Array = PackedVector3Array()
 	var color_array: PackedColorArray = PackedColorArray()
 
-	func clear():
+	func clear() -> void:
 		if not verts_array.is_empty():
 			is_dirty = true
 		verts_array = PackedVector3Array()
@@ -119,18 +117,18 @@ class StubImmediateGeometry3D:
 	var last_vert: Vector3 = Vector3.ZERO
 	var is_dirty: bool = false
 
-	func begin(mode):
+	func begin(mode) -> void:
 		if mode == Mesh.PRIMITIVE_LINE_STRIP:
 			line_strip = 1
 
-	func end():
+	func end() -> void:
 		is_dirty = true
 		line_strip = 0
 
-	func set_color(color: Color):
+	func set_color(color: Color) -> void:
 		cur_color = color
 
-	func add_vertex(v: Vector3):
+	func add_vertex(v: Vector3) -> void:
 		if line_strip > 2:
 			color_array.append(cur_color)
 			verts_array.append(last_vert)
@@ -140,7 +138,7 @@ class StubImmediateGeometry3D:
 		if line_strip > 0:
 			line_strip += 1
 
-	func _commit_arraymesh():
+	func _commit_arraymesh() -> void:
 		if is_dirty:
 			if mesh == null:
 				mesh = ArrayMesh.new()
@@ -163,35 +161,31 @@ class SecondaryGizmo:
 	var m: StandardMaterial3D = StandardMaterial3D.new()
 
 
-	func _init(parent):
+	func _init(parent) -> void:
 		secondary_node = parent
 		set_material()
-
-
-	func set_material():
+	
+	func set_material() -> void:
 		m.no_depth_test = true
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		m.vertex_color_use_as_albedo = true
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-
-
-	func draw_in_editor(do_draw_spring_bones: bool = false):
+	
+	func draw_in_editor(do_draw_spring_bones: bool = false) -> void:
 		clear()
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
 		_commit_arraymesh() # Remove when we can use the real ImmediateGometry3D
-
-
-	func draw_in_game():
+	
+	func draw_in_game() -> void:
 		clear()
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
 		_commit_arraymesh() # Remove when we can use the real ImmediateGometry3D
-
-
-	func draw_spring_bones(color: Color):
+	
+	func draw_spring_bones(color: Color) -> void:
 		set_material_override(m)
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
@@ -214,9 +208,8 @@ class SecondaryGizmo:
 					spring_bone.hit_radius,
 					color
 				)
-
-
-	func draw_collider_groups():
+	
+	func draw_collider_groups() -> void:
 		set_material_override(m)
 		for collider_group in (secondary_node.collider_groups if Engine.is_editor_hint() else secondary_node.collider_groups_internal):
 			var c_tr = Transform3D.IDENTITY
@@ -229,17 +222,15 @@ class SecondaryGizmo:
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
-
-
-	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color):
+	
+	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
 		begin(Mesh.PRIMITIVE_LINES)
 		set_color(color)
 		add_vertex(begin_pos)
 		add_vertex(end_pos)
 		end()
-
-
-	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color):
+	
+	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color) -> void:
 		var step: int = 16
 		var sppi: float = 2 * PI / step
 		begin(Mesh.PRIMITIVE_LINE_STRIP)
