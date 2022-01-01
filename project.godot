@@ -6,7 +6,7 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=4
+config_version=5
 
 _global_script_classes=[{
 "base": "Node3D",
@@ -24,6 +24,7 @@ config/name="VRM Project [GODOT Master Branch]"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
 config/icon="res://icon.png"
 enabled=PackedStringArray("vrm")
+config/features=PackedStringArray("4.0")
 
 [display]
 

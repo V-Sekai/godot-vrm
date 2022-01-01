@@ -127,7 +127,7 @@ func check_for_editor_update():
 		if not parent.update_in_editor and update_in_editor:
 			update_in_editor = false
 			for spring_bone in spring_bones_internal:
-				spring_bone.skel_polyfill.clear_bones_global_pose_override()
+				spring_bone.skel.clear_bones_global_pose_override()
 	return update_in_editor
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -136,8 +136,8 @@ func _process(delta):
 		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
-				if spring_bone.skel_polyfill != null:
-					spring_bone.skel_polyfill.get_bone_global_pose_without_override(0, true)
+				if spring_bone.skel != null:
+					spring_bone.skel.get_bone_global_pose_without_override(0, true)
 			for collider_group in collider_groups_internal:
 				collider_group._process()
 			for spring_bone in spring_bones_internal:
@@ -157,8 +157,8 @@ func _physics_process(delta):
 		if not Engine.is_editor_hint() or check_for_editor_update():
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
-				if spring_bone.skel_polyfill != null:
-					spring_bone.skel_polyfill.get_bone_global_pose_without_override(0, true)
+				if spring_bone.skel != null:
+					spring_bone.skel.get_bone_global_pose_without_override(0, true)
 			for collider_group in collider_groups_internal:
 				collider_group._process()
 			for spring_bone in spring_bones_internal:
@@ -272,7 +272,7 @@ class SecondaryGizmo:
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
 					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				else:
-					s_tr = spring_bone.skel_polyfill.get_bone_global_pose_without_override(v.bone_idx)
+					s_tr = spring_bone.skel.get_bone_global_pose_without_override(v.bone_idx)
 				draw_line(
 					s_tr.origin,
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
@@ -295,7 +295,7 @@ class SecondaryGizmo:
 				if c_sk is Skeleton3D:
 					c_tr = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))
 			elif collider_group.parent is Skeleton3D:
-				c_tr = collider_group.skel_polyfill.get_bone_global_pose_without_override(collider_group.parent.find_bone(collider_group.bone))
+				c_tr = collider_group.skel.get_bone_global_pose_without_override(collider_group.parent.find_bone(collider_group.bone))
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)

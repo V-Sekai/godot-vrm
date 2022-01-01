@@ -23,7 +23,6 @@ meshes/light_baking=2
 meshes/lightmap_texel_size=0.1
 skins/use_named_skins=true
 animation/import=true
-animation/bake_reset_animation=true
 animation/fps=15
 import_script/path=""
 _subresources={
