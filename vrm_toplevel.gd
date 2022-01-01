@@ -12,7 +12,7 @@ extends Node3D
 
 @export var update_in_editor: bool = false
 @export var gizmo_spring_bone: bool = false
-@export var gizmo_spring_bone_color: Color = Color.YELLOW
+@export var gizmo_spring_bone_color: Color = Color.LIGHT_YELLOW
 
 class VRMUtil:
 	static func from_to_rotation(from: Vector3, to: Vector3):
