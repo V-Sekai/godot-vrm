@@ -123,11 +123,12 @@ class SecondaryGizmo:
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
-	
+		
 	func draw_spring_bones(color: Color) -> void:
 		set_material_override(m)
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
+			mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 			for v in spring_bone.verlets:
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				var s_sk: Skeleton3D = spring_bone.skel
@@ -141,16 +142,28 @@ class SecondaryGizmo:
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
 					color
 				)
+			mesh.surface_end()
+			for v in spring_bone.verlets:
+				mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
+				var s_tr: Transform3D = Transform3D.IDENTITY
+				var s_sk: Skeleton3D = spring_bone.skel
+				if Engine.is_editor_hint():
+					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
+					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+				else:
+					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
 				draw_sphere(
 					s_tr.basis,
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
 					spring_bone.hit_radius,
 					color
 				)
-	
+				mesh.surface_end()
+
 	func draw_collider_groups() -> void:
 		set_material_override(m)
 		for collider_group in (secondary_node.collider_groups if Engine.is_editor_hint() else secondary_node.collider_groups_internal):
+			mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
 			var c_tr = Transform3D.IDENTITY
 			if Engine.is_editor_hint():
 				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
@@ -161,30 +174,24 @@ class SecondaryGizmo:
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
+			mesh.surface_end()
 	
 	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
-		mesh.surface_begin(mesh.PRIMITIVE_LINE_STRIP)
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(begin_pos)
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(end_pos)
-		mesh.surface_end()
 	
 	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color) -> void:
-		var step: int = 16
+		var step: int = 15
 		var sppi: float = 2 * PI / step
-		mesh.surface_begin(mesh.PRIMITIVE_LINE_STRIP)
 		for i in range(step + 1):
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + (bas * Vector3.UP * radius).rotated(bas * Vector3.RIGHT, sppi * (i % step)))
-		mesh.surface_end()
-		mesh.surface_begin(mesh.PRIMITIVE_LINE_STRIP)
 		for i in range(step + 1):
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + (bas * Vector3.RIGHT * radius).rotated(bas * Vector3.FORWARD, sppi * (i % step)))
-		mesh.surface_end()
-		mesh.surface_begin(mesh.PRIMITIVE_LINE_STRIP)
 		for i in range(step + 1):
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + (bas * Vector3.FORWARD * radius).rotated(bas * Vector3.UP, sppi * (i % step)))
-		mesh.surface_end()
+
