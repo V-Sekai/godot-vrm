@@ -102,7 +102,7 @@ class VRMSpringBoneLogic:
 	var initial_transform: Transform3D
 	
 	func get_transform(skel: Skeleton3D) -> Transform3D:
-		return skel.global_transform * skel.get_bone_global_pose_no_override(bone_idx)
+		return skel.global_pose_to_world_transform(skel.get_bone_global_pose_no_override(bone_idx))
 	func get_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_transform(skel).basis.get_rotation_quaternion()
 	
