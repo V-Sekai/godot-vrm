@@ -51,7 +51,6 @@ func setup(force: bool = false) -> void:
 			for go in root_bones:
 				if typeof(go) != TYPE_NIL and not go.is_empty():
 					setup_recursive(skel.find_bone(go), center)
-	return
 
 func setup_recursive(id: int, center_tr) -> void:
 	if skel.get_bone_children(id).is_empty():
@@ -66,7 +65,6 @@ func setup_recursive(id: int, center_tr) -> void:
 		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, pos, skel.get_bone_global_pose_no_override(id)))
 	for child in skel.get_bone_children(id):
 		setup_recursive(child, center_tr)
-	return
 
 # Called when the node enters the scene tree for the first time.
 func _ready(skel: Object, colliders_ref: Array):
@@ -74,7 +72,6 @@ func _ready(skel: Object, colliders_ref: Array):
 		self.skel = skel
 	setup()
 	colliders = colliders_ref.duplicate(true)
-	return
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
@@ -89,11 +86,6 @@ func _process(delta):
 	for verlet in verlets:
 		verlet.radius = hit_radius
 		verlet.update(skel, center, stiffness, drag_force, external, colliders)
-	return
-
-
-
-
 
 # Individual spring bone entries.
 class VRMSpringBoneLogic:
