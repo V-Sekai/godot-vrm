@@ -41,14 +41,13 @@ var verlets: Array = [].duplicate()
 var colliders: Array = [].duplicate()
 var center = null
 var skel: Skeleton3D = null
-var skel_polyfill: Object = null
 
 func setup(force: bool = false) -> void:
 	if not self.root_bones.is_empty() && skel != null:
 		if force || verlets.is_empty():
 			if not verlets.is_empty():
 				for verlet in verlets:
-					verlet.reset(skel_polyfill)
+					verlet.reset(skel)
 			verlets.clear()
 			for go in root_bones:
 				if typeof(go) != TYPE_NIL and not go.is_empty():
@@ -56,22 +55,22 @@ func setup(force: bool = false) -> void:
 	return
 
 func setup_recursive(id: int, center_tr) -> void:
-	if skel_polyfill.get_bone_children(id).is_empty():
+	if skel.get_bone_children(id).is_empty():
 		var delta: Vector3 = skel.get_bone_rest(id).origin
 		var child_position: Vector3 = delta.normalized() * 0.07
-		verlets.append(VRMSpringBoneLogic.new(skel, skel_polyfill, id, center_tr, child_position, skel_polyfill.get_bone_global_pose_without_override(id, true)))
+		verlets.append(VRMSpringBoneLogic.new(skel, skel, id, center_tr, child_position, skel.get_bone_global_pose_without_override(id, true)))
 	else:
-		var first_child: int = skel_polyfill.get_bone_children(id)[0]
+		var first_child: int = skel.get_bone_children(id)[0]
 		var local_position: Vector3 = skel.get_bone_rest(first_child).origin
 		var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
 		var pos: Vector3 = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
-		verlets.append(VRMSpringBoneLogic.new(skel, skel_polyfill, id, center_tr, pos, skel_polyfill.get_bone_global_pose_without_override(id, true)))
-	for child in skel_polyfill.get_bone_children(id):
+		verlets.append(VRMSpringBoneLogic.new(skel, skel, id, center_tr, pos, skel.get_bone_global_pose_without_override(id, true)))
+	for child in skel.get_bone_children(id):
 		setup_recursive(child, center_tr)
 	return
 
 # Called when the node enters the scene tree for the first time.
-func _ready(skel: Object, skel_polyfill: Object, colliders_ref: Array):
+func _ready(skel: Object, skel_polyfill: Skeleton3D, colliders_ref: Array):
 	if skel != null:
 		self.skel = skel
 		self.skel_polyfill = skel_polyfill
@@ -91,7 +90,7 @@ func _process(delta):
 	
 	for verlet in verlets:
 		verlet.radius = hit_radius
-		verlet.update(skel, skel_polyfill, center, stiffness, drag_force, external, colliders)
+		verlet.update(skel, skel, center, stiffness, drag_force, external, colliders)
 	return
 
 
@@ -112,21 +111,21 @@ class VRMSpringBoneLogic:
 	
 	var initial_transform: Transform3D
 	
-	func get_transform(skel: Skeleton3D, skel_polyfill: Object) -> Transform3D:
+	func get_transform(skel: Skeleton3D, skel_polyfill: Skeleton3D) -> Transform3D:
 		return skel.global_transform * skel_polyfill.get_bone_global_pose_without_override(bone_idx)
-	func get_rotation(skel: Skeleton3D, skel_polyfill: Object) -> Quaternion:
+	func get_rotation(skel: Skeleton3D, skel_polyfill: Skeleton3D) -> Quaternion:
 		return get_transform(skel, skel_polyfill).basis.get_rotation_quaternion()
 	
-	func get_local_transform(skel_polyfill: Object) -> Transform3D:
+	func get_local_transform(skel_polyfill: Skeleton3D) -> Transform3D:
 		return skel_polyfill.get_bone_global_pose_without_override(bone_idx)
-	func get_local_rotation(skel_polyfill: Object) -> Quaternion:
+	func get_local_rotation(skel_polyfill: Skeleton3D) -> Quaternion:
 		return get_local_transform(skel_polyfill).basis.get_rotation_quaternion()
 	
-	func reset(skel_polyfill: Object) -> void:
+	func reset(skel_polyfill: Skeleton3D) -> void:
 		skel_polyfill.set_bone_global_pose_override(bone_idx, initial_transform, 1.0)
 		return
 	
-	func _init(skel: Skeleton3D, skel_polyfill: Object, idx: int, center, local_child_position: Vector3, default_pose: Transform3D):
+	func _init(skel: Skeleton3D, skel_polyfill: Skeleton3D, idx: int, center, local_child_position: Vector3, default_pose: Transform3D):
 		initial_transform = default_pose
 		bone_idx = idx
 		var world_child_position: Vector3 = VRMTopLevel.VRMUtil.transform_point(get_transform(skel, skel_polyfill), local_child_position)
@@ -139,7 +138,7 @@ class VRMSpringBoneLogic:
 		length = local_child_position.length()
 		return
 	
-	func update(skel: Skeleton3D, skel_polyfill: Object, center, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
+	func update(skel: Skeleton3D, skel_polyfill: Skeleton3D, center, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
 		var tmp_current_tail: Vector3
 		var tmp_prev_tail: Vector3
 		if typeof(center) != TYPE_NIL:
@@ -178,7 +177,7 @@ class VRMSpringBoneLogic:
 		
 		return
 	
-	func collision(skel: Skeleton3D, skel_polyfill: Object, colliders: Array, _next_tail: Vector3) -> Vector3:
+	func collision(skel: Skeleton3D, skel_polyfill: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
 		var out: Vector3 = _next_tail
 		for collider in colliders:
 			var r = radius + collider.get_radius()
