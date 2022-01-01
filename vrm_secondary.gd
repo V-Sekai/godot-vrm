@@ -128,7 +128,7 @@ class SecondaryGizmo:
 		set_material_override(m)
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
-			mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+			mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 			for v in spring_bone.verlets:
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				var s_sk: Skeleton3D = spring_bone.skel
@@ -179,8 +179,6 @@ class SecondaryGizmo:
 	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(begin_pos)
-		mesh.surface_set_color(color)
-		mesh.surface_add_vertex(end_pos)
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(end_pos)
 	
