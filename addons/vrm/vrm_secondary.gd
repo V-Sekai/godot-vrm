@@ -40,7 +40,6 @@ func _ready():
 		if skel != null:
 			new_spring_bone._ready(skel, tmp_colliders)
 			spring_bones_internal.append(new_spring_bone)
-	return
 
 func check_for_editor_update():
 	if not Engine.is_editor_hint():
