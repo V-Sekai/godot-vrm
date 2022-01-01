@@ -27,9 +27,8 @@ func _ready():
 	for collider_group in collider_groups:
 		var new_collider_group = collider_group.duplicate(true)
 		var parent: Node3D = get_node_or_null(new_collider_group.skeleton_or_node)
-		var parent_polyfill: Object = parent
 		if parent != null:
-			new_collider_group._ready(parent, parent_polyfill)
+			new_collider_group._ready(parent, parent)
 			collider_groups_internal.append(new_collider_group)
 	for spring_bone in spring_bones:
 		var new_spring_bone = spring_bone.duplicate(true)
@@ -38,7 +37,6 @@ func _ready():
 			if new_spring_bone.collider_groups.has(collider_groups[i]):
 				tmp_colliders.append_array(collider_groups_internal[i].colliders)
 		var skel: Skeleton3D = get_node_or_null(new_spring_bone.skeleton)
-		var parent_polyfill: Object = skel
 		if skel != null:
 			new_spring_bone._ready(skel, tmp_colliders)
 			spring_bones_internal.append(new_spring_bone)
@@ -86,7 +84,7 @@ func _physics_process(delta):
 			# force update skeleton
 			for spring_bone in spring_bones_internal:
 				if spring_bone.skel != null:
-					spring_bone.skel.get_bone_global_pose_no_override(0, true)
+					spring_bone.skel.get_bone_global_pose_no_override(0)
 			for collider_group in collider_groups_internal:
 				collider_group._process()
 			for spring_bone in spring_bones_internal:
@@ -167,7 +165,6 @@ class SecondaryGizmo:
 	func _init(parent):
 		secondary_node = parent
 		set_material()
-		return
 	
 	func set_material():
 		m.no_depth_test = true
@@ -212,7 +209,6 @@ class SecondaryGizmo:
 					spring_bone.hit_radius,
 					color
 				)
-		return
 	
 	func draw_collider_groups():
 		set_material_override(m)
@@ -227,7 +223,6 @@ class SecondaryGizmo:
 			for collider in collider_group.sphere_colliders:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
-		return
 	
 	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color):
 		begin(Mesh.PRIMITIVE_LINES)
@@ -235,7 +230,6 @@ class SecondaryGizmo:
 		add_vertex(begin_pos)
 		add_vertex(end_pos)
 		end()
-		return
 	
 	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color):
 		var step: int = 16
@@ -255,4 +249,3 @@ class SecondaryGizmo:
 		for i in range(step + 1):
 			add_vertex(center + (bas * Vector3.FORWARD * radius).rotated(bas * Vector3.UP, sppi * (i % step)))
 		end()
-		return
