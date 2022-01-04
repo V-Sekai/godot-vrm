@@ -216,8 +216,8 @@ void fragment() {
 		tangentNormal = UnpackScaleNormal(texture(_BumpMap, mainUv), _BumpScale);
 	}
 
-	shade *= GammaToLinearSpace(_ShadeColor);
-	lit *= GammaToLinearSpace(_Color);
+	shade *= (OUTPUT_IS_SRGB ? _ShadeColor : GammaToLinearSpace(_ShadeColor));
+	lit *= (OUTPUT_IS_SRGB ? _Color : GammaToLinearSpace(_Color));
 
 	//shade = min(shade, lit); ///// Mimic look of non-PBR min() clamp we commented out below.
 
@@ -263,7 +263,7 @@ void fragment() {
 
 	// outline
 	if (isOutline == 1.0) {
-		vec3 outlineColor = GammaToLinearSpace(_OutlineColor).rgb;
+		vec3 outlineColor = (OUTPUT_IS_SRGB ? _OutlineColor.rgb : GammaToLinearSpace(_OutlineColor).rgb);
 		if (MTOON_OUTLINE_COLOR_FIXED) {
 			albedo = vec3(0.0);
 			emission = outlineColor;
@@ -328,10 +328,10 @@ void light() {
 	vec3 rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
 	vec4 shade = texture(_ShadeTexture, mainUv);
 	vec4 lit = texture(_MainTex, mainUv);
-	shade *= GammaToLinearSpace(_ShadeColor);
-	lit *= GammaToLinearSpace(_Color);
+	shade *= (OUTPUT_IS_SRGB ? _ShadeColor : GammaToLinearSpace(_ShadeColor));
+	lit *= (OUTPUT_IS_SRGB ? _Color : GammaToLinearSpace(_Color));
 	if (isOutline == 1.0 && _OutlineColorMode == 1.0) {
-		vec3 outlineColor = GammaToLinearSpace(_OutlineColor).rgb;
+		vec3 outlineColor = (OUTPUT_IS_SRGB ? _OutlineColor.rgb : GammaToLinearSpace(_OutlineColor).rgb);
 		lit.rgb *= outlineColor * _OutlineLightingMix;
 		shade.rgb = lit.rgb;
 	}
