@@ -185,7 +185,7 @@ vec3 mix_normal(vec3 X, vec3 Y, float factor) {
 }
 
 void fragment() {
-	bool _NORMALMAP = textureSize(_BumpMap, 0).x > 8;
+	bool _NORMALMAP = true; //textureSize(_BumpMap, 0).x > 8;
 	bool MTOON_OUTLINE_COLOR_FIXED = _OutlineColorMode == 0.0;
 	bool MTOON_OUTLINE_COLOR_MIXED = _OutlineColorMode == 1.0;
 
