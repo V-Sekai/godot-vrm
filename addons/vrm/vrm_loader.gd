@@ -1,5 +1,4 @@
-@tool
-extends EditorSceneFormatImporter
+extends RefCounted
 
 # Set this to true to save a .res file with all GLTF DOM state
 # This allows exploring all JSON structure and also Godot internal GLTFState
@@ -48,27 +47,6 @@ const FirstPersonParser: Dictionary = {
 	"FirstPersonOnly": FirstPersonFlag.FirstPersonOnly,
 	"ThirdPersonOnly": FirstPersonFlag.ThirdPersonOnly,
 }
-
-
-func _get_importer_name() -> String:
-	return "Godot-VRM"
-
-
-func _get_recognized_extensions() -> Array:
-	return ["vrm"]
-
-
-func _get_extensions() -> Array:
-	return ["vrm"]
-
-
-func _get_import_flags() -> int:
-	return IMPORT_SCENE
-
-
-func _import_animation(path: String, flags: int, bake_fps: int) -> Animation:
-	return Animation.new()
-
 
 func _process_khr_material(orig_mat: StandardMaterial3D, gltf_mat_props: Dictionary) -> Material:
 	# VRM spec requires support for the KHR_materials_unlit extension.
@@ -302,10 +280,10 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 			return gstate.get_scene_node(i)
 	return null
 
+
 class SkelBone:
 	var skel: Skeleton3D
 	var bone_name: String
-	
 
 # https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/schema/vrm.humanoid.bone.schema.json
 # vrm_extension["humanoid"]["bone"]:
@@ -322,7 +300,6 @@ class SkelBone:
 # "rightMiddleProximal","rightMiddleIntermediate","rightMiddleDistal",
 # "rightRingProximal","rightRingIntermediate","rightRingDistal",
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
-
 
 func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary) -> Resource:
 	var nodes = gstate.get_nodes()
@@ -752,7 +729,7 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 
 	return true
 
-func _import_scene(path: String, flags: int, bake_fps: int) -> Node:
+func import_scene(path: String, flags: int, bake_fps: int, use_tmp: bool = false) -> Node:
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
 		return null
@@ -786,7 +763,10 @@ func _import_scene(path: String, flags: int, bake_fps: int) -> Node:
 	var json_utf8: PackedByteArray = gltf_json_parsed_result.stringify(gltf_json_parsed, "", true, true).to_utf8_buffer()
 
 	f = File.new()
-	var tmp_path = path + ".tmp"
+	var tmp_path = path
+	if use_tmp:
+		tmp_path += ".tmp"
+	
 	if f.open(tmp_path, File.WRITE) != OK:
 		return null
 	f.store_32(magic)
@@ -799,15 +779,19 @@ func _import_scene(path: String, flags: int, bake_fps: int) -> Node:
 	f.flush()
 	f.close()
 
-	var gstate : GLTFState = GLTFState.new()
-	var gltf : GLTFDocument = GLTFDocument.new()
-	print(path);
+	var gstate := GLTFState.new()
+	var gltf := GLTFDocument.new()
+	print(path)
 	
-	var root_node : Node = gltf.import_scene(tmp_path, 0, 30.0, gstate)
+	gltf.append_from_file(tmp_path, gstate, 0, 30)
+	
+	var root_node: Node = gltf.generate_scene(gstate, 30)
 	root_node.name = path.get_basename().get_file()
-	var d: Directory = Directory.new()
-	d.open("res://")
-	d.remove(tmp_path)
+	
+	if use_tmp:
+		var d: Directory = Directory.new()
+		d.open("res://")
+		d.remove(tmp_path)
 
 	if SAVE_DEBUG_GLTFSTATE_RES:
 		if (!ResourceLoader.exists(path + ".res")):
@@ -864,35 +848,3 @@ func _import_scene(path: String, flags: int, bake_fps: int) -> Node:
 	var packed_scene: PackedScene = PackedScene.new()
 	packed_scene.pack(root_node)
 	return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
-
-
-func import_animation_from_other_importer(path: String, flags: int, bake_fps: int):
-	return self._import_animation(path, flags, bake_fps)
-
-
-func import_scene_from_other_importer(path: String, flags: int, bake_fps: int):
-	return self._import_scene(path, flags, bake_fps)
-
-func _convert_sql_to_material_param(column_name: String, value):
-	if "color" in column_name:
-		pass
-	return value
-
-func _to_dict(columns: Array, values: Array):
-	var dict : Dictionary = {}
-	for i in range(columns.size()):
-		dict[columns[i]] = values[i]
-	return dict
-
-func _to_material_param_dict(columns: Array, values: Array):
-	var dict : Dictionary = {}
-	print("Col size=" + str(columns.size()) + " val size=" + str(values.size()))
-	for i in range(min(columns.size(), values.size())):
-		dict[columns[i]] = _convert_sql_to_material_param(columns[i], values[i])
-	return dict
-
-
-
-
-
-
