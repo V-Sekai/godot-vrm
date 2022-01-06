@@ -729,13 +729,16 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 
 	return true
 
-func import_scene(path: String, flags: int, bake_fps: int, use_tmp: bool = false) -> Node:
+const GLB_MAGIC = 0x46546C67
+const CHUNK_MAGIC = 0x4E4F534A
+
+func import_scene(path: String, flags: int, bake_fps: int) -> Node:
 	var f = File.new()
 	if f.open(path, File.READ) != OK:
 		return null
 
 	var magic = f.get_32()
-	if magic != 0x46546C67:
+	if magic != GLB_MAGIC:
 		return null
 	var version = f.get_32() # version
 	var full_length = f.get_32() # length
@@ -743,14 +746,38 @@ func import_scene(path: String, flags: int, bake_fps: int, use_tmp: bool = false
 	var chunk_length = f.get_32();
 	var chunk_type = f.get_32();
 
-	if chunk_type != 0x4E4F534A:
+	if chunk_type != CHUNK_MAGIC:
 		return null
 	var orig_json_utf8 : PackedByteArray = f.get_buffer(chunk_length)
 	var rest_data : PackedByteArray = f.get_buffer(full_length - chunk_length - 20)
 	if (f.get_length() != full_length):
 		push_error("Incorrect full_length in " + str(path))
-
 	f.close()
+
+	return _import_scene_internal(version, orig_json_utf8, rest_data, path, flags, bake_fps)
+
+func import_scene_buffer(buffer: PackedByteArray, flags: int, bake_fps: int, path: String = "") -> Node:
+	if len(buffer) < 20:
+		return null
+	var magic = buffer.decode_u32(0)
+	if magic != GLB_MAGIC:
+		return null
+	var version = buffer.decode_u32(4) # version
+	var full_length = buffer.decode_u32(8) # length
+
+	var chunk_length = buffer.decode_u32(12)
+	var chunk_type = buffer.decode_u32(16)
+
+	if chunk_type != CHUNK_MAGIC:
+		return null
+	var orig_json_utf8 : PackedByteArray = buffer.slice(20, chunk_length + 20)
+	var rest_data : PackedByteArray = buffer.slice(chunk_length + 20, full_length)
+	if (len(buffer) != full_length):
+		push_error("Incorrect full_length in buffer")
+
+	return _import_scene_internal(version, orig_json_utf8, rest_data, path, flags, bake_fps)
+
+func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_data: PackedByteArray, path: String, flags: int, bake_fps: int) -> Node:
 	var gltf_json_parsed_result = JSON.new()
 	
 	if gltf_json_parsed_result.parse(orig_json_utf8.get_string_from_utf8()) != OK:
@@ -761,39 +788,29 @@ func import_scene(path: String, flags: int, bake_fps: int, use_tmp: bool = false
 		push_error("Failed to find required VRM keys in " + str(path))
 		return null
 	var json_utf8: PackedByteArray = gltf_json_parsed_result.stringify(gltf_json_parsed, "", true, true).to_utf8_buffer()
-
-	f = File.new()
-	var tmp_path = path
-	if use_tmp:
-		tmp_path += ".tmp"
 	
-	if f.open(tmp_path, File.WRITE) != OK:
-		return null
-	f.store_32(magic)
-	f.store_32(version)
-	f.store_32(full_length + len(json_utf8) - len(orig_json_utf8))
-	f.store_32(len(json_utf8))
-	f.store_32(chunk_type)
-	f.store_buffer(json_utf8)
-	f.store_buffer(rest_data)
-	f.flush()
-	f.close()
+	var pb: PackedByteArray = PackedByteArray()
+	pb.resize(20)
+	pb.encode_u32(0, GLB_MAGIC)
+	pb.encode_u32(4, version)
+	pb.encode_u32(8, 20 + len(json_utf8) + len(rest_data))
+	pb.encode_u32(12, len(json_utf8))
+	pb.encode_u32(16, CHUNK_MAGIC)
+	pb.append_array(json_utf8)
+	pb.append_array(rest_data)
 
 	var gstate := GLTFState.new()
 	var gltf := GLTFDocument.new()
 	print(path)
 	
-	gltf.append_from_file(tmp_path, gstate, 0, 30)
+	# FIXME: For security reasons, it would be good to forbid loading of external resources.
+	gltf.append_from_buffer(pb, "", gstate, flags, bake_fps)
 	
 	var root_node: Node = gltf.generate_scene(gstate, 30)
-	root_node.name = path.get_basename().get_file()
+	if path != "":
+		root_node.name = path.get_basename().get_file()
 	
-	if use_tmp:
-		var d: Directory = Directory.new()
-		d.open("res://")
-		d.remove(tmp_path)
-
-	if SAVE_DEBUG_GLTFSTATE_RES:
+	if SAVE_DEBUG_GLTFSTATE_RES and path != "":
 		if (!ResourceLoader.exists(path + ".res")):
 			ResourceSaver.save(path + ".res", gstate)
 
