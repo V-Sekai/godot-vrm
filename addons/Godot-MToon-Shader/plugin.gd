@@ -1,6 +1,6 @@
 @tool
 extends EditorPlugin
-const inspector_plugin_class = preload("./inspector_mtoon.gd")
+const inspector_plugin_class = preload("res://addons/Godot-MToon-Shader/inspector_mtoon.gd")
 
 
 var inspector_plugin: Object = null

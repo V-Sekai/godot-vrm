@@ -834,7 +834,7 @@ func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_
 
 	var animplayer = AnimationPlayer.new()
 	animplayer.name = "anim"
-	root_node.add_child(animplayer)
+	root_node.add_child(animplayer, true)
 	animplayer.owner = root_node
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
@@ -852,7 +852,7 @@ func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_
 		var secondary_node: Node = root_node.get_node("secondary")
 		if secondary_node == null:
 			secondary_node = Node3D.new()
-			root_node.add_child(secondary_node)
+			root_node.add_child(secondary_node, true)
 			secondary_node.set_owner(root_node)
 			secondary_node.set_name("secondary")
 		

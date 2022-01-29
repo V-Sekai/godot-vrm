@@ -126,17 +126,17 @@ func merge_single_line_properties(label: String, outer_prop: Control, inner_prop
 
 	var new_hbox: HBoxContainer = HBoxContainer.new()
 	new_hbox.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	new_hbox.add_child(sub_picker)
+	new_hbox.add_child(sub_picker, true)
 
 	var new_control: Control = Control.new()
 	new_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	new_control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	new_hbox.add_child(new_control)
+	new_hbox.add_child(new_control, true)
 	# Is it a bad idea to constrain the inspector like this?
 	new_hbox.rect_min_size = Vector2(155, 20)
 	outer_prop.rect_min_size = Vector2(190, 20)
-	outer_prop.add_child(inner_prop)
-	outer_prop.add_child(new_hbox)
+	outer_prop.add_child(inner_prop, true)
+	outer_prop.add_child(new_hbox, true)
 
 # Copy texture modifications to next_pass material
 func _texture_property_changed(property, value, emptystr, boolfalse=null, editor_property=null) -> void:
@@ -187,10 +187,10 @@ func parse_end() -> void:
 					pos -= 1
 				var hbox_container: Container = HBoxContainer.new()
 				var label_container: Container = Container.new()
-				label_container.add_child(label)
-				hbox_container.add_child(label_container)
-				hbox_container.add_child(scale_label)
-				parent_vbox.add_child(hbox_container)
+				label_container.add_child(label, true)
+				hbox_container.add_child(label_container, true)
+				hbox_container.add_child(scale_label, true)
+				parent_vbox.add_child(hbox_container, true)
 				parent_vbox.move_child(hbox_container, pos)
 				label_container.size_flags_horizontal = Control.SIZE_FILL
 				label_container.size_flags_vertical = Control.SIZE_FILL
@@ -336,16 +336,16 @@ class RenderingTypeInspector extends MToonProperty:
 
 	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
-		add_child(rendering_type_box)
+		add_child(rendering_type_box, true)
 		dropdown.add_item("Opaque")
 		dropdown.add_item("Cutout")
 		dropdown.add_item("Transparent")
 		dropdown.add_item("Trans ZWrite")
-		rendering_type_box.add_child(dropdown)
+		rendering_type_box.add_child(dropdown, true)
 		add_focusable(dropdown)
 		cull_off_checkbox.text = "Cull Disabled"
 		cull_off_checkbox.connect("toggled", self._cull_toggled)
-		rendering_type_box.add_child(cull_off_checkbox)
+		rendering_type_box.add_child(cull_off_checkbox, true)
 		add_focusable(cull_off_checkbox)
 		dropdown.connect("item_selected", self._item_selected)
 
@@ -355,7 +355,7 @@ class RenderingTypeInspector extends MToonProperty:
 
 	func _item_selected(option_idx: int) -> void:
 		if updating: return
-		_update_shader(option_idx, cull_off_checkbox.pressed)
+		_update_shader(option_idx, cull_off_checkbox.button_pressed)
 
 	func _update_shader(option_idx: int, cull_off: bool) -> void:
 		var shader_name: String = get_edited_object().shader.resource_path.split("/")[-1]
@@ -390,7 +390,7 @@ class RenderingTypeInspector extends MToonProperty:
 			val = 2
 		update_hidden_props(1 if val == 1 else 0)
 		dropdown.selected = val
-		cull_off_checkbox.pressed = cull_off
+		cull_off_checkbox.button_pressed = cull_off
 		updating = false
 
 class OutlineModeInspector extends MToonProperty:
@@ -401,7 +401,7 @@ class OutlineModeInspector extends MToonProperty:
 		dropdown.add_item("None")
 		dropdown.add_item("WorldCoordinates")
 		dropdown.add_item("ScreenCoordinates")
-		add_child(dropdown)
+		add_child(dropdown, true)
 		add_focusable(dropdown)
 		dropdown.connect("item_selected", self._item_selected)
 
@@ -438,7 +438,7 @@ class OutlineColorModeInspector extends MToonProperty:
 		self.tooltip = tooltip
 		dropdown.add_item("FixedColor")
 		dropdown.add_item("MixedLighting")
-		add_child(dropdown)
+		add_child(dropdown, true)
 		add_focusable(dropdown)
 		dropdown.connect("item_selected", self._item_selected)
 
@@ -463,7 +463,7 @@ class DebugModeInspector extends MToonProperty:
 		dropdown.add_item("None")
 		dropdown.add_item("Normal")
 		dropdown.add_item("LitShadeRate")
-		add_child(dropdown)
+		add_child(dropdown, true)
 		add_focusable(dropdown)
 		dropdown.connect("item_selected", self._item_selected)
 
@@ -484,7 +484,7 @@ class ReserveInspector extends MToonProperty:
 	var hbox: HBoxContainer = HBoxContainer.new()
 	func _init(tooltip: String) -> void:
 		self.tooltip = tooltip
-		add_child(hbox)
+		add_child(hbox, true)
 
 	func update_property() -> void:
 		pass
@@ -504,7 +504,7 @@ class SpinInspector extends MToonProperty:
 			x_input.allow_greater = false
 		if step < 0:
 			x_input.exp_edit = true
-		add_child(x_input)
+		add_child(x_input, true)
 		add_focusable(x_input)
 
 	func _value_changed(value: float) -> void:
@@ -542,16 +542,16 @@ class ScaleOffsetInspector extends MToonProperty:
 		var hbox_scale = reserve.hbox
 		_setup_slider(x_input, "x")
 		_setup_slider(y_input, "y")
-		hbox_scale.add_child(x_input)
+		hbox_scale.add_child(x_input, true)
 		reserve.add_focusable(x_input)
-		hbox_scale.add_child(y_input)
+		hbox_scale.add_child(y_input, true)
 		reserve.add_focusable(y_input)
-		add_child(hbox)
+		add_child(hbox, true)
 		_setup_slider(z_input, "x")
 		_setup_slider(d_input, "y")
-		hbox.add_child(z_input)
+		hbox.add_child(z_input, true)
 		add_focusable(z_input)
-		hbox.add_child(d_input)
+		hbox.add_child(d_input, true)
 		add_focusable(d_input)
 
 	func _value_changed(value: float) -> void:
@@ -578,9 +578,9 @@ class LinearColorInspector extends MToonProperty:
 	func _init(tooltip: String, allow_alpha: bool) -> void:
 		self.tooltip = tooltip
 		add_child(color_picker) # picker_box)
-		#picker_box.add_child(color_picker)
+		#picker_box.add_child(color_picker, true)
 		add_focusable(color_picker)
-		#picker_box.add_child(color_picker2)
+		#picker_box.add_child(color_picker2, true)
 		#add_focusable(color_picker2)
 		color_picker.edit_alpha = allow_alpha
 		color_picker.rect_min_size = Vector2(40.0, 40.0)
