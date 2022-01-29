@@ -21,7 +21,7 @@ func _ready() -> void:
 
 	if secondary_gizmo == null and (Engine.is_editor_hint() or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
-		add_child(secondary_gizmo)
+		add_child(secondary_gizmo, true)
 	collider_groups_internal.clear()
 	spring_bones_internal.clear()
 	for collider_group in collider_groups:
