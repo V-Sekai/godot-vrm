@@ -302,6 +302,7 @@ void fragment() {
 	//if (!LM_SCENEDATA_BOOL(lm_macro_system_enabled_)) {
 	//	col.rgb = vec3(0.5 + 0.5 * sin(TIME +UV.x+UV.y),0.0,1.0);4
 	//}
+	fragment_albedo_output = max(fragment_albedo_output.rgb, vec3(0.0001));
 
 	ALBEDO = albedo;
 	EMISSION = emission;
