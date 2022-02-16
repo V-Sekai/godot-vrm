@@ -164,7 +164,8 @@ class SecondaryGizmo:
 			if Engine.is_editor_hint():
 				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
 				if c_sk is Skeleton3D:
-					c_tr = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))
+					c_tr = c_sk.get_bone_local_pose(c_sk.find_bone(collider_group.bone))
+					c_tr = c_sk.local_pose_to_global_pose(c_sk.find_bone(collider_group.bone), c_tr)
 			elif collider_group.parent is Skeleton3D:
 				c_tr = collider_group.skel.get_bone_global_pose_no_override(collider_group.parent.find_bone(collider_group.bone))
 			for collider in collider_group.sphere_colliders:
