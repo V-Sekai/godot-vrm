@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://vrm_samples/sample_script.gd" id="3"]
 [ext_resource type="Script" path="res://addons/vrm/vrm_collidergroup.gd" id="3_2xdrw"]
 [ext_resource type="Script" path="res://addons/vrm/vrm_springbone.gd" id="4_47wpj"]
+[ext_resource type="Animation" uid="uid://csxfsxsh2fe8x" path="res://vrm_samples/animation_vrm_samples.tres" id="6_uubhm"]
 
 [sub_resource type="ProceduralSkyMaterial" id="68"]
 sky_top_color = Color(0.454902, 0.678431, 0.87451, 1)
@@ -226,10 +227,11 @@ length = 6.0
 
 [sub_resource type="Animation" id="80"]
 length = 10.0
+loop_mode = 1
 tracks/0/type = "value"
 tracks/0/imported = false
 tracks/0/enabled = true
-tracks/0/path = NodePath(".:translation")
+tracks/0/path = NodePath(".:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
@@ -241,14 +243,14 @@ tracks/0/keys = {
 tracks/1/type = "value"
 tracks/1/imported = false
 tracks/1/enabled = true
-tracks/1/path = NodePath(".:rotation_degrees")
+tracks/1/path = NodePath(".:rotation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
 "times": PackedFloat32Array(0, 4, 6, 10),
 "transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 360, 0), Vector3(0, 360, 0)]
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 1.98968, 0), Vector3(0, 6.28319, 0)]
 }
 
 [sub_resource type="Animation" id="81"]
@@ -261,33 +263,6 @@ length = 5.0
 
 [sub_resource type="Animation" id="84"]
 length = 6.0
-
-[sub_resource type="Animation" id="85"]
-length = 10.0
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:translation")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(2.5, 0, 0), Vector3(2.5, 0, 0), Vector3(1.5, 0, 0), Vector3(3.5, 0, 0), Vector3(2.5, 0, 0), Vector3(2.5, 0, 0), Vector3(2.5, 0, 1), Vector3(2.5, 0, -1), Vector3(2.5, 0, 0), Vector3(2.5, 0, 0)]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath(".:rotation_degrees")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 4, 6, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
-"update": 0,
-"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 360, 0), Vector3(0, 360, 0)]
-}
 
 [sub_resource type="BoxMesh" id="86"]
 size = Vector3(0, 1, 0)
@@ -314,6 +289,7 @@ spring_bones = [SubResource( "Resource_02uhj" ), SubResource( "Resource_6ckcv" )
 collider_groups = [SubResource( "Resource_kgvf1" ), SubResource( "Resource_xvka1" )]
 
 [node name="anim" parent="Godette_vrm_v4" index="2"]
+autoplay = "A"
 anims/idle = SubResource( "71" )
 anims/wiggle = SubResource( "72" )
 anims/wiggle2 = SubResource( "73" )
@@ -321,8 +297,11 @@ anims/wiggle3 = SubResource( "74" )
 anims/wiggle4 = SubResource( "75" )
 
 [node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( "1" )]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.31995, 0, 0)
+transform = Transform3D(1, 0, 1.74846e-07, 0, 1, 0, -1.74846e-07, 0, 1, 1.2, 0, 0)
 update_in_editor = true
+
+[node name="mesh" parent="AliciaSolid_vrm-051" index="0"]
+visible = false
 
 [node name="secondary" parent="AliciaSolid_vrm-051" index="2"]
 spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
@@ -336,18 +315,19 @@ anims/wiggle3 = SubResource( "79" )
 anims/wiggle4 = SubResource( "80" )
 
 [node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( "1" )]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
 
 [node name="secondary" parent="AliciaSolid_vrm-052" index="2"]
 spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
 collider_groups = [SubResource( "Resource_jaafy" ), SubResource( "Resource_lword" ), SubResource( "Resource_0xfpp" ), SubResource( "Resource_wy5id" ), SubResource( "Resource_p2mmr" ), SubResource( "Resource_je1dj" )]
 
 [node name="anim" parent="AliciaSolid_vrm-052" index="3"]
+autoplay = "A"
 anims/idle = SubResource( "81" )
 anims/wiggle = SubResource( "82" )
 anims/wiggle2 = SubResource( "83" )
 anims/wiggle3 = SubResource( "84" )
-anims/wiggle4 = SubResource( "85" )
+anims/wiggle4 = ExtResource( "6_uubhm" )
 
 [node name="Cube" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0)
