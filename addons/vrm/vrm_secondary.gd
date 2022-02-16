@@ -52,7 +52,7 @@ func check_for_editor_update() -> bool:
 		if not parent.update_in_editor and update_in_editor:
 			update_in_editor = false
 			for spring_bone in spring_bones_internal:
-				spring_bone.skel.clear_bones_global_pose_override()
+				spring_bone.skel.clear_bones_local_pose_override()
 	return update_in_editor
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.

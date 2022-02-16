@@ -321,7 +321,9 @@ anims/wiggle3 = SubResource( "74" )
 anims/wiggle4 = SubResource( "75" )
 
 [node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( "1" )]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.35, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.31995, 0, 0)
+update_in_editor = true
+gizmo_spring_bone = true
 
 [node name="secondary" parent="AliciaSolid_vrm-051" index="2"]
 spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
@@ -351,7 +353,6 @@ anims/wiggle4 = SubResource( "85" )
 [node name="Cube" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0)
 mesh = SubResource( "86" )
-surface_material_override/0 = null
 
 [editable path="Godette_vrm_v4"]
 [editable path="AliciaSolid_vrm-051"]
