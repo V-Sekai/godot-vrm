@@ -63,7 +63,9 @@ class SphereCollider:
 	func update(parent: Node3D, skel: Object):
 		if parent.get_class() == "Skeleton3D" && idx != -1:
 			var skeleton: Skeleton3D = parent as Skeleton3D
-			position = VRMTopLevel.VRMUtil.transform_point((skeleton.global_pose_to_world_transform(skel.get_bone_global_pose_no_override(idx))), offset)
+			var pose = skeleton.get_bone_pose(idx)
+			pose = skeleton.local_pose_to_global_pose(idx, pose)
+			position = VRMTopLevel.VRMUtil.transform_point(pose, offset)
 		else:
 			position = VRMTopLevel.VRMUtil.transform_point(parent.global_transform, offset)
 
