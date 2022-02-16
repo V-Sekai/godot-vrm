@@ -92,7 +92,7 @@ func _physics_process(delta) -> void:
 
 class SecondaryGizmo:
 	extends MeshInstance3D
-	
+
 	var secondary_node
 	var m: StandardMaterial3D = StandardMaterial3D.new()
 
@@ -103,19 +103,19 @@ class SecondaryGizmo:
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		m.vertex_color_use_as_albedo = true
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	
+
 	func draw_in_editor(do_draw_spring_bones: bool = false) -> void:
 		mesh.clear_surfaces()
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
-	
+
 	func draw_in_game() -> void:
 		mesh.clear_surfaces()
 		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
-		
+
 	func draw_spring_bones(color: Color) -> void:
 		set_material_override(m)
 		# Spring bones
@@ -172,13 +172,13 @@ class SecondaryGizmo:
 				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
 			mesh.surface_end()
-	
+
 	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(begin_pos)
 		mesh.surface_set_color(color)
 		mesh.surface_add_vertex(end_pos)
-	
+
 	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color) -> void:
 		var step: int = 15
 		var sppi: float = 2 * PI / step
