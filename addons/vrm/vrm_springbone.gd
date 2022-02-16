@@ -155,12 +155,14 @@ class VRMSpringBoneLogic:
 			current_tail = next_tail
 
 		# Apply rotation
-		var ft = VRMTopLevel.VRMUtil.from_to_rotation((bone_axis), next_tail - get_transform(skel).origin)
+		var ft = VRMTopLevel.VRMUtil.from_to_rotation((get_rotation(skel) * (bone_axis)), next_tail - get_transform(skel).origin)
 		if typeof(ft) != TYPE_NIL:
+			ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
+			var qt: Quaternion = ft * get_rotation(skel)
 			var tr: Transform3D = get_local_transform(skel)
-			tr.basis = Basis(ft.normalized())
-			tr = skel.global_pose_to_local_pose(bone_idx, tr)
-			skel.set_bone_local_pose_override(bone_idx, tr, 1.0, true)
+			tr.basis = Basis(qt.normalized())
+			skel.set_bone_global_pose_override(bone_idx, tr, 1.0, true)
+
 
 	func collision(skel: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
 		var out: Vector3 = _next_tail

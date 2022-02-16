@@ -298,8 +298,7 @@ anims/wiggle3 = SubResource( "74" )
 anims/wiggle4 = SubResource( "75" )
 
 [node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( "1" )]
-transform = Transform3D(1, 0, 1.74846e-07, 0, 1, 0, -1.74846e-07, 0, 1, 1.2, 0, 0)
-update_in_editor = true
+transform = Transform3D(1, 0, 1.74846e-07, 0, 1, 0, -1.74846e-07, 0, 1, 1.25251, 0, 0)
 
 [node name="mesh" parent="AliciaSolid_vrm-051" index="0"]
 visible = false
