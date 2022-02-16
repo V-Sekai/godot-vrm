@@ -59,10 +59,6 @@ func check_for_editor_update() -> bool:
 func _process(delta) -> void:
 	if not update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
-			# force update skeleton
-			for spring_bone in spring_bones_internal:
-				if spring_bone.skel != null:
-					spring_bone.skel.get_bone_global_pose_no_override(0)
 			for collider_group in collider_groups_internal:
 				collider_group._process()
 			for spring_bone in spring_bones_internal:
@@ -80,10 +76,6 @@ func _process(delta) -> void:
 func _physics_process(delta) -> void:
 	if update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
-			# force update skeleton
-			for spring_bone in spring_bones_internal:
-				if spring_bone.skel != null:
-					spring_bone.skel.get_bone_global_pose_no_override(0)
 			for collider_group in collider_groups_internal:
 				collider_group._process()
 			for spring_bone in spring_bones_internal:
@@ -134,9 +126,11 @@ class SecondaryGizmo:
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.is_editor_hint():
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
-					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+					s_tr = s_sk.get_bone_local_pose_override(v.bone_idx)
+					s_tr = s_sk.local_pose_to_global_pose(v.bone_idx, s_tr)
 				else:
-					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
+					s_tr = spring_bone.skel.get_bone_local_pose_override(v.bone_idx)
+					s_tr = spring_bone.skel.local_pose_to_global_pose(v.bone_idx, s_tr)
 				draw_line(
 					s_tr.origin,
 					VRMTopLevel.VRMUtil.inv_transform_point(s_sk.global_transform, v.current_tail),
@@ -149,8 +143,10 @@ class SecondaryGizmo:
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.is_editor_hint():
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
-					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+					s_tr = s_sk.get_bone_local_pose(v.bone_idx)
+					s_tr = s_sk.local_pose_to_global_pose(v.bone_idx, s_tr)
 				else:
+					s_tr = spring_bone.skel.get_bone_local_pose(v.bone_idx)
 					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
 				draw_sphere(
 					s_tr.basis,
