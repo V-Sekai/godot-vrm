@@ -283,6 +283,7 @@ light_color = Color(1, 0.956863, 0.839216, 1)
 shadow_bias = 0.03
 
 [node name="Godette_vrm_v4" parent="." instance=ExtResource( "2" )]
+update_in_editor = true
 
 [node name="secondary" parent="Godette_vrm_v4" index="1"]
 spring_bones = [SubResource( "Resource_02uhj" ), SubResource( "Resource_6ckcv" ), SubResource( "Resource_kbmfl" )]
@@ -316,6 +317,7 @@ anims/wiggle4 = SubResource( "80" )
 
 [node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( "1" )]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
+update_in_editor = true
 
 [node name="secondary" parent="AliciaSolid_vrm-052" index="2"]
 spring_bones = [SubResource( "Resource_arhdk" ), SubResource( "Resource_4x88k" ), SubResource( "Resource_1leut" )]
