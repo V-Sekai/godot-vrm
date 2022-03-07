@@ -10,8 +10,10 @@ func _get_recognized_extensions() -> Array:
 	return ["vrm"]
 
 
-func _get_extensions() -> Array:
-	return ["vrm"]
+func _get_extensions() -> PackedStringArray:
+	var exts : PackedStringArray 
+	exts.push_back("vrm")
+	return exts
 
 
 func _get_import_flags() -> int:
@@ -22,7 +24,7 @@ func _import_animation(path: String, flags: int, options: Dictionary, bake_fps: 
 	return Animation.new()
 
 
-func _import_scene(path: String, flags: int, options: Dictionary, bake_fps: int) -> Node:
+func _import_scene(path: String, flags: int, options: Dictionary, bake_fps: int) -> Object:
 	var vrm_loader = load("res://addons/vrm/vrm_loader.gd").new()
 	
 	var root_node = vrm_loader.import_scene(path, flags, bake_fps)

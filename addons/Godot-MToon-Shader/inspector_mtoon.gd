@@ -280,7 +280,7 @@ class MToonProperty extends EditorProperty:
 	var hide_if_value: Dictionary = {}
 
 	# Tooltips do not seem to be functional for Godot properties
-	func _make_custom_tooltip(text: String) -> Control:
+	func _make_custom_tooltip(text: String) -> Object:
 		var label: Label = Label.new()
 		label.text = text + self.tooltip
 		label.rect_min_size = Vector2(200,30)
@@ -326,7 +326,7 @@ class MToonProperty extends EditorProperty:
 		slider.rect_min_size = Vector2(50.0, 20.0)
 		slider.connect("value_changed", self._value_changed)
 
-	func emit_changed(prop, val) -> void:
+	func emit_changed(prop : StringName, val : Variant, field : StringName = &"", changing : bool = false) -> void:
 		get_edited_object()[prop] = val
 
 class RenderingTypeInspector extends MToonProperty:
