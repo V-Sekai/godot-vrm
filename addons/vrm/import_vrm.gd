@@ -31,4 +31,7 @@ func _import_scene(path: String, flags: int, options: Dictionary, bake_fps: int)
 	
 	if typeof(root_node) == TYPE_INT:
 		return root_node # Error code
-	return root_node
+	else:
+		var packed_scene := PackedScene.new()
+		packed_scene.pack(root_node)
+		return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)

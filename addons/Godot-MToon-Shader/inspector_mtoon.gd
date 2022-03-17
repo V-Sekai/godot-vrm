@@ -139,8 +139,7 @@ func merge_single_line_properties(label: String, outer_prop: Control, inner_prop
 	outer_prop.add_child(new_hbox, true)
 
 # Copy texture modifications to next_pass material
-func _texture_property_changed(property, value, emptystr, boolfalse=null, editor_property=null) -> void:
-	var texture_property: EditorProperty = emptystr if editor_property == null else editor_property
+func _texture_property_changed(texture_property: EditorProperty, property_name: StringName, value: Variant) -> void:
 	if MToonProperty.has_outline_pass_static(texture_property.get_edited_object()):
 		texture_property.get_edited_object().next_pass[texture_property.get_edited_property()] = value
 
@@ -148,7 +147,7 @@ func _process_tex_property() -> void:
 	var prop = last_tex_property
 	var parent_vbox = first_property.get_parent()
 	var texture_property: EditorProperty = parent_vbox.get_child(parent_vbox.get_child_count() - 1)
-	texture_property.connect("property_changed", self._texture_property_changed, [texture_property])
+	texture_property.property_changed.connect(self._texture_property_changed.bind(texture_property))
 	if single_line_properties.has(prop):
 		var color_property: EditorProperty = property_name_to_editor.get(single_line_properties[prop])
 		if color_property != null:
@@ -324,7 +323,7 @@ class MToonProperty extends EditorProperty:
 		slider.max_value = 1.0
 		slider.size_flags_horizontal = SIZE_EXPAND_FILL
 		slider.rect_min_size = Vector2(50.0, 20.0)
-		slider.connect("value_changed", self._value_changed)
+		slider.value_changed.connect(self._value_changed)
 
 	func emit_changed(prop : StringName, val : Variant, field : StringName = &"", changing : bool = false) -> void:
 		get_edited_object()[prop] = val
@@ -344,10 +343,10 @@ class RenderingTypeInspector extends MToonProperty:
 		rendering_type_box.add_child(dropdown, true)
 		add_focusable(dropdown)
 		cull_off_checkbox.text = "Cull Disabled"
-		cull_off_checkbox.connect("toggled", self._cull_toggled)
+		cull_off_checkbox.toggled.connect(self._cull_toggled)
 		rendering_type_box.add_child(cull_off_checkbox, true)
 		add_focusable(cull_off_checkbox)
-		dropdown.connect("item_selected", self._item_selected)
+		dropdown.item_selected.connect(self._item_selected)
 
 	func _cull_toggled(value: bool) -> void:
 		if updating: return
@@ -403,7 +402,7 @@ class OutlineModeInspector extends MToonProperty:
 		dropdown.add_item("ScreenCoordinates")
 		add_child(dropdown, true)
 		add_focusable(dropdown)
-		dropdown.connect("item_selected", self._item_selected)
+		dropdown.item_selected.connect(self._item_selected)
 
 
 	func _item_selected(option_idx: int) -> void:
@@ -440,7 +439,7 @@ class OutlineColorModeInspector extends MToonProperty:
 		dropdown.add_item("MixedLighting")
 		add_child(dropdown, true)
 		add_focusable(dropdown)
-		dropdown.connect("item_selected", self._item_selected)
+		dropdown.item_selected.connect(self._item_selected)
 
 	func _item_selected(option_idx: int) -> void:
 		if updating: return
@@ -465,7 +464,7 @@ class DebugModeInspector extends MToonProperty:
 		dropdown.add_item("LitShadeRate")
 		add_child(dropdown, true)
 		add_focusable(dropdown)
-		dropdown.connect("item_selected", self._item_selected)
+		dropdown.item_selected.connect(self._item_selected)
 
 	func _item_selected(option_idx: int) -> void:
 		if updating: return
@@ -585,7 +584,7 @@ class LinearColorInspector extends MToonProperty:
 		color_picker.edit_alpha = allow_alpha
 		color_picker.rect_min_size = Vector2(40.0, 40.0)
 		#color_picker2.rect_min_size = Vector2(40.0, 40.0)
-		color_picker.connect("color_changed", self._color_changed)
+		color_picker.color_changed.connect(self._color_changed)
 
 	func _color_changed(new_color: Color) -> void:
 		if updating:
