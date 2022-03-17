@@ -30,20 +30,17 @@ var parent: Node3D = null
 var skel: Object = null
 
 func setup():
-	if parent == null:
-		return
-	colliders.clear()
-	for collider in sphere_colliders:
-		colliders.append(SphereCollider.new(bone_idx, collider.normal, collider.d))
+	if parent != null:
+		colliders.clear()
+		for collider in sphere_colliders:
+			colliders.append(SphereCollider.new(bone_idx, collider.normal, collider.d))
 
 
-func _ready(parent: Node3D, skel: Object):
-	self.parent = parent
-	if parent.get_class() != "Skeleton3D":
-		setup()
-		return
-	self.skel = skel
-	bone_idx = parent.find_bone(bone)
+func _ready(ready_parent: Node3D, ready_skel: Object):
+	self.parent = ready_parent
+	if ready_parent.get_class() == "Skeleton3D":
+		self.skel = ready_skel
+		bone_idx = ready_parent.find_bone(bone)
 	setup()
 
 
@@ -57,25 +54,21 @@ class SphereCollider:
 	var offset: Vector3
 	var radius: float
 	var position: Vector3
-
-
+	
 	func _init(bone_idx: int, collider_offset: Vector3 = Vector3.ZERO, collider_radius: float = 0.1):
 		idx = bone_idx
 		offset = VRMTopLevel.VRMUtil.coordinate_u2g(collider_offset)
 		radius = collider_radius
-
-
+	
 	func update(parent: Node3D, skel: Object):
-		if not (parent.get_class() == "Skeleton3D" && idx != -1):			
+		if parent.get_class() == "Skeleton3D" && idx != -1:
+			var skeleton: Skeleton3D = parent as Skeleton3D
+			position = VRMTopLevel.VRMUtil.transform_point((skeleton.global_pose_to_world_transform(skel.get_bone_global_pose_no_override(idx))), offset)
+		else:
 			position = VRMTopLevel.VRMUtil.transform_point(parent.global_transform, offset)
-			return
-		var skeleton: Skeleton3D = parent as Skeleton3D
-		position = VRMTopLevel.VRMUtil.transform_point((skeleton.global_pose_to_world_transform(skel.get_bone_global_pose_no_override(idx))), offset)
-
 
 	func get_radius() -> float:
 		return radius
-
-
+	
 	func get_position() -> Vector3:
 		return position

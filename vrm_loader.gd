@@ -861,4 +861,7 @@ func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate)
 
-	return root_node
+	# Remove references
+	var packed_scene: PackedScene = PackedScene.new()
+	packed_scene.pack(root_node)
+	return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
