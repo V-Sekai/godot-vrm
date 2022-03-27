@@ -91,21 +91,21 @@ void vertex() {
 	if (isOutline == 1.0) {
 		float outlineTex = textureLod(_OutlineWidthTexture, UV, 0).r;
 		if (_OutlineWidthMode < 1.5) {
-			vec3 worldNormalLength = vec3(1.0/length(mat3(transpose(WORLD_MATRIX)) * NORMAL));
+			vec3 worldNormalLength = vec3(1.0/length(mat3(transpose(MODEL_MATRIX)) * NORMAL));
 			vec3 outlineOffset = 0.01 * _OutlineWidth * outlineTex * worldNormalLength * NORMAL;
 			VERTEX += outlineOffset;
-			VERTEX = (INV_CAMERA_MATRIX * WORLD_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		} else { // #elif defined(MTOON_OUTLINE_WIDTH_SCREEN)
 			// 1. Create the clip-space position
 			// 2. Get the normal direction, normalized, in clip space.
 			// 3. Get the aspect ratio of the currently rendering camera.
 			// 4. Scale the normals by the distance to the camera
 			// 5. Add the normals to the clip-space XY position scaled by the width.
-			VERTEX = (INV_CAMERA_MATRIX * WORLD_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 			vec4 clipPos = PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 			vec4 nearUpperRight = (INV_PROJECTION_MATRIX * vec4(1, 1, 0, 1));
 			float aspect = abs(nearUpperRight.y / nearUpperRight.x);
-			vec3 viewNormal = mat3(INV_CAMERA_MATRIX) * mat3(WORLD_MATRIX) * NORMAL.xyz;
+			vec3 viewNormal = mat3(VIEW_MATRIX) * mat3(MODEL_MATRIX) * NORMAL.xyz;
 			vec3 clipNormal = mat3(PROJECTION_MATRIX) * viewNormal.xyz;
 			vec2 projectedNormal = normalize(clipNormal.xy);
 			projectedNormal *= min(clipPos.w, _OutlineScaledMaxDistance);
@@ -114,7 +114,7 @@ void vertex() {
 			VERTEX = (INV_PROJECTION_MATRIX * clipPos).xyz;
 		}
 	} else {
-		VERTEX = (INV_CAMERA_MATRIX * WORLD_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	}
 
 
@@ -246,7 +246,7 @@ void fragment() {
 	// Unity lighting
 
 	// Indirect Light
-	vec3 up_normal = mat3(INV_CAMERA_MATRIX) * vec3(0.0,1.0,0.0);
+	vec3 up_normal = mat3(VIEW_MATRIX) * vec3(0.0,1.0,0.0);
 	float LIGHT_COME_FROM_UP_RATIO = mix(0.8, 1.0, sin(_IndirectLightIntensity));
 	fragment_albedo_output = max(lit.rgb, vec3(0.0001));
 
@@ -261,7 +261,7 @@ void fragment() {
 	emission = mix(emission, vec3(0, 0, 0), isOutline);
 
 	// additive matcap
-	vec3 viewCameraUp = vec3(0.0,1.0,0.0);//normalize(CAMERA_MATRIX[1].xyz); // FIXME!!
+	vec3 viewCameraUp = vec3(0.0,1.0,0.0);//normalize(INV_VIEW_MATRIX[1].xyz); // FIXME!!
 	vec3 viewViewUp = normalize(viewCameraUp - viewView * dot(viewView, viewCameraUp));
 	vec3 viewViewRight = normalize(cross(viewView, viewViewUp));
 	vec2 matcapUv = vec2(-dot(viewViewRight, viewNormal), dot(viewViewUp, viewNormal)) * 0.5 + 0.5;
@@ -292,7 +292,7 @@ void fragment() {
 		emission = vec3(0.0);
 		albedo = vec3(0.0);
 		if (_DebugMode == 1.0) { //MTOON_DEBUG_NORMAL
-			emission = ((mat3(CAMERA_MATRIX) * viewNormal * vec3(1.0,1.0,-1.0)) * 0.5 + vec3(0.5));
+			emission = ((mat3(INV_VIEW_MATRIX) * viewNormal * vec3(1.0,1.0,-1.0)) * 0.5 + vec3(0.5));
 		} else if (_DebugMode == 2.0) { //MTOON_DEBUG_LITSHADERATE
 			albedo = vec3(1.0) * LIGHT_COME_FROM_UP_RATIO; // lightIntensity * lighting;
 		} else if (_DebugMode == 3.0) { // Add pass lighting
