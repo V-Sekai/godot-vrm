@@ -3,7 +3,7 @@
 # VRM addon for Godot Engine
 
 This Godot addon fully implements an importer for models with the [VRM specification, version 0.0](https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0).
-Compatible with Godot Engine 3.2.2 stable or newer.
+Compatible with Godot Engine 4.0 stable or newer.
 
 Proudly brought to you by the [V-Sekai team](https://v-sekai.org/about).
 
@@ -53,10 +53,7 @@ EXPORT is completely unsupported. Support will be added using the Godot 4.x GLTF
 
 ## Godot 4.x
 
-VRM works in latest Godot master but currently requires the following patches applied:
-
-* https://github.com/godotengine/godot/pull/48253
-* https://github.com/godotengine/godot/pull/48014
+VRM works in latest Godot master.
 
 Caveat: Scenes with realtime omni or spot lights will have clustering artifacts, because there is no current way to detect if a given light is directional. After some missing variables are added, we can provide a way to detect this.
 
