@@ -368,6 +368,8 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var node: AnimationPlayer = gstate.get_animation_player(i)
 		node.get_parent().remove_child(node)
 
+	var animation_library : AnimationLibrary = AnimationLibrary.new()
+	
 	var meshes = gstate.get_meshes()
 	var nodes = gstate.get_nodes()
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
@@ -449,15 +451,15 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			#print("Bind weight: " + str(float(bind["weight"]) / 100.0))
 
 		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
-		animplayer.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
+		animation_library.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
 
 	var firstperson = vrm_extension["firstPerson"]
 	
 	var firstpersanim: Animation = Animation.new()
-	animplayer.add_animation("FirstPerson", firstpersanim)
+	animation_library.add_animation("FirstPerson", firstpersanim)
 
 	var thirdpersanim: Animation = Animation.new()
-	animplayer.add_animation("ThirdPerson", thirdpersanim)
+	animation_library.add_animation("ThirdPerson", thirdpersanim)
 
 	var skeletons:Array = gstate.get_skeletons()
 
@@ -518,7 +520,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var anim: Animation = null
 		if not animplayer.has_animation("LOOKLEFT"):
 			anim = Animation.new()
-			animplayer.add_animation("LOOKLEFT", anim)
+			animation_library.add_animation("LOOKLEFT", anim)
 		anim = animplayer.get_animation("LOOKLEFT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
@@ -534,7 +536,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 
 		if not animplayer.has_animation("LOOKRIGHT"):
 			anim = Animation.new()
-			animplayer.add_animation("LOOKRIGHT", anim)
+			animation_library.add_animation("LOOKRIGHT", anim)
 		anim = animplayer.get_animation("LOOKRIGHT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
@@ -550,7 +552,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 
 		if not animplayer.has_animation("LOOKUP"):
 			anim = Animation.new()
-			animplayer.add_animation("LOOKUP", anim)
+			animation_library.add_animation("LOOKUP", anim)
 		anim = animplayer.get_animation("LOOKUP")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
@@ -566,7 +568,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 
 		if not animplayer.has_animation("LOOKDOWN"):
 			anim = Animation.new()
-			animplayer.add_animation("LOOKDOWN", anim)
+			animation_library.add_animation("LOOKDOWN", anim)
 		anim = animplayer.get_animation("LOOKDOWN")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
@@ -579,6 +581,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
 			anim.rotation_track_insert_key(animtrack, vertdown["xRange"] / 90.0, Basis(Vector3(1,0,0), -vertdown["yRange"] * 3.14159/180.0).get_rotation_quaternion())
+	animplayer.add_animation_library("", animation_library)
 	return animplayer
 
 
