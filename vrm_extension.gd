@@ -733,7 +733,7 @@ func _import_preflight(gstate : GLTFState) -> int:
 	return OK
 
 
-func _import_post(gstate : GLTFState, node : Node) -> Node3D:
+func _import_post(gstate : GLTFState, node : Node) -> int:
 
 	var gltf : GLTFDocument = GLTFDocument.new()
 	var root_node: Node = gltf.generate_scene(gstate, 30)
@@ -784,4 +784,4 @@ func _import_post(gstate : GLTFState, node : Node) -> Node3D:
 		root_node.set("vrm_secondary", secondary_path)
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate)
-	return root_node
+	return OK
