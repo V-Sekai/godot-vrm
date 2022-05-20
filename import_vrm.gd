@@ -25,13 +25,11 @@ func _import_animation(path: String, flags: int, options: Dictionary, bake_fps: 
 
 
 func _import_scene(path: String, flags: int, options: Dictionary, bake_fps: int) -> Object:
-	var vrm_loader = load("res://addons/vrm/vrm_loader.gd").new()
-	
-	var root_node = vrm_loader.import_scene(path, flags, bake_fps)
-	
-	if typeof(root_node) == TYPE_INT:
-		return root_node # Error code
-	else:
-		var packed_scene := PackedScene.new()
-		packed_scene.pack(root_node)
-		return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
+	var gltf : GLTFDocument = GLTFDocument.new()
+	var extension : GLTFDocumentExtension = load("res://addons/vrm/vrm_extension.gd").new()
+	gltf.extensions.push_front(extension)	
+	var state : GLTFState = GLTFState.new()
+	var err = gltf.append_from_file(path, state, flags, bake_fps)
+	if err != OK:
+		return null
+	return gltf.generate_scene(state, bake_fps)

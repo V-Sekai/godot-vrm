@@ -1,9 +1,4 @@
-extends RefCounted
-
-# Set this to true to save a .res file with all GLTF DOM state
-# This allows exploring all JSON structure and also Godot internal GLTFState
-# Very useful for debugging.
-const SAVE_DEBUG_GLTFSTATE_RES: bool = false
+extends GLTFDocumentExtension
 
 enum DebugMode {
 	None = 0,
@@ -77,12 +72,12 @@ func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_
 func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float:
 	return vrm_mat_props["floatProperties"].get(key, def)
 
- 
+
 func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm_mat_props: Dictionary) -> Material:
 	var vrm_shader_name:String = vrm_mat_props["shader"]
 	if vrm_shader_name == "VRM_USE_GLTFSHADER":
 		return orig_mat # It's already correct!
-	
+
 	if (vrm_shader_name == "Standard" or
 		vrm_shader_name == "UniGLTF/UniUnlit"):
 		printerr("Unsupported legacy VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
@@ -165,7 +160,7 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 
 	for param_name in vrm_mat_props["floatProperties"]:
 		new_mat.set_shader_param(param_name, vrm_mat_props["floatProperties"][param_name])
-		
+
 	for param_name in ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor"]:
 		if param_name in vrm_mat_props["vectorProperties"]:
 			var param_val = vrm_mat_props["vectorProperties"][param_name]
@@ -177,11 +172,11 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 	# FIXME: setting _Cutoff to disable cutoff is a bit unusual.
 	if blend_mode == int(RenderMode.Cutout):
 		new_mat.set_shader_param("_EnableAlphaCutout", 1.0)
-	
+
 	if godot_shader_outline != null:
 		var outline_mat = new_mat.duplicate()
 		outline_mat.shader = godot_shader_outline
-		
+
 		new_mat.next_pass = outline_mat
 
 	return new_mat
@@ -239,9 +234,6 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 		# render_priority only makes sense for transparent materials.
 		if newmat.get_class() == "StandardMaterial3D":
 			if int(newmat.transparency) > 0:
-				newmat.render_priority = target_render_priority
-		elif newmat.get_class() == "SpatialMaterial": 
-			if newmat.flag_transparent:
 				newmat.render_priority = target_render_priority
 		else:
 			var blend_mode = int(vrm_mat_props["floatProperties"].get("_BlendMode", 0))
@@ -380,7 +372,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		var gltfmesh : GLTFMesh = meshes[i]
 		for j in range(gltfmesh.mesh.get_surface_count()):
 			material_name_to_mesh_and_surface_idx[gltfmesh.mesh.get_surface_material(j).resource_name] = [i, j]
-			
+
 	for i in range(nodes.size()):
 		var gltfnode: GLTFNode = nodes[i]
 		var mesh_idx: int = gltfnode.mesh
@@ -393,7 +385,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	for shape in blend_shape_groups:
 		#print("Blend shape group: " + shape["name"])
 		var anim = Animation.new()
-		
+
 		for matbind in shape["materialValues"]:
 			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
@@ -404,7 +396,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var origvalue = null
 			var tv = matbind["targetValue"]
 			var newvalue = tv[0]
-				
+
 			if (mat is ShaderMaterial):
 				var smat: ShaderMaterial = mat
 				var param = smat.get_shader_param(matbind["parameterName"])
@@ -430,7 +422,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			# FIXME: Is this a mesh_idx or a node_idx???
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
 			var nodeMesh: ImporterMesh = node.mesh;
-			
+
 			if (bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count()):
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
 				continue
@@ -454,7 +446,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		animation_library.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
 
 	var firstperson = vrm_extension["firstPerson"]
-	
+
 	var firstpersanim: Animation = Animation.new()
 	animation_library.add_animation("FirstPerson", firstpersanim)
 
@@ -608,7 +600,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			collider_group.skeleton_or_node = secondary_node.get_path_to(skeleton)
 			collider_group.bone = nodes[int(cgroup["node"])].resource_name
 			collider_group.resource_name = collider_group.bone
-		
+
 		for collider_info in cgroup["colliders"]:
 			var offset_obj = collider_info.get("offset", {"x": 0.0, "y": 0.0, "z": 0.0})
 			var local_pos: Vector3 = Vector3(offset_obj["x"], offset_obj["y"], offset_obj["z"])
@@ -633,7 +625,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		spring_bone.gravity_dir = Vector3(gravity_dir["x"], gravity_dir["y"], gravity_dir["z"])
 		spring_bone.drag_force = float(sbone.get("drag_force", 0.4))
 		spring_bone.hit_radius = float(sbone.get("hitRadius", 0.02))
-		
+
 		if spring_bone.comment != "":
 			spring_bone.resource_name = spring_bone.comment.split("\n")[0]
 		else:
@@ -642,7 +634,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				tmpname += " + " + str(sbone["bones"].size() - 1) + " roots"
 			tmpname = nodes[int(first_bone_node)].resource_name + tmpname
 			spring_bone.resource_name = tmpname
-		
+
 		spring_bone.collider_groups = [].duplicate() # HACK HACK HACK
 		for cgroup_idx in sbone.get("colliderGroups", []):
 			spring_bone.collider_groups.append(collider_groups[int(cgroup_idx)])
@@ -732,90 +724,19 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 
 	return true
 
-const GLB_MAGIC = 0x46546C67
-const CHUNK_MAGIC = 0x4E4F534A
 
-func import_scene(path: String, flags: int, bake_fps: int) -> Node:
-	var f = File.new()
-	if f.open(path, File.READ) != OK:
-		return null
-
-	var magic = f.get_32()
-	if magic != GLB_MAGIC:
-		return null
-	var version = f.get_32() # version
-	var full_length = f.get_32() # length
-
-	var chunk_length = f.get_32();
-	var chunk_type = f.get_32();
-
-	if chunk_type != CHUNK_MAGIC:
-		return null
-	var orig_json_utf8 : PackedByteArray = f.get_buffer(chunk_length)
-	var rest_data : PackedByteArray = f.get_buffer(full_length - chunk_length - 20)
-	if (f.get_length() != full_length):
-		push_error("Incorrect full_length in " + str(path))
-	f.close()
-
-	return _import_scene_internal(version, orig_json_utf8, rest_data, path, flags, bake_fps)
-
-func import_scene_buffer(buffer: PackedByteArray, flags: int, bake_fps: int, path: String = "") -> Node:
-	if len(buffer) < 20:
-		return null
-	var magic = buffer.decode_u32(0)
-	if magic != GLB_MAGIC:
-		return null
-	var version = buffer.decode_u32(4) # version
-	var full_length = buffer.decode_u32(8) # length
-
-	var chunk_length = buffer.decode_u32(12)
-	var chunk_type = buffer.decode_u32(16)
-
-	if chunk_type != CHUNK_MAGIC:
-		return null
-	var orig_json_utf8 : PackedByteArray = buffer.slice(20, chunk_length + 20)
-	var rest_data : PackedByteArray = buffer.slice(chunk_length + 20, full_length)
-	if (len(buffer) != full_length):
-		push_error("Incorrect full_length in buffer")
-
-	return _import_scene_internal(version, orig_json_utf8, rest_data, path, flags, bake_fps)
-
-func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_data: PackedByteArray, path: String, flags: int, bake_fps: int) -> Node:
-	var gltf_json_parsed_result = JSON.new()
-	
-	if gltf_json_parsed_result.parse(orig_json_utf8.get_string_from_utf8()) != OK:
-		push_error("Failed to parse JSON part of glTF file in " + str(path) + ":" + str(gltf_json_parsed_result.error_line) + ": " + gltf_json_parsed_result.error_string)
-		return null
-	var gltf_json_parsed: Dictionary = gltf_json_parsed_result.get_data()
+func _import_preflight(gstate : GLTFState) -> int:
+	var gltf_json_parsed: Dictionary = gstate.json
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
-		push_error("Failed to find required VRM keys in " + str(path))
-		return null
-	var json_utf8: PackedByteArray = gltf_json_parsed_result.stringify(gltf_json_parsed, "", true, true).to_utf8_buffer()
-	
-	var pb: PackedByteArray = PackedByteArray()
-	pb.resize(20)
-	pb.encode_u32(0, GLB_MAGIC)
-	pb.encode_u32(4, version)
-	pb.encode_u32(8, 20 + len(json_utf8) + len(rest_data))
-	pb.encode_u32(12, len(json_utf8))
-	pb.encode_u32(16, CHUNK_MAGIC)
-	pb.append_array(json_utf8)
-	pb.append_array(rest_data)
+		push_error("Failed to find required VRM keys in json")
+		return ERR_INVALID_DATA
+	return OK
 
-	var gstate := GLTFState.new()
-	var gltf := GLTFDocument.new()
-	print(path)
-	
-	# FIXME: For security reasons, it would be good to forbid loading of external resources.
-	gltf.append_from_buffer(pb, "", gstate, flags, bake_fps)
-	
+
+func _import_post(gstate : GLTFState, node : Node) -> Node3D:
+
+	var gltf : GLTFDocument = GLTFDocument.new()
 	var root_node: Node = gltf.generate_scene(gstate, 30)
-	if path != "":
-		root_node.name = path.get_basename().get_file()
-	
-	if SAVE_DEBUG_GLTFSTATE_RES and path != "":
-		if (!ResourceLoader.exists(path + ".res")):
-			ResourceSaver.save(path + ".res", gstate)
 
 	var gltf_json : Dictionary = gstate.json
 	var vrm_extension : Dictionary = gltf_json["extensions"]["VRM"]
@@ -858,13 +779,9 @@ func _import_scene_internal(version: int, orig_json_utf8: PackedByteArray, rest_
 			root_node.add_child(secondary_node, true)
 			secondary_node.set_owner(root_node)
 			secondary_node.set_name("secondary")
-		
+
 		var secondary_path: NodePath = root_node.get_path_to(secondary_node)
 		root_node.set("vrm_secondary", secondary_path)
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate)
-
-	# Remove references
-	var packed_scene: PackedScene = PackedScene.new()
-	packed_scene.pack(root_node)
-	return packed_scene.instantiate(PackedScene.GEN_EDIT_STATE_INSTANCE)
+	return root_node
