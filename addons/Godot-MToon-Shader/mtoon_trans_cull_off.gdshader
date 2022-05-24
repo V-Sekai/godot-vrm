@@ -34,7 +34,7 @@ render_mode cull_disabled;
 const bool CALCULATE_LIGHTING_IN_FRAGMENT = true;
 
 
-uniform float _EnableAlphaCutout : hint_range(0,1,1) = 0.0;
+uniform float _AlphaCutoutEnable : hint_range(0,1,1) = 0.0;
 uniform float _Cutoff : hint_range(0,1) = 0.5;
 uniform vec4 _Color /*: source_color*/ = vec4(1.0,1.0,1.0,1.0); // "Lit Texture + Alpha"
 uniform vec4 _ShadeColor /*: source_color*/ = vec4(0.97, 0.81, 0.86, 1); // "Shade Color"
@@ -310,7 +310,7 @@ void fragment() {
 	ROUGHNESS = 1.0;
 	METALLIC = 0.0;
 	ALPHA = alpha;
-	//if (_EnableAlphaCutout > 0.5 && alpha < _Cutoff) { discard; }
+	//if (_AlphaCutoutEnable > 0.5 && alpha < _Cutoff) { discard; }
 
 	//METALLIC = metallic;
 	//ROUGHNESS = roughness;
