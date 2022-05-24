@@ -171,7 +171,7 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 
 	# FIXME: setting _Cutoff to disable cutoff is a bit unusual.
 	if blend_mode == int(RenderMode.Cutout):
-		new_mat.set_shader_param("_EnableAlphaCutout", 1.0)
+		new_mat.set_shader_param("_AlphaCutoutEnable", 1.0)
 
 	if godot_shader_outline != null:
 		var outline_mat = new_mat.duplicate()
