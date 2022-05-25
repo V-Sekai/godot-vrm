@@ -361,7 +361,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 		node.get_parent().remove_child(node)
 
 	var animation_library : AnimationLibrary = AnimationLibrary.new()
-	
+
 	var meshes = gstate.get_meshes()
 	var nodes = gstate.get_nodes()
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
