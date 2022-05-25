@@ -209,7 +209,7 @@ void fragment() {
 	float rotateRad = _UvAnimRotation * PI_2 * uvAnim;
 	const vec2 rotatePivot = vec2(0.5, 0.5);
 	mainUv = mat2(vec2(cos(rotateRad), sin(rotateRad)), vec2(-sin(rotateRad), cos(rotateRad))) * (mainUv - rotatePivot) + rotatePivot;
-	
+
 	// main tex
 	vec4 mainTex = texture(_MainTex, mainUv);
 	// alpha
@@ -347,7 +347,7 @@ void light() {
 		vec3 col;
 		// shade
 		lighting = calculateLighting(mainUv, addDotNL, lightAttenuation, shade, lit, LIGHT_COLOR, col, lightIntensity);
- 
+
 		// base light does not darken.
 		diffuse_output += col * lighting + indirectLighting * lit.rgb;
 
