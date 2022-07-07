@@ -22,9 +22,9 @@ _global_script_class_icons={
 
 config/name="VRM Project [GODOT Master Branch]"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
+config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
 enabled=PackedStringArray("vrm")
-config/features=PackedStringArray("4.0")
 
 [display]
 

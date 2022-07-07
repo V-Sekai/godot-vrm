@@ -133,8 +133,8 @@ func merge_single_line_properties(label: String, outer_prop: Control, inner_prop
 	new_control.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	new_hbox.add_child(new_control, true)
 	# Is it a bad idea to constrain the inspector like this?
-	new_hbox.minimum_size = Vector2(155, 20)
-	outer_prop.minimum_size = Vector2(190, 20)
+	new_hbox.custom_minimum_size = Vector2(155, 20)
+	outer_prop.custom_minimum_size = Vector2(190, 20)
 	outer_prop.add_child(inner_prop, true)
 	outer_prop.add_child(new_hbox, true)
 
@@ -282,7 +282,7 @@ class MToonProperty extends EditorProperty:
 	func _make_custom_tooltip(text: String) -> Object:
 		var label: Label = Label.new()
 		label.text = text + self.tooltip
-		label.minimum_size = Vector2(200,30)
+		label.custom_minimum_size = Vector2(200,30)
 		return label
 
 	func get_tooltip_text() -> String:
@@ -322,7 +322,7 @@ class MToonProperty extends EditorProperty:
 		slider.min_value = 0.0
 		slider.max_value = 1.0
 		slider.size_flags_horizontal = SIZE_EXPAND_FILL
-		slider.minimum_size = Vector2(50.0, 20.0)
+		slider.custom_minimum_size = Vector2(50.0, 20.0)
 		slider.value_changed.connect(self._value_changed)
 
 	func emit_changed(prop : StringName, val : Variant, field : StringName = &"", changing : bool = false) -> void:
@@ -582,8 +582,8 @@ class LinearColorInspector extends MToonProperty:
 		#picker_box.add_child(color_picker2, true)
 		#add_focusable(color_picker2)
 		color_picker.edit_alpha = allow_alpha
-		color_picker.minimum_size = Vector2(40.0, 40.0)
-		#color_picker2.minimum_size = Vector2(40.0, 40.0)
+		color_picker.custom_minimum_size = Vector2(40.0, 40.0)
+		#color_picker2.custom_minimum_size = Vector2(40.0, 40.0)
 		color_picker.color_changed.connect(self._color_changed)
 
 	func _color_changed(new_color: Color) -> void:
