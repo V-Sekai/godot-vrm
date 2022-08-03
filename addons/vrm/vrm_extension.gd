@@ -243,7 +243,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 		var oldpath = oldmat.resource_path
 		oldmat.resource_path = ""
 		newmat.take_over_path(oldpath)
-		ResourceSaver.save(oldpath, newmat)
+		ResourceSaver.save(newmat, oldpath)
 	gstate.set_materials(materials)
 
 	var meshes = gstate.get_meshes()
