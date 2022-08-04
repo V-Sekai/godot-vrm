@@ -46,7 +46,9 @@ extends Resource
 # Human bone name -> Reference node index
 # NOTE: We are currently discarding all Unity-specific data.
 # We may need to store it somewhere in case we wish to re-export.
-@export var humanoid_bone_mapping: Dictionary # VRM boneName -> bone name (within skeleton)
+@export var humanoid_bone_mapping: BoneMap # VRM boneName -> bone name (within skeleton)
+
+@export var humanoid_skeleton_path: NodePath = NodePath()
 
 # firstPersonBoneOffset:
 # The target position of the VR headset in first-person view.
