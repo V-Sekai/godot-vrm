@@ -1,5 +1,14 @@
 extends GLTFDocumentExtension
 
+const vrm_constants_class = preload("./vrm_constants.gd")
+const vrm_meta_class = preload("./vrm_meta.gd")
+const vrm_secondary = preload("./vrm_secondary.gd")
+const vrm_collidergroup = preload("./vrm_collidergroup.gd")
+const vrm_springbone = preload("./vrm_springbone.gd")
+const vrm_top_level = preload("./vrm_toplevel.gd")
+
+var vrm_meta: Resource = null
+
 enum DebugMode {
 	None = 0,
 	Normal = 1,
@@ -320,11 +329,14 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 
 	var gltfnodes: Array = gstate.nodes
 
-	var humanBoneDictionary: Dictionary = {}
-	for humanBoneName in human_bone_to_idx:
-		humanBoneDictionary[humanBoneName] = gltfnodes[human_bone_to_idx[humanBoneName]].resource_name
+	var humanBones: BoneMap = BoneMap.new()
+	humanBones.profile = SkeletonProfileHumanoid.new()
 
-	var vrm_meta: Resource = load("res://addons/vrm/vrm_meta.gd").new()
+	var vrmconst_inst = vrm_constants_class.new(true) # vrm 0.0
+	for humanBoneName in human_bone_to_idx:
+		humanBones.set_skeleton_bone_name(vrmconst_inst.vrm_to_human_bone[humanBoneName], gltfnodes[human_bone_to_idx[humanBoneName]].resource_name)
+
+	vrm_meta = vrm_meta_class.new()
 
 	vrm_meta.resource_name = "CLICK TO SEE METADATA"
 	vrm_meta.exporter_version = vrm_extension.get("exporterVersion", "")
@@ -349,7 +361,8 @@ func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: D
 		vrm_meta.other_license_url = vrm_extension["meta"].get("otherLicenseUrl", "")
 
 	vrm_meta.eye_offset = eyeOffset
-	vrm_meta.humanoid_bone_mapping = humanBoneDictionary
+	vrm_meta.humanoid_bone_mapping = humanBones
+	vrm_meta.humanoid_skeleton_path = skeletonPath
 	return vrm_meta
 
 
@@ -581,10 +594,6 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 
-	var vrm_secondary:GDScript = load("res://addons/vrm/vrm_secondary.gd")
-	var vrm_collidergroup:GDScript = load("res://addons/vrm/vrm_collidergroup.gd")
-	var vrm_springbone:GDScript = load("res://addons/vrm/vrm_springbone.gd")
-
 	var collider_groups: Array = [].duplicate()
 	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
 		var gltfnode: GLTFNode = nodes[int(cgroup["node"])]
@@ -762,7 +771,6 @@ func _import_post(gstate : GLTFState, node : Node) -> int:
 	animplayer.owner = root_node
 	_create_animation_player(animplayer, vrm_extension, gstate, human_bone_to_idx)
 
-	var vrm_top_level:GDScript = load("res://addons/vrm/vrm_toplevel.gd")
 	root_node.set_script(vrm_top_level)
 
 	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, human_bone_to_idx)
