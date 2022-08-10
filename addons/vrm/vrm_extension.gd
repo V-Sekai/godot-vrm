@@ -384,19 +384,19 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
 	if maintex_info.get("tex", null) != null:
-		new_mat.set_shader_param("_MainTex", maintex_info["tex"])
+		new_mat.set_shader_uniform("_MainTex", maintex_info["tex"])
 
-	new_mat.set_shader_param("_MainTex_ST", Plane(
+	new_mat.set_shader_uniform("_MainTex_ST", Plane(
 		maintex_info["scale"].x, maintex_info["scale"].y,
 		maintex_info["offset"].x, maintex_info["offset"].y))
 
 	for param_name in ["_MainTex", "_ShadeTexture", "_BumpMap", "_RimTexture", "_SphereAdd", "_EmissionMap", "_OutlineWidthTexture", "_UvAnimMaskTexture"]:
 		var tex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, param_name)
 		if tex_info.get("tex", null) != null:
-			new_mat.set_shader_param(param_name, tex_info["tex"])
+			new_mat.set_shader_uniform(param_name, tex_info["tex"])
 
 	for param_name in vrm_mat_props["floatProperties"]:
-		new_mat.set_shader_param(param_name, vrm_mat_props["floatProperties"][param_name])
+		new_mat.set_shader_uniform(param_name, vrm_mat_props["floatProperties"][param_name])
 
 	for param_name in ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor"]:
 		if param_name in vrm_mat_props["vectorProperties"]:
@@ -404,11 +404,11 @@ func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm
 			#### TODO: Use Color
 			### But we want to keep 4.0 compat which does not gamma correct color.
 			var color_param: Plane = Plane(param_val[0], param_val[1], param_val[2], param_val[3])
-			new_mat.set_shader_param(param_name, color_param)
+			new_mat.set_shader_uniform(param_name, color_param)
 
 	# FIXME: setting _Cutoff to disable cutoff is a bit unusual.
 	if blend_mode == int(RenderMode.Cutout):
-		new_mat.set_shader_param("_AlphaCutoutEnable", 1.0)
+		new_mat.set_shader_uniform("_AlphaCutoutEnable", 1.0)
 
 	if godot_shader_outline != null:
 		var outline_mat = new_mat.duplicate()
@@ -624,14 +624,14 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var surface_idx = mesh_and_surface_idx[1]
 
 			var mat: Material = node.get_surface_material(surface_idx)
-			var paramprop = "shader_param/" + matbind["parameterName"]
+			var paramprop = "shader_uniform/" + matbind["parameterName"]
 			var origvalue = null
 			var tv = matbind["targetValue"]
 			var newvalue = tv[0]
 
 			if (mat is ShaderMaterial):
 				var smat: ShaderMaterial = mat
-				var param = smat.get_shader_param(matbind["parameterName"])
+				var param = smat.get_shader_uniform(matbind["parameterName"])
 				if param is Color:
 					origvalue = param
 					newvalue = Color(tv[0], tv[1], tv[2], tv[3])

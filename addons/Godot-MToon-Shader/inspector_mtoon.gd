@@ -173,7 +173,7 @@ func _parse_end(object: Object) -> void:
 		var parent_vbox: Control = first_property.get_parent()
 		do_unfold_section(parent_vbox.get_parent())
 		for prop in property_name_to_editor:
-			property_name_to_editor[prop].set_tooltip("shader_param/" + prop + "\n" + property_text.get(prop, ["",""])[1])
+			property_name_to_editor[prop].set_tooltip("shader_uniform/" + prop + "\n" + property_text.get(prop, ["",""])[1])
 		for param in property_headers:
 			var property_editor: Control = property_name_to_editor.get(param)
 			if property_editor != null:
@@ -225,18 +225,18 @@ func _parse_end(object: Object) -> void:
 		first_property = null
 		property_name_to_editor = {}.duplicate()
 
-func is_a_shader_param(path: String) -> bool:
-	return path.begins_with("shader_param/")
+func is_a_shader_uniform(path: String) -> bool:
+	return path.begins_with("shader_uniform/")
 
 func _parse_property(object: Object, type: int, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
 	if last_tex_property != "":
 		_process_tex_property()
 		last_tex_property = ""
-	if path == "shader_param/_AlphaCutoutEnable":
+	if path == "shader_uniform/_AlphaCutoutEnable":
 		for param in property_text:
 			if len(property_text[param]) == 3:
 				continue
-			var this_type: int = typeof(object.get_shader_param(param))
+			var this_type: int = typeof(object.get_shader_uniform(param))
 			var property_editor: EditorProperty = null
 			var tooltip: String = property_text[param][1]
 			if param == "_AlphaCutoutEnable":
@@ -259,10 +259,10 @@ func _parse_property(object: Object, type: int, path: String, hint: int, hint_te
 			else:
 				property_editor = SpinInspector.new(tooltip, mins.get(param, 0.0), maxes.get(param, 1.0), steps.get(param, 0.001))
 			property_name_to_editor[param] = property_editor
-			var path_arr = PackedStringArray(["shader_param/" + param])
+			var path_arr = PackedStringArray(["shader_uniform/" + param])
 			add_property_editor_for_multiple_properties(property_text[param][0], path_arr, property_editor)
 		return true
-	elif is_a_shader_param(str(path)):
+	elif is_a_shader_uniform(str(path)):
 		var param: String = str(path).split("/")[-1]
 		if type == TYPE_OBJECT and str(hint_text).find("Texture") != -1:
 			last_tex_property = param
