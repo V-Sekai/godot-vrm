@@ -32,9 +32,3 @@ class VRMUtil:
 		var diff = point - transform.origin
 		var sc = transform.basis.get_scale()
 		return transform.basis.get_rotation_quaternion().inverse() * Vector3(diff.x / sc.x, diff.y / sc.y, diff.z / sc.z)
-
-	# UniVRM will match XY-axis between Unity and OpenGL, so Z-axis will be flipped.
-	# The coordinate issue may be fixed in VRM 1.0 or later.
-	# https://github.com/vrm-c/vrm-specification/issues/205
-	static func coordinate_u2g(vec: Vector3) -> Vector3:
-		return Vector3(vec.x, vec.y, -vec.z)

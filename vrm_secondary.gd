@@ -134,7 +134,8 @@ class SecondaryGizmo:
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.is_editor_hint():
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
-					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+					if v.bone_idx != -1:
+						s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				else:
 					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
 				draw_line(
@@ -149,7 +150,8 @@ class SecondaryGizmo:
 				var s_sk: Skeleton3D = spring_bone.skel
 				if Engine.is_editor_hint():
 					s_sk = secondary_node.get_node_or_null(spring_bone.skeleton)
-					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+					if v.bone_idx != -1:
+						s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				else:
 					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
 				draw_sphere(
@@ -168,11 +170,13 @@ class SecondaryGizmo:
 			if Engine.is_editor_hint():
 				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
 				if c_sk is Skeleton3D:
-					c_tr = c_sk.get_bone_global_pose(c_sk.find_bone(collider_group.bone))
+					if collider_group.bone_idx == -1:
+						collider_group.bone_idx = c_sk.find_bone(collider_group.bone)
+					c_tr = c_sk.get_bone_global_pose(collider_group.bone_idx)
 			elif collider_group.parent is Skeleton3D:
 				c_tr = collider_group.skel.get_bone_global_pose_no_override(collider_group.parent.find_bone(collider_group.bone))
 			for collider in collider_group.sphere_colliders:
-				var c_ps: Vector3 = VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
+				var c_ps: Vector3 = Vector3(0,0,0) # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
 			mesh.surface_end()
 
