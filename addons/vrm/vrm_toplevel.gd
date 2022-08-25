@@ -8,7 +8,7 @@ extends Node3D
 
 @export var vrm_meta: Resource
 
-@export var update_secondary_fixed: bool = true
+@export var update_secondary_fixed: bool = false
 
 @export var update_in_editor: bool = false
 @export var gizmo_spring_bone: bool = false
