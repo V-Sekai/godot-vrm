@@ -493,7 +493,6 @@ class SpinInspector extends MToonProperty:
 
 	func _init(tooltip: String, minval: float, maxval: float, step: float) -> void:
 		self.tooltip = tooltip
-		set_tooltip(tooltip)
 		_setup_slider(x_input, "")
 		x_input.min_value = minval
 		x_input.max_value = maxval
