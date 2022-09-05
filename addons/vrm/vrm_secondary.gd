@@ -76,7 +76,6 @@ func _process(delta) -> void:
 			if secondary_gizmo != null:
 				secondary_gizmo.draw_in_editor()
 
-# All animations to the Node need to be done in the _physics_process.
 func _physics_process(delta) -> void:
 	if update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
