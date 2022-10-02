@@ -957,7 +957,7 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 	return true
 
 
-func _import_preflight(gstate : GLTFState) -> int:
+func _import_preflight(gstate : GLTFState, psa=PackedStringArray(), psa2: Variant=null) -> int:
 	var gltf_json_parsed: Dictionary = gstate.json
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
 		push_error("Failed to find required VRM keys in json")
@@ -969,6 +969,12 @@ func apply_retarget(gstate : GLTFState, root_node: Node, skeleton: Skeleton3D, b
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
 
 	skeleton_rename(gstate, root_node, skeleton, bone_map)
+	var hips_bone_idx = skeleton.find_bone("Hips")
+	if hips_bone_idx != -1:
+		skeleton.motion_scale = abs(skeleton.get_bone_global_rest(hips_bone_idx).origin.y)
+		if skeleton.motion_scale < 0.0001:
+			skeleton.motion_scale = 1.0
+
 	var poses = skeleton_rotate(root_node, skeleton, bone_map)
 	apply_rotation(root_node, skeleton)
 	return poses
