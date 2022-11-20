@@ -1,7 +1,7 @@
 [gd_scene load_steps=26 format=3 uid="uid://c3wc05xvfpxsx"]
 
-[ext_resource type="PackedScene" uid="uid://d0op4fuesc1lc" path="res://vrm_samples/AliciaSolid_vrm-0.51.vrm" id="1"]
-[ext_resource type="PackedScene" uid="uid://dl2f13mng05y5" path="res://vrm_samples/Godette_vrm_v4.vrm" id="2"]
+[ext_resource type="PackedScene" uid="uid://d0cffjok5buw2" path="res://vrm_samples/AliciaSolid_vrm-0.51.vrm" id="1"]
+[ext_resource type="PackedScene" uid="uid://cf7tffjqoleo3" path="res://vrm_samples/Godette_vrm_v4.vrm" id="2"]
 [ext_resource type="Script" path="res://vrm_samples/sample_script.gd" id="3"]
 [ext_resource type="Animation" uid="uid://csxfsxsh2fe8x" path="res://vrm_samples/animation_vrm_samples.tres" id="6_uubhm"]
 
@@ -14,11 +14,11 @@ ground_horizon_color = Color(1, 1, 1, 1)
 ground_curve = 7.77931e-07
 
 [sub_resource type="Sky" id="69"]
-sky_material = SubResource( "68" )
+sky_material = SubResource("68")
 
 [sub_resource type="Environment" id="70"]
 background_mode = 2
-sky = SubResource( "69" )
+sky = SubResource("69")
 
 [sub_resource type="Animation" id="71"]
 
@@ -60,11 +60,11 @@ tracks/1/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_12131"]
 _data = {
-"idle": SubResource( "71" ),
-"wiggle": SubResource( "72" ),
-"wiggle2": SubResource( "73" ),
-"wiggle3": SubResource( "74" ),
-"wiggle4": SubResource( "75" )
+"idle": SubResource("71"),
+"wiggle": SubResource("72"),
+"wiggle2": SubResource("73"),
+"wiggle3": SubResource("74"),
+"wiggle4": SubResource("75")
 }
 
 [sub_resource type="Animation" id="76"]
@@ -108,11 +108,11 @@ tracks/1/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_318jr"]
 _data = {
-"idle": SubResource( "76" ),
-"wiggle": SubResource( "77" ),
-"wiggle2": SubResource( "78" ),
-"wiggle3": SubResource( "79" ),
-"wiggle4": SubResource( "80" )
+"idle": SubResource("76"),
+"wiggle": SubResource("77"),
+"wiggle2": SubResource("78"),
+"wiggle3": SubResource("79"),
+"wiggle4": SubResource("80")
 }
 
 [sub_resource type="Animation" id="81"]
@@ -128,41 +128,41 @@ length = 6.0
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_5s5s0"]
 _data = {
-"idle": SubResource( "81" ),
-"wiggle": SubResource( "82" ),
-"wiggle2": SubResource( "83" ),
-"wiggle3": SubResource( "84" ),
-"wiggle4": ExtResource( "6_uubhm" )
+"idle": SubResource("81"),
+"wiggle": SubResource("82"),
+"wiggle2": SubResource("83"),
+"wiggle3": SubResource("84"),
+"wiggle4": ExtResource("6_uubhm")
 }
 
 [sub_resource type="BoxMesh" id="86"]
 size = Vector3(0, 1, 0)
 
 [node name="Spatial" type="Node3D"]
-script = ExtResource( "3" )
+script = ExtResource("3")
 
 [node name="Camera" type="Camera3D" parent="."]
 transform = Transform3D(-1, 0, -3.25841e-07, 0, 1, 0, 3.25841e-07, 0, -1, 1.06225, 1, -2)
 fov = 60.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( "70" )
+environment = SubResource("70")
 
 [node name="DirectionalLight" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.290669, 0.307523, 0.906058, -0.819219, -0.40927, 0.40172, 0.494361, -0.859027, 0.132967, 0, 2.83314, 0)
 light_color = Color(1, 0.956863, 0.839216, 1)
 shadow_bias = 0.03
 
-[node name="Godette_vrm_v4" parent="." instance=ExtResource( "2" )]
+[node name="Godette_vrm_v4" parent="." instance=ExtResource("2")]
 update_in_editor = true
 
 [node name="anim" parent="Godette_vrm_v4" index="2"]
 autoplay = "A"
 libraries = {
-"sample": SubResource( "AnimationLibrary_12131" )
+"sample": SubResource("AnimationLibrary_12131")
 }
 
-[node name="AliciaSolid_vrm-051" parent="." instance=ExtResource( "1" )]
+[node name="AliciaSolid_vrm-051" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 1.74846e-07, 0, 1, 0, -1.74846e-07, 0, 1, 1.25251, 0, 0)
 update_in_editor = true
 
@@ -171,22 +171,22 @@ visible = false
 
 [node name="anim" parent="AliciaSolid_vrm-051" index="3"]
 libraries = {
-"sample": SubResource( "AnimationLibrary_318jr" )
+"sample": SubResource("AnimationLibrary_318jr")
 }
 
-[node name="AliciaSolid_vrm-052" parent="." instance=ExtResource( "1" )]
+[node name="AliciaSolid_vrm-052" parent="." instance=ExtResource("1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
 update_in_editor = true
 
 [node name="anim" parent="AliciaSolid_vrm-052" index="3"]
 autoplay = "A"
 libraries = {
-"sample": SubResource( "AnimationLibrary_5s5s0" )
+"sample": SubResource("AnimationLibrary_5s5s0")
 }
 
 [node name="Cube" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.195, 0.5, 0)
-mesh = SubResource( "86" )
+mesh = SubResource("86")
 
 [editable path="Godette_vrm_v4"]
 [editable path="AliciaSolid_vrm-051"]
