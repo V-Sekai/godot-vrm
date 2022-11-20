@@ -166,7 +166,7 @@ func do_unfold_section(editor_inspector_section: Node) -> void:
 #func parse_category(object: Object, category: String) -> void:
 #	print("Category " + str(category))
 func _parse_end(object: Object) -> void:
-	if last_tex_property != "":
+	if not last_tex_property.is_empty():
 		_process_tex_property()
 		last_tex_property = ""
 	if first_property != null:
@@ -229,7 +229,7 @@ func is_a_shader_parameter(path: String) -> bool:
 	return path.begins_with("shader_parameter/")
 
 func _parse_property(object: Object, type: int, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
-	if last_tex_property != "":
+	if not last_tex_property.is_empty():
 		_process_tex_property()
 		last_tex_property = ""
 	if path == "shader_parameter/_AlphaCutoutEnable":
@@ -286,7 +286,7 @@ class MToonProperty extends EditorProperty:
 		return label
 
 	func get_tooltip_text() -> String:
-		if tooltip != "":
+		if not tooltip.is_empty():
 			return tooltip
 		else:
 			return str(get_edited_property())
