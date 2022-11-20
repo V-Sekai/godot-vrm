@@ -858,7 +858,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		spring_bone.drag_force = float(sbone.get("drag_force", 0.4))
 		spring_bone.hit_radius = float(sbone.get("hitRadius", 0.02))
 
-		if spring_bone.comment != "":
+		if not spring_bone.comment.is_empty():
 			spring_bone.resource_name = spring_bone.comment.split("\n")[0]
 		else:
 			var tmpname: String = ""
