@@ -478,7 +478,8 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 				newmat.render_priority = target_render_priority
 		materials[i] = newmat
 		var oldpath = oldmat.resource_path
-		oldmat.resource_path = ""
+		if oldpath.is_empty():
+			continue
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(newmat, oldpath)
 	gstate.set_materials(materials)
