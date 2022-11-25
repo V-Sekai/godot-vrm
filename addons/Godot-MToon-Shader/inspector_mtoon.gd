@@ -1,13 +1,13 @@
 @tool
 extends EditorInspectorPlugin
 
-const mtoon: Shader = preload("mtoon.gdshader")
-const mtoon_cull_off: Shader = preload("mtoon_cull_off.gdshader")
-const mtoon_trans: Shader = preload("mtoon_trans.gdshader")
-const mtoon_trans_cull_off: Shader = preload("mtoon_trans_cull_off.gdshader")
-const mtoon_trans_zwrite: Shader = preload("mtoon_trans_zwrite.gdshader")
-const mtoon_trans_zwrite_cull_off: Shader = preload("mtoon_trans_zwrite_cull_off.gdshader")
-const mtoon_outline: Shader = preload("mtoon_outline.gdshader")
+const mtoon: Shader = preload("res://addons/Godot-MToon-Shader/mtoon.gdshader")
+const mtoon_cull_off: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_cull_off.gdshader")
+const mtoon_trans: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_trans.gdshader")
+const mtoon_trans_cull_off: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_trans_cull_off.gdshader")
+const mtoon_trans_zwrite: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_trans_zwrite.gdshader")
+const mtoon_trans_zwrite_cull_off: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_trans_zwrite_cull_off.gdshader")
+const mtoon_outline: Shader = preload("res://addons/Godot-MToon-Shader/mtoon_outline.gdshader")
 
 func _can_handle(object: Variant) -> bool:
 	if object is ShaderMaterial:
