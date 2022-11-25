@@ -88,6 +88,12 @@ func skeleton_rename(gstate : GLTFState, p_base_scene: Node, p_skeleton: Skeleto
 		if bn != StringName():
 			p_skeleton.set_bone_name(i, bn)
 	var gnodes = gstate.nodes
+	var root_bone_name = "Root"
+	if p_skeleton.find_bone(root_bone_name) == -1:
+		p_skeleton.add_bone(root_bone_name)
+		var new_root_bone_id = p_skeleton.find_bone(root_bone_name)
+		for root_bone_id in p_skeleton.get_parentless_bones():
+			p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
 	for gnode in gnodes:
 		var bn: StringName = p_bone_map.find_profile_bone_name(gnode.resource_name)
 		if bn != StringName():
