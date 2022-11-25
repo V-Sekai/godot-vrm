@@ -1,11 +1,11 @@
 extends GLTFDocumentExtension
 
-const vrm_constants_class = preload("res://addons/vrm/vrm_constants.gd")
-const vrm_meta_class = preload("res://addons/vrm/vrm_meta.gd")
-const vrm_secondary = preload("res://addons/vrm/vrm_secondary.gd")
-const vrm_collidergroup = preload("res://addons/vrm/vrm_collidergroup.gd")
-const vrm_springbone = preload("res://addons/vrm/vrm_springbone.gd")
-const vrm_top_level = preload("res://addons/vrm/vrm_toplevel.gd")
+const vrm_constants_class = preload("./vrm_constants.gd")
+const vrm_meta_class = preload("./vrm_meta.gd")
+const vrm_secondary = preload("./vrm_secondary.gd")
+const vrm_collidergroup = preload("./vrm_collidergroup.gd")
+const vrm_springbone = preload("./vrm_springbone.gd")
+const vrm_top_level = preload("./vrm_toplevel.gd")
 
 var vrm_meta: Resource = null
 
