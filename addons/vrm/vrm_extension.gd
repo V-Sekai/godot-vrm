@@ -316,7 +316,7 @@ func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float
 	return vrm_mat_props["floatProperties"].get(key, def)
 
 
-func _process_vrm_material(orig_mat: StandardMaterial3D, gltf_images: Array, vrm_mat_props: Dictionary) -> Material:
+func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props: Dictionary) -> Material:
 	var vrm_shader_name:String = vrm_mat_props["shader"]
 	if vrm_shader_name == "VRM_USE_GLTFSHADER":
 		return orig_mat # It's already correct!
@@ -974,7 +974,6 @@ func _import_preflight(gstate : GLTFState, psa=PackedStringArray(), psa2: Varian
 
 func apply_retarget(gstate : GLTFState, root_node: Node, skeleton: Skeleton3D, bone_map: BoneMap) -> Array[Basis]:
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
-
 	skeleton_rename(gstate, root_node, skeleton, bone_map)
 	var hips_bone_idx = skeleton.find_bone("Hips")
 	if hips_bone_idx != -1:
