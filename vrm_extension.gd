@@ -148,12 +148,11 @@ func rotate_scene_180(p_scene: Node3D):
 	var mesh_set: Dictionary = {}
 	var skin_set: Dictionary = {}
 	rotate_scene_180_inner(p_scene, mesh_set, skin_set)
-	#xtmp(p_scene, mesh_set, skin_set)
 	for mesh in mesh_set:
 		adjust_mesh_zforward(mesh)
 	for skin in skin_set:
 		for b in range(skin.get_bind_count()):
-			skin.set_bind_pose(b, ROTATE_180_TRANSFORM * skin.get_bind_pose(b) * ROTATE_180_TRANSFORM)
+			skin.set_bind_pose(b, skin.get_bind_pose(b) * ROTATE_180_TRANSFORM)
 
 func skeleton_rotate(p_base_scene: Node, src_skeleton: Skeleton3D, p_bone_map: BoneMap) -> Array[Basis]:
 	# is_renamed: was skeleton_rename already invoked?
@@ -870,7 +869,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		else:
 			var tmpname: String = ""
 			if sbone["bones"].size() > 1:
-				tmpname += " + " + str(sbone["bones"].size() - 1) + " roots"
+				tmpname += " + %s roots" % [str(sbone["bones"].size() - 1)]
 			tmpname = nodes[int(first_bone_node)].resource_name + tmpname
 			spring_bone.resource_name = tmpname
 
@@ -974,6 +973,7 @@ func _import_preflight(gstate : GLTFState, psa=PackedStringArray(), psa2: Varian
 
 func apply_retarget(gstate : GLTFState, root_node: Node, skeleton: Skeleton3D, bone_map: BoneMap) -> Array[Basis]:
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
+
 	skeleton_rename(gstate, root_node, skeleton, bone_map)
 	var hips_bone_idx = skeleton.find_bone("Hips")
 	if hips_bone_idx != -1:
