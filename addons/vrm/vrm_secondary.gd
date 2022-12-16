@@ -28,7 +28,7 @@ func _ready() -> void:
 		var new_collider_group = collider_group.duplicate(true)
 		var parent: Node3D = get_node_or_null(new_collider_group.skeleton_or_node)
 		if parent != null:
-			new_collider_group._ready(parent, parent)
+			new_collider_group.call("_ready", parent, parent)
 			collider_groups_internal.append(new_collider_group)
 	for spring_bone in spring_bones:
 		var new_spring_bone = spring_bone.duplicate(true)
