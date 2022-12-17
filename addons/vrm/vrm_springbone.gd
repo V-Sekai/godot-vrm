@@ -5,9 +5,9 @@ extends Resource
 @export var comment: String
 
 # The resilience of the swaying object (the power of returning to the initial pose).
-@export_range(0, 4)  var stiffness_force: float = 1.0
+@export_range(0, 4) var stiffness_force: float = 1.0
 # The strength of gravity.
-@export_range(0, 2)  var gravity_power: float = 0.0
+@export_range(0, 2) var gravity_power: float = 0.0
 
 # The direction of gravity. Set (0, -1, 0) for simulating the gravity.
 # Set (1, 0, 0) for simulating the wind.
@@ -27,19 +27,20 @@ extends Resource
 @export var center_node: NodePath
 
 # The radius of the sphere used for the collision detection with colliders.
-@export_range(0.0, 0.5)  var hit_radius: float = 0.02
+@export_range(0.0, 0.5) var hit_radius: float = 0.02
 
 # bone name of the root bone of the swaying object, within skeleton.
-@export var root_bones : Array[String] = [].duplicate() # DO NOT INITIALIZE HERE
+@export var root_bones: Array[String] = [].duplicate()  # DO NOT INITIALIZE HERE
 
 # Reference to the vrm_collidergroup for collisions with swaying objects.
-@export var collider_groups : Array = [].duplicate() # DO NOT INITIALIZE HERE
+@export var collider_groups: Array = [].duplicate()  # DO NOT INITIALIZE HERE
 
 # Props
 var verlets: Array = [].duplicate()
 var colliders: Array = [].duplicate()
 var center = null
 var skel: Skeleton3D = null
+
 
 func setup(force: bool = false) -> void:
 	if not self.root_bones.is_empty() && skel != null:
@@ -51,6 +52,7 @@ func setup(force: bool = false) -> void:
 			for go in root_bones:
 				if typeof(go) != TYPE_NIL and not go.is_empty():
 					setup_recursive(skel.find_bone(go), center)
+
 
 func setup_recursive(id: int, center_tr) -> void:
 	if skel.get_bone_children(id).is_empty():
@@ -66,12 +68,14 @@ func setup_recursive(id: int, center_tr) -> void:
 	for child in skel.get_bone_children(id):
 		setup_recursive(child, center_tr)
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready(ready_skel: Object, colliders_ref: Array) -> void:
 	if ready_skel != null:
 		self.skel = ready_skel
 	setup()
 	colliders = colliders_ref.duplicate(true)
+
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta) -> void:
@@ -86,6 +90,7 @@ func _process(delta) -> void:
 	for verlet in verlets:
 		verlet.radius = hit_radius
 		verlet.update(skel, center, stiffness, drag_force, external, colliders)
+
 
 # Individual spring bone entries.
 class VRMSpringBoneLogic:
@@ -103,11 +108,13 @@ class VRMSpringBoneLogic:
 
 	func get_transform(skel: Skeleton3D) -> Transform3D:
 		return skel.get_global_transform() * skel.get_bone_global_pose_no_override(bone_idx)
+
 	func get_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_transform(skel).basis.get_rotation_quaternion()
 
 	func get_local_transform(skel: Skeleton3D) -> Transform3D:
 		return skel.get_bone_global_pose_no_override(bone_idx)
+
 	func get_local_rotation(skel: Skeleton3D) -> Quaternion:
 		return get_local_transform(skel).basis.get_rotation_quaternion()
 
@@ -155,7 +162,7 @@ class VRMSpringBoneLogic:
 			current_tail = next_tail
 
 		# Apply rotation
-		var ft = VRMTopLevel.VRMUtil.from_to_rotation((get_rotation(skel) * (bone_axis)), next_tail - get_transform(skel).origin)
+		var ft = VRMTopLevel.VRMUtil.from_to_rotation(get_rotation(skel) * (bone_axis), next_tail - get_transform(skel).origin)
 		if typeof(ft) != TYPE_NIL:
 			ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
 			var qt: Quaternion = ft * get_rotation(skel)

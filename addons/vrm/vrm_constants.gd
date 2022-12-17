@@ -58,6 +58,7 @@ var vrm_to_human_bone: Dictionary = {
 	"rightToes": "RightToes"
 }
 
+
 func _init(is_vrm_0):
 	if is_vrm_0:
 		vrm_to_human_bone["leftThumbIntermediate"] = "LeftThumbProximal"
