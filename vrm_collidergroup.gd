@@ -17,8 +17,8 @@ extends Resource
 # Plane.d = The radius of the collider.
 # The coordinate issue may be fixed in VRM 1.0 or later.
 # https://github.com/vrm-c/vrm-specification/issues/205
-@export  var sphere_colliders: Array # DO NOT INITIALIZE HERE
- # (Array, Plane)
+@export var sphere_colliders: Array  # DO NOT INITIALIZE HERE
+# (Array, Plane)
 # Only use in editor
 @export var gizmo_color: Color = Color.MAGENTA
 
@@ -28,6 +28,7 @@ var bone_idx: int = -1
 var parent: Node3D = null
 
 var skel: Object = null
+
 
 func setup():
 	if parent != null:
@@ -63,7 +64,7 @@ class SphereCollider:
 	func update(parent: Node3D, skel: Object):
 		if parent.get_class() == "Skeleton3D" && idx != -1:
 			var skeleton: Skeleton3D = parent as Skeleton3D
-			position = VRMTopLevel.VRMUtil.transform_point(skeleton.get_global_transform() * skel.get_bone_global_pose(idx), offset)
+			position = (VRMTopLevel.VRMUtil.transform_point(skeleton.get_global_transform() * skel.get_bone_global_pose(idx), offset))
 		else:
 			position = VRMTopLevel.VRMUtil.transform_point(parent.global_transform, offset)
 
