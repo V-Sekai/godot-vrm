@@ -26,13 +26,13 @@ func _ready() -> void:
 	collider_groups_internal.clear()
 	spring_bones_internal.clear()
 	for collider_group in collider_groups:
-		var new_collider_group = collider_group.duplicate(true)
+		var new_collider_group = collider_group.duplicate(false)
 		var parent: Node3D = get_node_or_null(new_collider_group.skeleton_or_node)
 		if parent != null:
-			new_collider_group.call("_ready", parent, parent)
+			new_collider_group._ready(parent, parent)
 			collider_groups_internal.append(new_collider_group)
 	for spring_bone in spring_bones:
-		var new_spring_bone = spring_bone.duplicate(true)
+		var new_spring_bone = spring_bone.duplicate(false)
 		var tmp_colliders: Array = []
 		for i in range(collider_groups.size()):
 			if new_spring_bone.collider_groups.has(collider_groups[i]):

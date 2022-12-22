@@ -74,7 +74,7 @@ func _ready(ready_skel: Object, colliders_ref: Array) -> void:
 	if ready_skel != null:
 		self.skel = ready_skel
 	setup()
-	colliders = colliders_ref.duplicate(true)
+	colliders = colliders_ref.duplicate(false)
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
