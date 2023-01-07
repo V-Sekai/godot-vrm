@@ -139,15 +139,15 @@ func merge_single_line_properties(label: String, outer_prop: Control, inner_prop
 	outer_prop.add_child(new_hbox, true)
 
 # Copy texture modifications to next_pass material
-func _texture_property_changed(texture_property: EditorProperty, property_name: StringName, value: Variant) -> void:
-	if MToonProperty.has_outline_pass_static(texture_property.get_edited_object()):
-		texture_property.get_edited_object().next_pass[texture_property.get_edited_property()] = value
+func _texture_property_changed(texture_property: EditorProperty, object: ShaderMaterial, property_name: StringName, value: Variant) -> void:
+	if MToonProperty.has_outline_pass_static(object):
+		object.next_pass[texture_property.get_edited_property()] = value
 
-func _process_tex_property() -> void:
+func _process_tex_property(object: ShaderMaterial) -> void:
 	var prop = last_tex_property
 	var parent_vbox = first_property.get_parent()
 	var texture_property: EditorProperty = parent_vbox.get_child(parent_vbox.get_child_count() - 1)
-	texture_property.property_changed.connect(self._texture_property_changed.bind(texture_property))
+	texture_property.property_changed.connect(self._texture_property_changed.bind(texture_property, object))
 	if single_line_properties.has(prop):
 		var color_property: EditorProperty = property_name_to_editor.get(single_line_properties[prop])
 		if color_property != null:
@@ -163,17 +163,19 @@ func _process_tex_property() -> void:
 func do_unfold_section(editor_inspector_section: Node) -> void:
 	editor_inspector_section.unfold()
 
-#func parse_category(object: Object, category: String) -> void:
+#func parse_category(object_: Object, category: String) -> void:
 #	print("Category " + str(category))
-func _parse_end(object: Object) -> void:
+
+func _parse_end(object_: Object) -> void:
+	var object: ShaderMaterial = object_
 	if not last_tex_property.is_empty():
-		_process_tex_property()
+		_process_tex_property(object)
 		last_tex_property = ""
 	if first_property != null:
 		var parent_vbox: Control = first_property.get_parent()
 		do_unfold_section(parent_vbox.get_parent())
 		for prop in property_name_to_editor:
-			property_name_to_editor[prop].set_tooltip("shader_parameter/" + prop + "\n" + property_text.get(prop, ["",""])[1])
+			property_name_to_editor[prop].set_tooltip_text("shader_parameter/" + prop + "\n" + property_text.get(prop, ["",""])[1])
 		for param in property_headers:
 			var property_editor: Control = property_name_to_editor.get(param)
 			if property_editor != null:
@@ -228,9 +230,10 @@ func _parse_end(object: Object) -> void:
 func is_a_shader_parameter(path: String) -> bool:
 	return path.begins_with("shader_parameter/")
 
-func _parse_property(object: Object, type: int, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
+func _parse_property(object_: Object, type: int, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
+	var object: ShaderMaterial = object_
 	if not last_tex_property.is_empty():
-		_process_tex_property()
+		_process_tex_property(object)
 		last_tex_property = ""
 	if path == "shader_parameter/_AlphaCutoutEnable":
 		for param in property_text:
@@ -258,6 +261,7 @@ func _parse_property(object: Object, type: int, path: String, hint: int, hint_te
 				property_editor = ScaleOffsetInspector.new(tooltip, reserve)
 			else:
 				property_editor = SpinInspector.new(tooltip, mins.get(param, 0.0), maxes.get(param, 1.0), steps.get(param, 0.001))
+			property_editor.edited_object = object
 			property_name_to_editor[param] = property_editor
 			var path_arr = PackedStringArray(["shader_parameter/" + param])
 			add_property_editor_for_multiple_properties(property_text[param][0], path_arr, property_editor)
@@ -274,6 +278,10 @@ func _parse_property(object: Object, type: int, path: String, hint: int, hint_te
 	return false
 
 class MToonProperty extends EditorProperty:
+	var edited_object: ShaderMaterial = null
+	func get_edited_object_hack() -> ShaderMaterial:
+		return edited_object
+
 	var updating: bool = false
 	var tooltip: String = ""
 	var hide_if_value: Dictionary = {}
@@ -292,7 +300,7 @@ class MToonProperty extends EditorProperty:
 			return str(get_edited_property())
 
 	func has_outline_pass() -> bool:
-		return has_outline_pass_static(get_edited_object())
+		return has_outline_pass_static(get_edited_object_hack())
 
 	static func has_outline_pass_static(edited_mat: Material) -> bool:
 		var next_pass: Material = edited_mat.next_pass
@@ -303,7 +311,7 @@ class MToonProperty extends EditorProperty:
 
 	func set_outline_prop(prop: String, val) -> void:
 		if has_outline_pass():
-			get_edited_object().next_pass[prop] = val
+			get_edited_object_hack().next_pass[prop] = val
 		update_hidden_props(val)
 
 	func update_hidden_props(val) -> void:
@@ -326,7 +334,7 @@ class MToonProperty extends EditorProperty:
 		slider.value_changed.connect(self._value_changed)
 
 	func emit_changed(prop : StringName, val : Variant, field : StringName = &"", changing : bool = false) -> void:
-		get_edited_object()[prop] = val
+		get_edited_object_hack()[prop] = val
 
 class RenderingTypeInspector extends MToonProperty:
 	var dropdown: OptionButton = OptionButton.new()
@@ -357,31 +365,31 @@ class RenderingTypeInspector extends MToonProperty:
 		_update_shader(option_idx, cull_off_checkbox.button_pressed)
 
 	func _update_shader(option_idx: int, cull_off: bool) -> void:
-		var shader_name: String = get_edited_object().shader.resource_path.split("/")[-1]
+		var shader_name: String = get_edited_object_hack().shader.resource_path.split("/")[-1]
 		match option_idx:
 			0: # Opaque
 				emit_changed(get_edited_property(), 0)
 				set_outline_prop(get_edited_property(), 0)
-				get_edited_object().shader = mtoon_cull_off if cull_off else mtoon
+				get_edited_object_hack().shader = mtoon_cull_off if cull_off else mtoon
 			1: # Cutout
 				emit_changed(get_edited_property(), 1)
 				set_outline_prop(get_edited_property(), 1)
-				get_edited_object().shader = mtoon_cull_off if cull_off else mtoon
+				get_edited_object_hack().shader = mtoon_cull_off if cull_off else mtoon
 			2: # Transparent
 				emit_changed(get_edited_property(), 0)
 				set_outline_prop(get_edited_property(), 0)
-				get_edited_object().shader = mtoon_trans_cull_off if cull_off else mtoon_trans
+				get_edited_object_hack().shader = mtoon_trans_cull_off if cull_off else mtoon_trans
 			3: # TransparentWithZWrite
 				emit_changed(get_edited_property(), 0)
 				set_outline_prop(get_edited_property(), 0)
-				get_edited_object().shader = mtoon_trans_zwrite_cull_off if cull_off else mtoon_trans_zwrite
+				get_edited_object_hack().shader = mtoon_trans_zwrite_cull_off if cull_off else mtoon_trans_zwrite
 
 	func _update_property() -> void:
-		var val: Variant = get_edited_object()[get_edited_property()]
+		var val: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(val) == TYPE_NIL:
 			val = 0.0
 		updating = true
-		var shader_name = get_edited_object().shader.resource_path.split("/")[-1]
+		var shader_name = get_edited_object_hack().shader.resource_path.split("/")[-1]
 		var cull_off: bool = shader_name.find("_cull_off") != -1
 		if shader_name.find("mtoon_trans_zwrite") != -1:
 			val = 3
@@ -407,20 +415,20 @@ class OutlineModeInspector extends MToonProperty:
 
 	func _item_selected(option_idx: int) -> void:
 		if updating: return
-		var next_pass: Material = get_edited_object().next_pass
+		var next_pass: Material = get_edited_object_hack().next_pass
 		var has_outline: bool = has_outline_pass()
 		if option_idx == 0 and has_outline:
-			emit_changed("next_pass", get_edited_object().next_pass.next_pass)
+			emit_changed("next_pass", get_edited_object_hack().next_pass.next_pass)
 		if option_idx != 0 and not has_outline:
-			next_pass = get_edited_object().duplicate()
+			next_pass = get_edited_object_hack().duplicate()
 			next_pass.shader = mtoon_outline
-			next_pass.next_pass = get_edited_object().next_pass
+			next_pass.next_pass = get_edited_object_hack().next_pass
 			emit_changed("next_pass", next_pass)
 		emit_changed(get_edited_property(), option_idx)
 		set_outline_prop(get_edited_property(), option_idx)
 
 	func _update_property() -> void:
-		var val: Variant = get_edited_object()[get_edited_property()]
+		var val: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(val) == TYPE_NIL:
 			val = 0
 		if has_outline_pass() and val == 0:
@@ -447,7 +455,7 @@ class OutlineColorModeInspector extends MToonProperty:
 		set_outline_prop(get_edited_property(), option_idx)
 
 	func _update_property() -> void:
-		var val: Variant = get_edited_object()[get_edited_property()]
+		var val: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(val) == TYPE_NIL:
 			val = 0
 		updating = true
@@ -472,7 +480,7 @@ class DebugModeInspector extends MToonProperty:
 		set_outline_prop(get_edited_property(), option_idx)
 
 	func _update_property() -> void:
-		var val: Variant = get_edited_object()[get_edited_property()]
+		var val: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(val) == TYPE_NIL:
 			val = 0
 		updating = true
@@ -510,7 +518,7 @@ class SpinInspector extends MToonProperty:
 		set_outline_prop(get_edited_property(), x_input.value)
 
 	func _update_property() -> void:
-		var this_value: Variant = get_edited_object()[get_edited_property()]
+		var this_value: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(this_value) == TYPE_NIL:
 			const defaults = {
 				"_Cutoff": 0.5,
@@ -558,7 +566,7 @@ class ScaleOffsetInspector extends MToonProperty:
 		set_outline_prop(get_edited_property(), new_val)
 
 	func _update_property() -> void:
-		var st_value: Variant = get_edited_object()[get_edited_property()]
+		var st_value: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(st_value) == TYPE_NIL:
 			st_value = Plane(1,1,0,0)
 		updating = true
@@ -593,7 +601,7 @@ class LinearColorInspector extends MToonProperty:
 		set_outline_prop(get_edited_property(), new_val)
 
 	func _update_property() -> void:
-		var linear_color: Variant = get_edited_object()[get_edited_property()]
+		var linear_color: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(linear_color) == TYPE_NIL:
 			const defaults = {
 				"_Color": Plane(1.0,1.0,1.0,1.0),
