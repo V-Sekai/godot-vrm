@@ -130,12 +130,14 @@ class VRMSpringBoneLogic:
 		else:
 			tmp_current_tail = current_tail
 			tmp_prev_tail = prev_tail
+			
+		var bone_global_pose_no_override : Transform3D = skel.get_bone_global_pose_no_override(bone_idx)
 
 		# Integration of velocity verlet
-		var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + (skel.get_bone_global_pose_no_override(bone_idx).basis.get_rotation_quaternion() * (bone_axis)) * stiffness_force + external
+		var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + (bone_global_pose_no_override.basis.get_rotation_quaternion() * (bone_axis)) * stiffness_force + external
 
 		# Limiting bone length
-		var origin: Vector3 = skel.get_bone_global_pose_no_override(bone_idx).origin
+		var origin: Vector3 = bone_global_pose_no_override.origin
 		next_tail = origin + (next_tail - origin).normalized() * length
 
 		# Collision movement
@@ -150,10 +152,10 @@ class VRMSpringBoneLogic:
 			current_tail = next_tail
 
 		# Apply rotation
-		var from_to_global_transform : Quaternion = VRMTopLevel.VRMUtil.from_to_rotation(skel.get_bone_global_pose_no_override(bone_idx).basis.get_rotation_quaternion() * (bone_axis), next_tail - skel.get_bone_global_pose_no_override(bone_idx).origin)
+		var from_to_global_transform : Quaternion = VRMTopLevel.VRMUtil.from_to_rotation(bone_global_pose_no_override.basis.get_rotation_quaternion() * (bone_axis), next_tail - skel.get_bone_global_pose_no_override(bone_idx).origin)
 		from_to_global_transform = skel.global_transform.basis.get_rotation_quaternion().inverse() * from_to_global_transform
-		var new_rotation: Quaternion = from_to_global_transform * skel.get_bone_global_pose_no_override(bone_idx).basis.get_rotation_quaternion()
-		var bone_transform: Transform3D = skel.get_bone_global_pose_no_override(bone_idx)
+		var new_rotation: Quaternion = from_to_global_transform * bone_global_pose_no_override.basis.get_rotation_quaternion()
+		var bone_transform: Transform3D = bone_global_pose_no_override
 		bone_transform.basis = Basis(new_rotation.normalized())
 		skel.set_bone_global_pose_override(bone_idx, bone_transform, 1.0, true)
 
