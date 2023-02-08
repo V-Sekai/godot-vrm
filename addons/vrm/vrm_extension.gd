@@ -7,6 +7,8 @@ const vrm_collidergroup = preload("./vrm_collidergroup.gd")
 const vrm_springbone = preload("./vrm_springbone.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
 
+const mtoon_template = preload("./mtoon_template.tres") # Must be preload to workaround #72143
+
 var vrm_meta: Resource = null
 
 const ROTATE_180_BASIS = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1))
@@ -386,39 +388,45 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if godot_outline_shader_name:
 		godot_shader_outline = ResourceLoader.load(godot_outline_shader_name + ".gdshader")
 
-	var new_mat = ShaderMaterial.new()
+	var new_mat : ShaderMaterial = mtoon_template.duplicate()
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
-	if maintex_info.get("tex", null) != null:
-		new_mat.set_shader_parameter("_MainTex", maintex_info["tex"])
+	if godot_shader_outline == null:
+		new_mat.next_pass = null
+	var outline_mat: ShaderMaterial = new_mat.next_pass
 
-	new_mat.set_shader_parameter("_MainTex_ST", Plane(maintex_info["scale"].x, maintex_info["scale"].y, maintex_info["offset"].x, maintex_info["offset"].y))
+	var texture_repeat = Vector4(maintex_info["scale"].x, maintex_info["scale"].y, maintex_info["offset"].x, maintex_info["offset"].y)
+	new_mat.set_shader_parameter("_MainTex_ST", texture_repeat)
+	if outline_mat != null:
+		outline_mat.set_shader_parameter("_MainTex_ST", texture_repeat)
 
 	for param_name in ["_MainTex", "_ShadeTexture", "_BumpMap", "_RimTexture", "_SphereAdd", "_EmissionMap", "_OutlineWidthTexture", "_UvAnimMaskTexture"]:
 		var tex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, param_name)
 		if tex_info.get("tex", null) != null:
 			new_mat.set_shader_parameter(param_name, tex_info["tex"])
+			if outline_mat != null:
+				outline_mat.set_shader_parameter(param_name, tex_info["tex"])
 
 	for param_name in vrm_mat_props["floatProperties"]:
 		new_mat.set_shader_parameter(param_name, vrm_mat_props["floatProperties"][param_name])
+		if outline_mat != null:
+			outline_mat.set_shader_parameter(param_name, vrm_mat_props["floatProperties"][param_name])
 
 	for param_name in ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor"]:
 		if param_name in vrm_mat_props["vectorProperties"]:
 			var param_val = vrm_mat_props["vectorProperties"][param_name]
-			#### TODO: Use Color
-			### But we want to keep 4.0 compat which does not gamma correct color.
-			var color_param: Plane = Plane(param_val[0], param_val[1], param_val[2], param_val[3])
+			# TODO: Use Color for non-HDR color slots (_Color, _ShadeColor and _OutlineColor?)
+			# Or, use Color for all, and split _EmissionColor into emission color and emission strength.
+			var color_param: Vector4 = Vector4(param_val[0], param_val[1], param_val[2], param_val[3])
 			new_mat.set_shader_parameter(param_name, color_param)
+			if outline_mat != null:
+				outline_mat.set_shader_parameter(param_name, color_param)
 
 	# FIXME: setting _Cutoff to disable cutoff is a bit unusual.
 	if blend_mode == int(RenderMode.Cutout):
 		new_mat.set_shader_parameter("_AlphaCutoutEnable", 1.0)
-
-	if godot_shader_outline != null:
-		var outline_mat = new_mat.duplicate()
-		outline_mat.shader = godot_shader_outline
-
-		new_mat.next_pass = outline_mat
+		if outline_mat != null:
+			outline_mat.set_shader_parameter("_AlphaCutoutEnable", 1.0)
 
 	return new_mat
 
@@ -655,7 +663,7 @@ func _create_animation_player(
 					newvalue = Color(tv[0], tv[1], tv[2], tv[3])
 				elif matbind["parameterName"] == "_MainTex" or matbind["parameterName"] == "_MainTex_ST":
 					origvalue = param
-					newvalue = (Plane(tv[2], tv[3], tv[0], tv[1]) if matbind["parameterName"] == "_MainTex" else Plane(tv[0], tv[1], tv[2], tv[3]))
+					newvalue = (Vector4(tv[2], tv[3], tv[0], tv[1]) if matbind["parameterName"] == "_MainTex" else Vector4(tv[0], tv[1], tv[2], tv[3]))
 				elif param is float:
 					origvalue = param
 					newvalue = tv[0]

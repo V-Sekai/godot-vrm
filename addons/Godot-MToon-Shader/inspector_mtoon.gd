@@ -10,8 +10,8 @@ const mtoon_trans_zwrite_cull_off: Shader = preload("mtoon_trans_zwrite_cull_off
 const mtoon_outline: Shader = preload("mtoon_outline.gdshader")
 
 func _can_handle(object: Variant) -> bool:
-	if object is ShaderMaterial:
-		if object.shader.resource_path.find("/mtoon") != -1 && object.shader.resource_path.find("mtoon_outline") == -1:
+	if object != null and object is ShaderMaterial:
+		if object.shader != null and object.shader.resource_path.find("/mtoon") != -1 and object.shader.resource_path.find("/mtoon_outline") == -1:
 			return true
 	return false
 
@@ -230,7 +230,7 @@ func _parse_end(object_: Object) -> void:
 func is_a_shader_parameter(path: String) -> bool:
 	return path.begins_with("shader_parameter/")
 
-func _parse_property(object_: Object, type: int, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
+func _parse_property(object_: Object, type, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
 	var object: ShaderMaterial = object_
 	if not last_tex_property.is_empty():
 		_process_tex_property(object)
@@ -541,7 +541,7 @@ class ScaleOffsetInspector extends MToonProperty:
 	var x_input: Range = EditorSpinSlider.new()
 	var y_input: Range = EditorSpinSlider.new()
 	var z_input: Range = EditorSpinSlider.new()
-	var d_input: Range = EditorSpinSlider.new()
+	var w_input: Range = EditorSpinSlider.new()
 
 	func _init(tooltip: String, reserve: ReserveInspector) -> void:
 		self.tooltip = tooltip
@@ -553,27 +553,27 @@ class ScaleOffsetInspector extends MToonProperty:
 		hbox_scale.add_child(y_input, true)
 		reserve.add_focusable(y_input)
 		add_child(hbox, true)
-		_setup_slider(z_input, "x")
-		_setup_slider(d_input, "y")
+		_setup_slider(z_input, "z")
+		_setup_slider(w_input, "w")
 		hbox.add_child(z_input, true)
 		add_focusable(z_input)
-		hbox.add_child(d_input, true)
-		add_focusable(d_input)
+		hbox.add_child(w_input, true)
+		add_focusable(w_input)
 
 	func _value_changed(value: float) -> void:
-		var new_val: Plane = Plane(x_input.value, y_input.value, z_input.value, d_input.value)
+		var new_val: Vector4 = Vector4(x_input.value, y_input.value, z_input.value, w_input.value)
 		emit_changed(get_edited_property(), new_val)
 		set_outline_prop(get_edited_property(), new_val)
 
 	func _update_property() -> void:
 		var st_value: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(st_value) == TYPE_NIL:
-			st_value = Plane(1,1,0,0)
+			st_value = Vector4(1,1,0,0)
 		updating = true
 		x_input.value = st_value.x
 		y_input.value = st_value.y
 		z_input.value = st_value.z
-		d_input.value = st_value.d
+		w_input.value = st_value.w
 		updating = false
 
 class LinearColorInspector extends MToonProperty:
@@ -596,7 +596,7 @@ class LinearColorInspector extends MToonProperty:
 	func _color_changed(new_color: Color) -> void:
 		if updating:
 			return
-		var new_val: Plane = Plane(new_color.r, new_color.g, new_color.b, new_color.a)
+		var new_val: Vector4 = Vector4(new_color.r, new_color.g, new_color.b, new_color.a)
 		emit_changed(get_edited_property(), new_val)
 		set_outline_prop(get_edited_property(), new_val)
 
@@ -604,10 +604,10 @@ class LinearColorInspector extends MToonProperty:
 		var linear_color: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(linear_color) == TYPE_NIL:
 			const defaults = {
-				"_Color": Plane(1.0,1.0,1.0,1.0),
-				"_ShadeColor": Plane(0.97, 0.81, 0.86, 1.0),
+				"_Color": Vector4(1.0,1.0,1.0,1.0),
+				"_ShadeColor": Vector4(0.97, 0.81, 0.86, 1.0),
 			}
-			linear_color = defaults.get(str(get_edited_property()).split("/")[-1], Plane(0,0,0,1))
+			linear_color = defaults.get(str(get_edited_property()).split("/")[-1], Vector4(0,0,0,1))
 		updating = true
-		color_picker.color = Color(linear_color.x, linear_color.y, linear_color.z, linear_color.d)
+		color_picker.color = Color(linear_color.x, linear_color.y, linear_color.z, linear_color.w)
 		updating = false

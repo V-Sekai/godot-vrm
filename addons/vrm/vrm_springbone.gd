@@ -30,7 +30,7 @@ extends Resource
 @export_range(0.0, 0.5) var hit_radius: float = 0.02
 
 # bone name of the root bone of the swaying object, within skeleton.
-@export var root_bones: Array[String] = [].duplicate()  # DO NOT INITIALIZE HERE
+@export var root_bones: Array = [].duplicate()  # DO NOT INITIALIZE HERE
 
 # Reference to the vrm_collidergroup for collisions with swaying objects.
 @export var collider_groups: Array = [].duplicate()  # DO NOT INITIALIZE HERE
