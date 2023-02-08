@@ -393,6 +393,8 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	new_mat.shader = godot_shader
 	if godot_shader_outline == null:
 		new_mat.next_pass = null
+	else:
+		new_mat.next_pass = new_mat.next_pass.duplicate()
 	var outline_mat: ShaderMaterial = new_mat.next_pass
 
 	var texture_repeat = Vector4(maintex_info["scale"].x, maintex_info["scale"].y, maintex_info["offset"].x, maintex_info["offset"].y)
