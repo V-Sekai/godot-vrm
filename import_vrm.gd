@@ -22,10 +22,6 @@ func _get_import_flags() -> int:
 	return IMPORT_SCENE
 
 
-func _import_animation(path: String, flags: int, options: Dictionary, bake_fps: int) -> Animation:
-	return Animation.new()
-
-
 func _import_scene(path: String, flags: int, options: Dictionary) -> Object:
 	var gltf: GLTFDocument = GLTFDocument.new()
 	var vrm_extension: GLTFDocumentExtension = gltf_document_extension_class.new()
