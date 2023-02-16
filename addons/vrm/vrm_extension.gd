@@ -14,8 +14,90 @@ var vrm_meta: Resource = null
 const ROTATE_180_BASIS = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1))
 const ROTATE_180_TRANSFORM = Transform3D(ROTATE_180_BASIS, Vector3.ZERO)
 
+# Interface wrappers so we can use Mesh ("surface_get_*", "surface_set_*") and
+# ImporterMesh ("get_surface_*", "set_surface_*") interchangeably. Neither of
+# these two types are inherited from the other, and many of the functions are
+# identical with the words swapped around.
 
-func adjust_mesh_zforward(mesh: ImporterMesh):
+func _mesh_surface_get_primitive_type(mesh, idx):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_primitive_type(idx)
+	if mesh is Mesh:
+		return mesh.surface_get_primitive_type(idx)
+	assert(0)
+
+func _mesh_surface_get_format(mesh, idx):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_format(idx)
+	if mesh is Mesh:
+		return mesh.surface_get_format(idx)
+	assert(0)
+
+func _mesh_surface_get_arrays(mesh, idx):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_arrays(idx)
+	if mesh is Mesh:
+		return mesh.surface_get_arrays(idx)
+	assert(0)
+
+func _mesh_surface_get_name(mesh, idx):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_name(idx)
+	if mesh is Mesh:
+		return mesh.surface_get_name(idx)
+	assert(0)
+
+func _mesh_surface_get_material(mesh, idx):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_material(idx)
+	if mesh is Mesh:
+		return mesh.surface_get_material(idx)
+	assert(0)
+
+func _mesh_clear(mesh):
+	if mesh is ImporterMesh:
+		mesh.clear()
+		return
+	if mesh is Mesh:
+		mesh.clear_surfaces()
+		mesh.clear_blend_shapes()
+		return
+	assert(0)
+
+func _mesh_add_surface(
+	mesh,
+	primitive,
+	arrays: Array,
+	blend_shapes: Array[Array] = [],
+	lods: Dictionary = {},
+	material: Material = null,
+	name: String = "",
+	flags: int = 0):
+
+	if mesh is ImporterMesh:
+		mesh.add_surface(primitive, arrays, blend_shapes, lods, material, name, flags)
+		return
+
+	if mesh is ArrayMesh:
+		var idx = mesh.get_surface_count()
+		mesh.add_surface_from_arrays(primitive, arrays, blend_shapes,
+			lods, flags)
+		mesh.surface_set_name(idx, name)
+		mesh.surface_set_material(idx, material)
+		return
+
+	assert(0)
+
+func _mesh_surface_get_blend_shape_arrays(mesh, idx, bsindex):
+	if mesh is ImporterMesh:
+		return mesh.get_surface_blend_shape_arrays(idx, bsindex)
+	if mesh is Mesh:
+		var arrays = mesh.surface_get_blend_shape_arrays(idx)
+		return arrays[bsindex]
+	assert(0)
+
+
+func adjust_mesh_zforward(mesh):
 	# MESH and SKIN data divide, to compensate for object position multiplying.
 	var surf_count: int = mesh.get_surface_count()
 	var surf_data_by_mesh = [].duplicate()
@@ -23,24 +105,25 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 	for bsidx in mesh.get_blend_shape_count():
 		blendshapes.append(mesh.get_blend_shape_name(bsidx))
 	for surf_idx in range(surf_count):
-		var prim: int = mesh.get_surface_primitive_type(surf_idx)
-		var fmt_compress_flags: int = mesh.get_surface_format(surf_idx)
-		var arr: Array = mesh.get_surface_arrays(surf_idx)
-		var name: String = mesh.get_surface_name(surf_idx)
+		var prim: int = _mesh_surface_get_primitive_type(mesh, surf_idx)
+		var fmt_compress_flags: int = _mesh_surface_get_format(mesh, surf_idx)
+		var arr: Array = _mesh_surface_get_arrays(mesh, surf_idx)
+		var name: String = _mesh_surface_get_name(mesh, surf_idx)
 		var bscount = mesh.get_blend_shape_count()
-		var bsarr: Array = []
+		var bsarr: Array[Array] = []
 		for bsidx in range(bscount):
-			bsarr.append(mesh.get_surface_blend_shape_arrays(surf_idx, bsidx))
+			bsarr.append(_mesh_surface_get_blend_shape_arrays(mesh, surf_idx, bsidx))
 		var lods: Dictionary = {}  # mesh.surface_get_lods(surf_idx) # get_lods(mesh, surf_idx)
-		var mat: Material = mesh.get_surface_material(surf_idx)
+		var mat: Material = _mesh_surface_get_material(mesh, surf_idx)
 		var vert_arr_len: int = len(arr[ArrayMesh.ARRAY_VERTEX])
 		var vertarr: PackedVector3Array = arr[ArrayMesh.ARRAY_VERTEX]
+		var invert_vector = Vector3(-1, 1, -1)
 		for i in range(vert_arr_len):
-			vertarr[i] = Vector3(-1, 1, -1) * vertarr[i]
+			vertarr[i] = invert_vector * vertarr[i]
 		if typeof(arr[ArrayMesh.ARRAY_NORMAL]) == TYPE_PACKED_VECTOR3_ARRAY:
 			var normarr: PackedVector3Array = arr[ArrayMesh.ARRAY_NORMAL]
 			for i in range(vert_arr_len):
-				normarr[i] = Vector3(-1, 1, -1) * normarr[i]
+				normarr[i] = invert_vector * normarr[i]
 		if typeof(arr[ArrayMesh.ARRAY_TANGENT]) == TYPE_PACKED_FLOAT32_ARRAY:
 			var tangarr: PackedFloat32Array = arr[ArrayMesh.ARRAY_TANGENT]
 			for i in range(vert_arr_len):
@@ -49,11 +132,11 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 		for bsidx in range(len(bsarr)):
 			vertarr = bsarr[bsidx][ArrayMesh.ARRAY_VERTEX]
 			for i in range(vert_arr_len):
-				vertarr[i] = Vector3(-1, 1, -1) * vertarr[i]
+				vertarr[i] = invert_vector * vertarr[i]
 			if typeof(bsarr[bsidx][ArrayMesh.ARRAY_NORMAL]) == TYPE_PACKED_VECTOR3_ARRAY:
 				var normarr: PackedVector3Array = bsarr[bsidx][ArrayMesh.ARRAY_NORMAL]
 				for i in range(vert_arr_len):
-					normarr[i] = Vector3(-1, 1, -1) * normarr[i]
+					normarr[i] = invert_vector * normarr[i]
 			if typeof(bsarr[bsidx][ArrayMesh.ARRAY_TANGENT]) == TYPE_PACKED_FLOAT32_ARRAY:
 				var tangarr: PackedFloat32Array = bsarr[bsidx][ArrayMesh.ARRAY_TANGENT]
 				for i in range(vert_arr_len):
@@ -62,26 +145,65 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 			bsarr[bsidx].resize(ArrayMesh.ARRAY_MAX)
 
 		surf_data_by_mesh.push_back({"prim": prim, "arr": arr, "bsarr": bsarr, "lods": lods, "fmt_compress_flags": fmt_compress_flags, "name": name, "mat": mat})
-	mesh.clear()
+	_mesh_clear(mesh)
 	for blend_name in blendshapes:
 		mesh.add_blend_shape(blend_name)
 	for surf_idx in range(surf_count):
 		var prim: int = surf_data_by_mesh[surf_idx].get("prim")
 		var arr: Array = surf_data_by_mesh[surf_idx].get("arr")
-		var bsarr: Array = surf_data_by_mesh[surf_idx].get("bsarr")
+		var bsarr: Array[Array] = surf_data_by_mesh[surf_idx].get("bsarr")
 		var lods: Dictionary = surf_data_by_mesh[surf_idx].get("lods")
 		var fmt_compress_flags: int = surf_data_by_mesh[surf_idx].get("fmt_compress_flags")
 		var name: String = surf_data_by_mesh[surf_idx].get("name")
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
-		mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
+		_mesh_add_surface(mesh, prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 
+func _get_bind_bone_name(skeleton : Skeleton3D, skin : Skin, i):
+	var bind_bone_index = skin.get_bind_bone(i)
+	var bind_bone_name = skin.get_bind_name(i)
+	if bind_bone_index != -1:
+		bind_bone_name = skeleton.get_bone_name(bind_bone_index)
+	return bind_bone_name
 
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
+
+	# -------------------------------
+	#   KIRI READ THIS
+	# -------------------------------
+	#
+	# As messed up as it looks at this point, I think this function may be
+	# correct right now. DON'T MESS WITH IT. LOOK FOR BUGS ELSEWHERE.
+	#
+	# Remember: We want to see that the bones are mapped to their correct
+	# indices. Does the head move when you move your head? Do the hands and
+	# fingers move when you move your hands and figures? If so, then the bone
+	# name mapping is probably *FINE*.
+	#
+	# Only exception: Left/right could still be flipped. (No reason to believe
+	# this as of this writing.)
+	#
+	# Edit: Okay, it's broken in editor-import.
+
+	var original_bone_names_to_indices = {}
+	var original_indices_to_bone_names = {}
+	var original_indices_to_new_bone_names = {}
 	var skellen: int = p_skeleton.get_bone_count()
+
+	# Rename bones to their humanoid equivalents.
 	for i in range(skellen):
 		var bn: StringName = p_bone_map.find_profile_bone_name(p_skeleton.get_bone_name(i))
+#		print("Skel bone name: ", p_skeleton.get_bone_name(i))
+#		print("Profile name:   ", bn)
+		original_bone_names_to_indices[p_skeleton.get_bone_name(i)] = i
+		original_indices_to_bone_names[i] = p_skeleton.get_bone_name(i)
+		original_indices_to_new_bone_names[i] = bn
 		if bn != StringName():
+#			print("Rename bone: ", p_skeleton.get_bone_name(i), " to ",  bn)
 			p_skeleton.set_bone_name(i, bn)
+
+
+#	print("original_indices_to_new_bone_names: ", original_indices_to_new_bone_names)
+
 	var gnodes = gstate.nodes
 	var root_bone_name = "Root"
 	if p_skeleton.find_bone(root_bone_name) == -1:
@@ -95,17 +217,96 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 			gnode.resource_name = bn
 
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
+	nodes.append_array(p_base_scene.find_children("*", "MeshInstance3D")) # -Kiri
+	
 	while not nodes.is_empty():
-		var mi = nodes.pop_back() as ImporterMeshInstance3D
-		var skin: Skin = mi.skin
+		var mi = nodes.pop_back()
+		var skin: Skin = mi.skin # -Kiri
 		if skin:
-			var node = mi.get_node(mi.skeleton_path)
+			
+			# -Kiri
+			var node = null
+			if mi is ImporterMeshInstance3D:
+				node = mi.get_node(mi.skeleton_path)
+			elif mi is MeshInstance3D:
+				node = mi.get_node(mi.skeleton)
+			else:
+				assert(0)
+				
 			if node and node is Skeleton3D and node == p_skeleton:
 				skellen = skin.get_bind_count()
+				#print(skin)
 				for i in range(skellen):
-					var bn: StringName = p_bone_map.find_profile_bone_name(skin.get_bind_name(i))
-					if bn != StringName():
-						skin.set_bind_name(i, bn)
+					
+					#var bind_bone_index = skin.get_bind_bone(i)
+					#var bind_bone_name = skin.get_bind_name(i)
+					#if bind_bone_index != -1:
+					#	bind_bone_name = node.get_bone_name(bind_bone_index)
+					#var bind_bone_name = _get_bind_bone_name(node, skin, i)
+					
+					# Bone index on skeleton.
+					var bind_bone_index = skin.get_bind_bone(i)
+					
+					# Bone name from skin (un-remapped bone name)
+					var bind_bone_name = skin.get_bind_name(i)
+					
+					var bone_name_from_skel = ""
+
+					# I'm not sure if this is due to a bug or what. When loading
+					# a model at runtime, we have a different set of data
+					# available than when we load in the editor. This means...
+					#
+					# In the editor:
+					#   bind_bone_index = -1 (invalid)
+					#   bind_bone_name = the name of the original (not-remapped) bone
+					#
+					# We need to find the bind_bone_index by looking up the bone
+					# in the skeleton and retrieving the index, then looking
+					# that up in the profile.
+					#
+					# At runtime:
+					#   bind_bone_index = the index of the original bone
+					#   bind_bone_name = "" (invalid)
+					
+					if bind_bone_index == -1:
+
+						# Editor time. We have bind_bone_name (original name)
+						# but don't yet know the remapped bone
+						
+						# Get the name of the remapped bone.
+						bone_name_from_skel = p_bone_map.find_profile_bone_name(bind_bone_name)
+						
+						# If we didn't find that on the profile, then it's just
+						# one of the not-remapped bones.
+						if bone_name_from_skel == "":
+							bone_name_from_skel = bind_bone_name
+						
+						# Get the skeleton's index for the remapped bone.
+						bind_bone_index = p_skeleton.find_bone(bone_name_from_skel)
+						
+					else:
+						
+						# Runtime. We don't have the bind_bone_name (original name).
+						bone_name_from_skel = p_skeleton.get_bone_name(bind_bone_index)
+						bind_bone_name = original_indices_to_bone_names[bind_bone_index]
+						
+
+					#print("i, index, name, from_skel: ", i, ", ", bind_bone_index, ", ", bind_bone_name, ", ", bone_name_from_skel)
+
+					
+					#print("MAYBE IT: ", i, ", ", bind_bone_name)
+					#print("BIND NAME ", i, " ", skin.get_bind_name(i))
+					#print("Blah: ", node.get_bone_name(skin.get_bind_bone(i)))
+					
+					var bn: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
+					#var bn: StringName = p_bone_map.find_profile_bone_name(skin.get_bind_name(i))
+					#print("FROM qSKIN: ", i, ", ", skin.get_bind_name(i))
+					if bone_name_from_skel != StringName():
+						#print("Bind: ", i, " ", bone_name_from_skel)
+						#skin.set_bind_name(i, bn) # Editor
+						#skin.set_bind_name(i, bind_bone_name) # Runtime
+						#skin.set_bind_name(i, original_indices_to_new_bone_names[i])
+						skin.set_bind_name(i, bone_name_from_skel)
 
 	# Rename bones in all Nodes by calling method.
 	nodes = p_base_scene.find_children("*")
@@ -119,6 +320,9 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 
 
 func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_set: Dictionary):
+
+	#print("SDAVSDFVDVS: ", p_node)
+	
 	if p_node is Skeleton3D:
 		for bone_idx in range(p_node.get_bone_count()):
 			var rest: Transform3D = ROTATE_180_TRANSFORM * p_node.get_bone_rest(bone_idx) * ROTATE_180_TRANSFORM
@@ -127,7 +331,7 @@ func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_set: Dict
 			p_node.set_bone_pose_scale(bone_idx, Vector3.ONE)
 			p_node.set_bone_pose_position(bone_idx, rest.origin)
 	p_node.transform = ROTATE_180_TRANSFORM * p_node.transform * ROTATE_180_TRANSFORM
-	if p_node is ImporterMeshInstance3D:
+	if (p_node is ImporterMeshInstance3D) or (p_node is MeshInstance3D): # -Kiri
 		mesh_set[p_node.mesh] = true
 		skin_set[p_node.skin] = true
 	for child in p_node.get_children():
@@ -135,19 +339,57 @@ func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_set: Dict
 
 
 func xtmp(p_node: Node3D, mesh_set: Dictionary, skin_set: Dictionary):
-	if p_node is ImporterMeshInstance3D:
+	if (p_node is ImporterMeshInstance3D) or (p_node is MeshInstance3D): # -Kiri
 		mesh_set[p_node.mesh] = true
 		skin_set[p_node.skin] = true
 	for child in p_node.get_children():
 		xtmp(child, mesh_set, skin_set)
 
 
+
+func _find_instances_with_mesh(node, mesh):
+	var list_of_nodes = []
+	
+	if node is MeshInstance3D:
+		if node.mesh == mesh:
+			list_of_nodes.append(node)
+	
+	for child in node.get_children():
+		list_of_nodes.append_array(_find_instances_with_mesh(child, mesh))
+	
+	return list_of_nodes
+
 func rotate_scene_180(p_scene: Node3D):
+	
 	var mesh_set: Dictionary = {}
 	var skin_set: Dictionary = {}
+
 	rotate_scene_180_inner(p_scene, mesh_set, skin_set)
 	for mesh in mesh_set:
+
+		# There seems to be an issue with updating an ArrayMesh's blend shapes
+		# with the Vulkan renderer, if that ArrayMesh is tied to
+		# MeshInstance3Ds, as it attempts and fails to update the blend shape
+		# weight on the MeshInstance3D.
+		#
+		# Does not seem to apply to ImporterMeshInstance3Ds.
+		#
+		# Possibly related:
+		#   https://github.com/godotengine/godot/issues/31595#issuecomment-817819772
+		#
+		# Anyway. Let's just detach the meshes from the mesh instances, do the
+		# modification, and then restore them back.
+		var instances_with_mesh = _find_instances_with_mesh(p_scene, mesh)
+		for instance in instances_with_mesh:
+			instance.set_mesh(null)
+
+		# Alter the meshes.
 		adjust_mesh_zforward(mesh)
+		
+		# Restore the meshes in the MeshInstance3Ds, if necessary.
+		for instance in instances_with_mesh:
+			instance.set_mesh(mesh)
+
 	for skin in skin_set:
 		for b in range(skin.get_bind_count()):
 			skin.set_bind_pose(b, skin.get_bind_pose(b) * ROTATE_180_TRANSFORM)
@@ -217,12 +459,27 @@ func skeleton_rotate(p_base_scene: Node, src_skeleton: Skeleton3D, p_bone_map: B
 func apply_rotation(p_base_scene: Node, src_skeleton: Skeleton3D):
 	# Fix skin.
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
+	nodes.append_array(p_base_scene.find_children("*", "MeshInstance3D")) # -Kiri
+	
 	while not nodes.is_empty():
 		var this_node = nodes.pop_back()
-		if this_node is ImporterMeshInstance3D:
+		if (this_node is ImporterMeshInstance3D) or (this_node is MeshInstance3D):
 			var mi = this_node
 			var skin: Skin = mi.skin
-			var node = mi.get_node_or_null(mi.skeleton_path)
+			
+			# -Kiri
+			var node = null
+			if mi is ImporterMeshInstance3D:
+				node = mi.get_node_or_null(mi.skeleton_path)
+			elif mi is MeshInstance3D:
+				node = mi.get_node_or_null(mi.skeleton)
+			
+			#print("node: ", node)
+			#print("mi: ", mi)
+			#print("mi.skeleton: ", mi.skeleton)
+			#print("src_skeleton: ", src_skeleton)
+			#print("node is Skeleton3D: ", (node is Skeleton3D))
+			
 			if skin and node and node is Skeleton3D and node == src_skeleton:
 				var skellen = skin.get_bind_count()
 				for i in range(skellen):
@@ -318,6 +575,9 @@ func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float
 
 
 func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props: Dictionary) -> Material:
+	
+	print("_process_vrm_material: ", orig_mat, ", ", orig_mat.resource_name)
+	
 	var vrm_shader_name: String = vrm_mat_props["shader"]
 	if vrm_shader_name == "VRM_USE_GLTFSHADER":
 		return orig_mat  # It's already correct!
@@ -325,6 +585,8 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if vrm_shader_name == "Standard" or vrm_shader_name == "UniGLTF/UniUnlit":
 		printerr("Unsupported legacy VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
 		return orig_mat
+
+	print("  vrm_shader_name: ", vrm_shader_name)
 
 	var maintex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, "_MainTex")
 
@@ -402,8 +664,11 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if outline_mat != null:
 		outline_mat.set_shader_parameter("_MainTex_ST", texture_repeat)
 
+	print("  params...")
 	for param_name in ["_MainTex", "_ShadeTexture", "_BumpMap", "_RimTexture", "_SphereAdd", "_EmissionMap", "_OutlineWidthTexture", "_UvAnimMaskTexture"]:
+		print("    ", param_name)
 		var tex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, param_name)
+		print("      ", tex_info)
 		if tex_info.get("tex", null) != null:
 			new_mat.set_shader_parameter(param_name, tex_info["tex"])
 			if outline_mat != null:
@@ -430,10 +695,22 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 		if outline_mat != null:
 			outline_mat.set_shader_parameter("_AlphaCutoutEnable", 1.0)
 
+	print("  new_mat: ", new_mat)
 	return new_mat
 
 
-func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
+func _recursively_replace_materials(node: Node, old_material: Material, new_material: Material):
+	if node is MeshInstance3D:
+		var mesh : Mesh = node.mesh
+		for surface in range(mesh.get_surface_count()):
+			if mesh.surface_get_material(surface) == old_material:
+				print("REPLACE MATERIAL")
+				mesh.surface_set_material(surface, new_material)
+				
+	for child in node.get_children():
+		_recursively_replace_materials(child, old_material, new_material)
+	
+func _update_materials(vrm_extension: Dictionary, gstate: GLTFState, node: Node) -> void:
 	var images = gstate.get_images()
 	#print(images)
 	var materials: Array = gstate.get_materials()
@@ -491,13 +768,22 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 			if blend_mode == int(RenderMode.Transparent) or blend_mode == int(RenderMode.TransparentWithZWrite):
 				newmat.render_priority = target_render_priority
 		materials[i] = newmat
+
+		# Replace the material on all the MeshInstance3Ds we find in the
+		# hierarchy. This seems to be necessary for run-time imports. Do we just
+		# not get a GLTFMesh at runtime?
+		_recursively_replace_materials(node, oldmat, newmat)
+
 		var oldpath = oldmat.resource_path
 		if oldpath.is_empty():
 			continue
 		newmat.take_over_path(oldpath)
 		ResourceSaver.save(newmat, oldpath)
+		
+		
 	gstate.set_materials(materials)
 
+	# Only works for ImporterMesh stuff?
 	var meshes = gstate.get_meshes()
 	for i in range(meshes.size()):
 		var gltfmesh: GLTFMesh = meshes[i]
@@ -610,7 +896,6 @@ func _create_meta(
 	vrm_meta.humanoid_skeleton_path = skeletonPath
 	return vrm_meta
 
-
 func _create_animation_player(
 	animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]
 ) -> AnimationPlayer:
@@ -638,7 +923,7 @@ func _create_animation_player(
 		var mesh_idx: int = gltfnode.mesh
 		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
 		if mesh_idx != -1:
-			var scenenode: ImporterMeshInstance3D = gstate.get_scene_node(i)
+			var scenenode = gstate.get_scene_node(i) # -Kiri
 			mesh_idx_to_meshinstance[mesh_idx] = scenenode
 			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
 
@@ -650,7 +935,7 @@ func _create_animation_player(
 			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
 			var surface_idx = mesh_and_surface_idx[1]
-
+			# FIXME: Uhh..... get_surface_material is not a function on ImporterMeshInstance3D -Kiri
 			var mat: Material = node.get_surface_material(surface_idx)
 			var paramprop = "shader_uniform/" + matbind["parameterName"]
 			var origvalue = null
@@ -680,14 +965,28 @@ func _create_animation_player(
 				anim.track_insert_key(animtrack, 0.0, newvalue)
 		for bind in shape["binds"]:
 			# FIXME: Is this a mesh_idx or a node_idx???
-			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
-			var nodeMesh: ImporterMesh = node.mesh
+			var node = mesh_idx_to_meshinstance[int(bind["mesh"])] # -Kiri
+			var nodeMesh = node.mesh # -Kiri
 
 			if bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
 				continue
 			var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
 			# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
+
+			# FIXME: Weirdness.
+			#
+			# Runtime load: For some reason we have the nodes from the
+			# GLTFState, but they're not in the tree and they're Importer*
+			# instances. If we find something that's not in the tree (and has
+			# no parent, just find a MeshInstance3D with the same name.
+			#
+			# FIXME: This is a silly way to redirect to the runtime version of
+			# stuff.
+			if node.get_parent() == null:
+				node = animplayer.get_parent().find_child(node.get_name())
+				print("Found node actually in-tree: ", node)
+
 			anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":" + str(nodeMesh.get_blend_shape_name(int(bind["index"]))))
 			var interpolation: int = Animation.INTERPOLATION_LINEAR
 			if shape.has("isBinary") and bool(shape["isBinary"]):
@@ -740,7 +1039,7 @@ func _create_animation_player(
 			third_person_visibility = 0.0
 		else:
 			continue
-		var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
+		var node = mesh_idx_to_meshinstance[int(meshannotation["mesh"])] # -Kiri
 		var firstperstrack = firstpersanim.add_track(Animation.TYPE_VALUE)
 		firstpersanim.track_set_path(firstperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
 		firstpersanim.track_insert_key(firstperstrack, 0.0, first_person_visibility)
@@ -880,7 +1179,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 
-	var offset_flip: Vector3 = Vector3(-1, 1, -1) if is_vrm_0 else Vector3(1, 1, 1)
+	var offset_flip: Vector3 = Vector3(-1, 1, 1) if is_vrm_0 else Vector3(1, 1, 1)
 
 	var collider_groups: Array = [].duplicate()
 	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
@@ -1037,7 +1336,10 @@ func _import_preflight(gstate: GLTFState, psa = PackedStringArray(), psa2: Varia
 func apply_retarget(gstate: GLTFState, root_node: Node, skeleton: Skeleton3D, bone_map: BoneMap) -> Array[Basis]:
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
 
+	# skeleton_rename is probably "fine". See comment in function.
 	skeleton_rename(gstate, root_node, skeleton, bone_map)
+
+	# What the heck does this do? -Kiri
 	var hips_bone_idx = skeleton.find_bone("Hips")
 	if hips_bone_idx != -1:
 		skeleton.motion_scale = abs(skeleton.get_bone_global_rest(hips_bone_idx).origin.y)
@@ -1048,13 +1350,10 @@ func apply_retarget(gstate: GLTFState, root_node: Node, skeleton: Skeleton3D, bo
 	apply_rotation(root_node, skeleton)
 	return poses
 
-
 func _import_post(gstate: GLTFState, node: Node) -> int:
 	var gltf: GLTFDocument = GLTFDocument.new()
-	var root_node: Node = gltf.generate_scene(gstate, 30)
-
+	var root_node: Node = node # gltf.generate_scene(gstate, 30)
 	var is_vrm_0: bool = true
-
 	var gltf_json: Dictionary = gstate.json
 	var vrm_extension: Dictionary = gltf_json["extensions"]["VRM"]
 
@@ -1099,7 +1398,7 @@ func _import_post(gstate: GLTFState, node: Node) -> int:
 		for i in range(skeleton.get_bone_count()):
 			pose_diffs.append(Basis.IDENTITY)
 
-	_update_materials(vrm_extension, gstate)
+	_update_materials(vrm_extension, gstate, node)
 
 	var animplayer = AnimationPlayer.new()
 	animplayer.name = "anim"
@@ -1128,4 +1427,5 @@ func _import_post(gstate: GLTFState, node: Node) -> int:
 		root_node.set("vrm_secondary", secondary_path)
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate, pose_diffs, is_vrm_0)
+
 	return OK

@@ -1,0 +1,47 @@
+Stuff fixed:
+	
+	Loading at runtime causes a crash.
+		generate_scene() is called from _import_post, which is called from
+		generate_scene(). Editor complains (asserts) about objects being removed
+		from the tree while other things are being removed or added.
+		
+		Rather than calling generate_scene() to generate a new scene, we now use
+		the node already passed into _import_post.
+		
+	Collider offsets.
+		Z axis was inverted.
+		
+	Mesh and instance types.
+		Editor imports create ImporterMesh and ImporterMeshInstance3D, but
+		runtime import creates ArrayMesh and MeshInstance3D instances. The
+		interfaces have been mushed together and we can treat them the same now.
+		
+	Adding surfaces with blend shapes to ArrayMeshes causes errors and no mesh.
+		Root cause: MeshInstance3D blend weight list is not updated with the new
+		blend shape list, causing a mismatch in array sizes. Solution: Remove
+		mesh from all MeshInstance3D instances, alter it, and then set it back
+		on all of the instances. (Workaround for an engine bug.)
+		
+	Materials using default GLTF materials.
+		Likely more fallout from ImporterMesh-vs-ArrayMesh type stuff. Root
+		cause was that the new replacement material wasn't getting set as the
+		material in the meshes. There is code to do this, but seems broken at
+		runtime. Unknown reason.
+		
+	Bone name remapping.
+		Looked like missing data in runtime version. Apparently Skins just
+		sometimes use indexes and sometimes use names. Chatted with iFire about
+		it. Code now runs regardless of which version of Skin data we get and
+		missing data is pieced back together.
+		
+	Animations and blendshapes.
+		More issues with ImporterMesh/ImporterMeshInstance3D vs
+		Mesh/MeshInstance3D.
+	
+Stuff *to* fix:
+	
+	Verify collider fix doesn't require X axis to be inverted, too.
+		I think I verified this, but I'm not sure. Should be easy to test.
+		Just export a model with asymmetric collision areas.
+
+	

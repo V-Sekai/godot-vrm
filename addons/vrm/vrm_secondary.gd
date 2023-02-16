@@ -170,7 +170,7 @@ class SecondaryGizmo:
 			elif collider_group.parent is Skeleton3D:
 				c_tr = (collider_group.skel.get_bone_global_pose_no_override(collider_group.parent.find_bone(collider_group.bone)))
 			for collider in collider_group.sphere_colliders:
-				var c_ps: Vector3 = Vector3(0, 0, 0)  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
+				var c_ps: Vector3 = Vector3(collider.x, collider.y, collider.z)  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 				draw_sphere(c_tr.basis, VRMTopLevel.VRMUtil.transform_point(c_tr, c_ps), collider.d, collider_group.gizmo_color)
 			mesh.surface_end()
 
