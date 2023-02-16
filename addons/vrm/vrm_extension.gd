@@ -166,24 +166,6 @@ func _get_bind_bone_name(skeleton : Skeleton3D, skin : Skin, i):
 	return bind_bone_name
 
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
-
-	# -------------------------------
-	#   KIRI READ THIS
-	# -------------------------------
-	#
-	# As messed up as it looks at this point, I think this function may be
-	# correct right now. DON'T MESS WITH IT. LOOK FOR BUGS ELSEWHERE.
-	#
-	# Remember: We want to see that the bones are mapped to their correct
-	# indices. Does the head move when you move your head? Do the hands and
-	# fingers move when you move your hands and figures? If so, then the bone
-	# name mapping is probably *FINE*.
-	#
-	# Only exception: Left/right could still be flipped. (No reason to believe
-	# this as of this writing.)
-	#
-	# Edit: Okay, it's broken in editor-import.
-
 	var original_bone_names_to_indices = {}
 	var original_indices_to_bone_names = {}
 	var original_indices_to_new_bone_names = {}
