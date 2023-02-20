@@ -54,6 +54,15 @@ func _mesh_surface_get_material(mesh, idx):
 		return mesh.surface_get_material(idx)
 	assert(0)
 
+func _mesh_surface_set_material(mesh, idx, material):
+	if mesh is ImporterMesh:
+		mesh.set_surface_material(idx, material)
+		return
+	if mesh is Mesh:
+		mesh.surface_set_material(idx, material)
+		return
+	assert(0)
+
 func _mesh_clear(mesh):
 	if mesh is ImporterMesh:
 		mesh.clear()
@@ -192,7 +201,8 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 		p_skeleton.add_bone(root_bone_name)
 		var new_root_bone_id = p_skeleton.find_bone(root_bone_name)
 		for root_bone_id in p_skeleton.get_parentless_bones():
-			p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
+			if root_bone_id != new_root_bone_id:
+				p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
 	for gnode in gnodes:
 		var bn: StringName = p_bone_map.find_profile_bone_name(gnode.resource_name)
 		if bn != StringName():
@@ -646,11 +656,8 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if outline_mat != null:
 		outline_mat.set_shader_parameter("_MainTex_ST", texture_repeat)
 
-	print("  params...")
 	for param_name in ["_MainTex", "_ShadeTexture", "_BumpMap", "_RimTexture", "_SphereAdd", "_EmissionMap", "_OutlineWidthTexture", "_UvAnimMaskTexture"]:
-		print("    ", param_name)
 		var tex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, param_name)
-		print("      ", tex_info)
 		if tex_info.get("tex", null) != null:
 			new_mat.set_shader_parameter(param_name, tex_info["tex"])
 			if outline_mat != null:
@@ -680,18 +687,6 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	print("  new_mat: ", new_mat)
 	return new_mat
 
-
-func _recursively_replace_materials(node: Node, old_material: Material, new_material: Material):
-	if node is MeshInstance3D:
-		var mesh : Mesh = node.mesh
-		for surface in range(mesh.get_surface_count()):
-			if mesh.surface_get_material(surface) == old_material:
-				print("REPLACE MATERIAL")
-				mesh.surface_set_material(surface, new_material)
-				
-	for child in node.get_children():
-		_recursively_replace_materials(child, old_material, new_material)
-	
 func _update_materials(vrm_extension: Dictionary, gstate: GLTFState, node: Node) -> void:
 	var images = gstate.get_images()
 	#print(images)
@@ -751,11 +746,6 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState, node: Node)
 				newmat.render_priority = target_render_priority
 		materials[i] = newmat
 
-		# Replace the material on all the MeshInstance3Ds we find in the
-		# hierarchy. This seems to be necessary for run-time imports. Do we just
-		# not get a GLTFMesh at runtime?
-		_recursively_replace_materials(node, oldmat, newmat)
-
 		var oldpath = oldmat.resource_path
 		if oldpath.is_empty():
 			continue
@@ -766,17 +756,35 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState, node: Node)
 	gstate.set_materials(materials)
 
 	# Only works for ImporterMesh stuff?
-	var meshes = gstate.get_meshes()
-	for i in range(meshes.size()):
-		var gltfmesh: GLTFMesh = meshes[i]
+	var actual_meshes = []
+
+	# Add all GLTFMeshes from the GLTFState.
+	var gltf_meshes = gstate.get_meshes()
+	for i in range(gltf_meshes.size()):
+		var gltfmesh: GLTFMesh = gltf_meshes[i]
 		var mesh = gltfmesh.mesh
+		if not (mesh in actual_meshes):
+			actual_meshes.append(mesh)
+
+	# Add all ArrayMeshes from the node hierarchy.
+	var nodes_to_check = [node]
+	while len(nodes_to_check):
+		var current_node = nodes_to_check.pop_back()
+		if current_node is MeshInstance3D:
+			if current_node.mesh:
+				actual_meshes.push_back(current_node.mesh)
+		for child in current_node.get_children():
+			nodes_to_check.push_back(child)
+
+	# Apply material replacements.
+	for mesh in actual_meshes:
 		mesh.set_blend_shape_mode(Mesh.BLEND_SHAPE_MODE_NORMALIZED)
 		for surf_idx in range(mesh.get_surface_count()):
-			var surfmat = mesh.get_surface_material(surf_idx)
+			var surfmat = _mesh_surface_get_material(mesh, surf_idx)
 			if spatial_to_shader_mat.has(surfmat):
-				mesh.set_surface_material(surf_idx, spatial_to_shader_mat[surfmat])
+				_mesh_surface_set_material(mesh, surf_idx, spatial_to_shader_mat[surfmat])
 			else:
-				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
+				printerr("Mesh " + mesh + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
 
 
 func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
@@ -1053,7 +1061,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKLEFT"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKLEFT", anim)
-		anim = animplayer.get_animation("LOOKLEFT")
+		else:
+			anim = animplayer.get_animation("LOOKLEFT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -1079,7 +1088,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKRIGHT"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKRIGHT", anim)
-		anim = animplayer.get_animation("LOOKRIGHT")
+		else:
+			anim = animplayer.get_animation("LOOKRIGHT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -1105,7 +1115,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKUP"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKUP", anim)
-		anim = animplayer.get_animation("LOOKUP")
+		else:
+			anim = animplayer.get_animation("LOOKUP")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -1131,7 +1142,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKDOWN"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKDOWN", anim)
-		anim = animplayer.get_animation("LOOKDOWN")
+		else:
+			anim = animplayer.get_animation("LOOKDOWN")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
