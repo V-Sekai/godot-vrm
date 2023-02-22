@@ -25,7 +25,7 @@ func _get_import_flags() -> int:
 func _import_scene(path: String, flags: int, options: Dictionary) -> Object:
 	var gltf: GLTFDocument = GLTFDocument.new()
 	var vrm_extension: GLTFDocumentExtension = gltf_document_extension_class.new()
-	gltf.register_gltf_document_extension(vrm_extension)
+	gltf.register_gltf_document_extension(vrm_extension, true)
 	var state: GLTFState = GLTFState.new()
 	var err = gltf.append_from_file(path, state, flags)
 	if err != OK:
