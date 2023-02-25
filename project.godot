@@ -8,21 +8,11 @@
 
 config_version=5
 
-_global_script_classes=[{
-"base": "Node3D",
-"class": &"VRMTopLevel",
-"language": &"GDScript",
-"path": "res://addons/vrm/vrm_toplevel.gd"
-}]
-_global_script_class_icons={
-"VRMTopLevel": ""
-}
-
 [application]
 
 config/name="VRM Project [GODOT Master Branch]"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
-config/features=PackedStringArray("4.0")
+config/features=PackedStringArray("4.0", "Double Precision")
 config/icon="res://icon.png"
 enabled=PackedStringArray("vrm")
 

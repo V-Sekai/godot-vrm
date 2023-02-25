@@ -40,8 +40,8 @@ tracks/0/path = NodePath(".:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat64Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
+"transitions": PackedFloat64Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
 "values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(-1, 0, 0), Vector3(1, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(0, 0, 0), Vector3(0, 0, 0)]
 }
@@ -52,8 +52,8 @@ tracks/1/path = NodePath(".:rotation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 4, 6, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
+"times": PackedFloat64Array(0, 4, 6, 10),
+"transitions": PackedFloat64Array(1, 1, 1, 1),
 "update": 0,
 "values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 6.28, 0), Vector3(0, 6.28, 0)]
 }
@@ -88,8 +88,8 @@ tracks/0/path = NodePath(".:position")
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"times": PackedFloat64Array(0, 2, 2.5, 3.5, 4, 6, 6.5, 7.5, 8, 10),
+"transitions": PackedFloat64Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 0,
 "values": [Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(0.2, 0, 0), Vector3(2.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0), Vector3(1.2, 0, 1), Vector3(1.2, 0, -1), Vector3(1.2, 0, 0), Vector3(1.2, 0, 0)]
 }
@@ -100,8 +100,8 @@ tracks/1/path = NodePath(".:rotation")
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0, 4, 6, 10),
-"transitions": PackedFloat32Array(1, 1, 1, 1),
+"times": PackedFloat64Array(0, 4, 6, 10),
+"transitions": PackedFloat64Array(1, 1, 1, 1),
 "update": 0,
 "values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(0, 1.98968, 0), Vector3(0, 6.28319, 0)]
 }
