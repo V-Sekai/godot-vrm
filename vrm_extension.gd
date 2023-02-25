@@ -28,19 +28,20 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 		var arr: Array = mesh.get_surface_arrays(surf_idx)
 		var name: String = mesh.get_surface_name(surf_idx)
 		var bscount = mesh.get_blend_shape_count()
-		var bsarr: Array = []
+		var bsarr: Array[Array] = []
 		for bsidx in range(bscount):
 			bsarr.append(mesh.get_surface_blend_shape_arrays(surf_idx, bsidx))
 		var lods: Dictionary = {}  # mesh.surface_get_lods(surf_idx) # get_lods(mesh, surf_idx)
 		var mat: Material = mesh.get_surface_material(surf_idx)
 		var vert_arr_len: int = len(arr[ArrayMesh.ARRAY_VERTEX])
 		var vertarr: PackedVector3Array = arr[ArrayMesh.ARRAY_VERTEX]
+		var invert_vector = Vector3(-1, 1, -1)
 		for i in range(vert_arr_len):
-			vertarr[i] = Vector3(-1, 1, -1) * vertarr[i]
+			vertarr[i] = invert_vector * vertarr[i]
 		if typeof(arr[ArrayMesh.ARRAY_NORMAL]) == TYPE_PACKED_VECTOR3_ARRAY:
 			var normarr: PackedVector3Array = arr[ArrayMesh.ARRAY_NORMAL]
 			for i in range(vert_arr_len):
-				normarr[i] = Vector3(-1, 1, -1) * normarr[i]
+				normarr[i] = invert_vector * normarr[i]
 		if typeof(arr[ArrayMesh.ARRAY_TANGENT]) == TYPE_PACKED_FLOAT32_ARRAY:
 			var tangarr: PackedFloat32Array = arr[ArrayMesh.ARRAY_TANGENT]
 			for i in range(vert_arr_len):
@@ -49,11 +50,11 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 		for bsidx in range(len(bsarr)):
 			vertarr = bsarr[bsidx][ArrayMesh.ARRAY_VERTEX]
 			for i in range(vert_arr_len):
-				vertarr[i] = Vector3(-1, 1, -1) * vertarr[i]
+				vertarr[i] = invert_vector * vertarr[i]
 			if typeof(bsarr[bsidx][ArrayMesh.ARRAY_NORMAL]) == TYPE_PACKED_VECTOR3_ARRAY:
 				var normarr: PackedVector3Array = bsarr[bsidx][ArrayMesh.ARRAY_NORMAL]
 				for i in range(vert_arr_len):
-					normarr[i] = Vector3(-1, 1, -1) * normarr[i]
+					normarr[i] = invert_vector * normarr[i]
 			if typeof(bsarr[bsidx][ArrayMesh.ARRAY_TANGENT]) == TYPE_PACKED_FLOAT32_ARRAY:
 				var tangarr: PackedFloat32Array = bsarr[bsidx][ArrayMesh.ARRAY_TANGENT]
 				for i in range(vert_arr_len):
@@ -68,27 +69,36 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 	for surf_idx in range(surf_count):
 		var prim: int = surf_data_by_mesh[surf_idx].get("prim")
 		var arr: Array = surf_data_by_mesh[surf_idx].get("arr")
-		var bsarr: Array = surf_data_by_mesh[surf_idx].get("bsarr")
+		var bsarr: Array[Array] = surf_data_by_mesh[surf_idx].get("bsarr")
 		var lods: Dictionary = surf_data_by_mesh[surf_idx].get("lods")
 		var fmt_compress_flags: int = surf_data_by_mesh[surf_idx].get("fmt_compress_flags")
 		var name: String = surf_data_by_mesh[surf_idx].get("name")
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
 		mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 
-
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
+	var original_bone_names_to_indices = {}
+	var original_indices_to_bone_names = {}
+	var original_indices_to_new_bone_names = {}
 	var skellen: int = p_skeleton.get_bone_count()
+
+	# Rename bones to their humanoid equivalents.
 	for i in range(skellen):
 		var bn: StringName = p_bone_map.find_profile_bone_name(p_skeleton.get_bone_name(i))
+		original_bone_names_to_indices[p_skeleton.get_bone_name(i)] = i
+		original_indices_to_bone_names[i] = p_skeleton.get_bone_name(i)
+		original_indices_to_new_bone_names[i] = bn
 		if bn != StringName():
 			p_skeleton.set_bone_name(i, bn)
+
 	var gnodes = gstate.nodes
 	var root_bone_name = "Root"
 	if p_skeleton.find_bone(root_bone_name) == -1:
 		p_skeleton.add_bone(root_bone_name)
 		var new_root_bone_id = p_skeleton.find_bone(root_bone_name)
 		for root_bone_id in p_skeleton.get_parentless_bones():
-			p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
+			if root_bone_id != new_root_bone_id:
+				p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
 	for gnode in gnodes:
 		var bn: StringName = p_bone_map.find_profile_bone_name(gnode.resource_name)
 		if bn != StringName():
@@ -96,16 +106,63 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
 	while not nodes.is_empty():
-		var mi = nodes.pop_back() as ImporterMeshInstance3D
+		var mi : ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
 		var skin: Skin = mi.skin
 		if skin:
 			var node = mi.get_node(mi.skeleton_path)
 			if node and node is Skeleton3D and node == p_skeleton:
 				skellen = skin.get_bind_count()
 				for i in range(skellen):
-					var bn: StringName = p_bone_map.find_profile_bone_name(skin.get_bind_name(i))
-					if bn != StringName():
-						skin.set_bind_name(i, bn)
+
+					# Bone index on skeleton.
+					var bind_bone_index = skin.get_bind_bone(i)
+
+					# Bone name from skin (un-remapped bone name)
+					var bind_bone_name = skin.get_bind_name(i)
+
+					var bone_name_from_skel = ""
+
+					# I'm not sure if this is due to a bug or what. When loading
+					# a model at runtime, we have a different set of data
+					# available than when we load in the editor. This means...
+					#
+					# In the editor:
+					#   bind_bone_index = -1 (invalid)
+					#   bind_bone_name = the name of the original (not-remapped) bone
+					#
+					# We need to find the bind_bone_index by looking up the bone
+					# in the skeleton and retrieving the index, then looking
+					# that up in the profile.
+					#
+					# At runtime:
+					#   bind_bone_index = the index of the original bone
+					#   bind_bone_name = "" (invalid)
+
+					if bind_bone_index == -1:
+
+						# Editor time. We have bind_bone_name (original name)
+						# but don't yet know the remapped bone
+
+						# Get the name of the remapped bone.
+						bone_name_from_skel = p_bone_map.find_profile_bone_name(bind_bone_name)
+
+						# If we didn't find that on the profile, then it's just
+						# one of the not-remapped bones.
+						if bone_name_from_skel == "":
+							bone_name_from_skel = bind_bone_name
+
+						# Get the skeleton's index for the remapped bone.
+						bind_bone_index = p_skeleton.find_bone(bone_name_from_skel)
+
+					else:
+
+						# Runtime. We don't have the bind_bone_name (original name).
+						bone_name_from_skel = p_skeleton.get_bone_name(bind_bone_index)
+						bind_bone_name = original_indices_to_bone_names[bind_bone_index]
+
+					var bn: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
+					if bone_name_from_skel != StringName():
+						skin.set_bind_name(i, bone_name_from_skel)
 
 	# Rename bones in all Nodes by calling method.
 	nodes = p_base_scene.find_children("*")
@@ -772,7 +829,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKLEFT"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKLEFT", anim)
-		anim = animplayer.get_animation("LOOKLEFT")
+		else:
+			anim = animplayer.get_animation("LOOKLEFT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -798,7 +856,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKRIGHT"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKRIGHT", anim)
-		anim = animplayer.get_animation("LOOKRIGHT")
+		else:
+			anim = animplayer.get_animation("LOOKRIGHT")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -824,7 +883,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKUP"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKUP", anim)
-		anim = animplayer.get_animation("LOOKUP")
+		else:
+			anim = animplayer.get_animation("LOOKUP")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -850,7 +910,8 @@ func _create_animation_player(
 		if not animplayer.has_animation("LOOKDOWN"):
 			anim = Animation.new()
 			animation_library.add_animation("LOOKDOWN", anim)
-		anim = animplayer.get_animation("LOOKDOWN")
+		else:
+			anim = animplayer.get_animation("LOOKDOWN")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
@@ -880,7 +941,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 
-	var offset_flip: Vector3 = Vector3(-1, 1, -1) if is_vrm_0 else Vector3(1, 1, 1)
+	var offset_flip: Vector3 = Vector3(-1, 1, 1) if is_vrm_0 else Vector3(1, 1, 1)
 
 	var collider_groups: Array = [].duplicate()
 	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
@@ -1051,7 +1112,7 @@ func apply_retarget(gstate: GLTFState, root_node: Node, skeleton: Skeleton3D, bo
 
 func _import_post(gstate: GLTFState, node: Node) -> int:
 	var gltf: GLTFDocument = GLTFDocument.new()
-	var root_node: Node = gltf.generate_scene(gstate, 30)
+	var root_node: Node = node
 
 	var is_vrm_0: bool = true
 
