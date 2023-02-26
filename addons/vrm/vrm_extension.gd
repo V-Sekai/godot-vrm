@@ -113,55 +113,10 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 			if node and node is Skeleton3D and node == p_skeleton:
 				skellen = skin.get_bind_count()
 				for i in range(skellen):
-
-					# Bone index on skeleton.
-					var bind_bone_index = skin.get_bind_bone(i)
-
 					# Bone name from skin (un-remapped bone name)
 					var bind_bone_name = skin.get_bind_name(i)
-
-					var bone_name_from_skel = ""
-
-					# I'm not sure if this is due to a bug or what. When loading
-					# a model at runtime, we have a different set of data
-					# available than when we load in the editor. This means...
-					#
-					# In the editor:
-					#   bind_bone_index = -1 (invalid)
-					#   bind_bone_name = the name of the original (not-remapped) bone
-					#
-					# We need to find the bind_bone_index by looking up the bone
-					# in the skeleton and retrieving the index, then looking
-					# that up in the profile.
-					#
-					# At runtime:
-					#   bind_bone_index = the index of the original bone
-					#   bind_bone_name = "" (invalid)
-
-					if bind_bone_index == -1:
-
-						# Editor time. We have bind_bone_name (original name)
-						# but don't yet know the remapped bone
-
-						# Get the name of the remapped bone.
-						bone_name_from_skel = p_bone_map.find_profile_bone_name(bind_bone_name)
-
-						# If we didn't find that on the profile, then it's just
-						# one of the not-remapped bones.
-						if bone_name_from_skel == "":
-							bone_name_from_skel = bind_bone_name
-
-						# Get the skeleton's index for the remapped bone.
-						bind_bone_index = p_skeleton.find_bone(bone_name_from_skel)
-
-					else:
-
-						# Runtime. We don't have the bind_bone_name (original name).
-						bone_name_from_skel = p_skeleton.get_bone_name(bind_bone_index)
-						bind_bone_name = original_indices_to_bone_names[bind_bone_index]
-
-					var bn: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
-					if bone_name_from_skel != StringName():
+					var bone_name_from_skel: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
+					if not bone_name_from_skel.is_empty():
 						skin.set_bind_name(i, bone_name_from_skel)
 
 	# Rename bones in all Nodes by calling method.
