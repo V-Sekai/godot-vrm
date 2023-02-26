@@ -189,7 +189,7 @@ class VRMSpringBoneLogic:
 			ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
 			var qt: Quaternion = ft * get_rotation_relative_to_origin(skel)
 			var global_pose_tr: Transform3D = get_global_pose(skel)
-			global_pose_tr.basis = Basis(qt.normalized())
+			global_pose_tr.basis = Basis(qt)
 			skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)
 
 	func collision(skel: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
