@@ -1,4 +1,4 @@
-[gd_resource type="ShaderMaterial" load_steps=4 format=3 uid="uid://381vkknt7xr4"]
+[gd_resource type="ShaderMaterial" load_steps=4 format=3 uid="uid://1h104dn0n5xr"]
 
 [ext_resource type="Shader" path="res://addons/Godot-MToon-Shader/mtoon_outline.gdshader" id="1_3wj17"]
 [ext_resource type="Shader" path="res://addons/Godot-MToon-Shader/mtoon.gdshader" id="1_ocq4p"]
