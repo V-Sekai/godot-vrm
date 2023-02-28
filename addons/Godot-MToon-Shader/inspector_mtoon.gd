@@ -9,7 +9,7 @@ const mtoon_trans_zwrite: Shader = preload("mtoon_trans_zwrite.gdshader")
 const mtoon_trans_zwrite_cull_off: Shader = preload("mtoon_trans_zwrite_cull_off.gdshader")
 const mtoon_outline: Shader = preload("mtoon_outline.gdshader")
 
-func _can_handle(object: Variant) -> bool:
+func _can_handle(object: Object) -> bool:
 	if object != null and object is ShaderMaterial:
 		if object.shader != null and object.shader.resource_path.find("/mtoon") != -1 and object.shader.resource_path.find("/mtoon_outline") == -1:
 			return true
@@ -230,7 +230,7 @@ func _parse_end(object_: Object) -> void:
 func is_a_shader_parameter(path: String) -> bool:
 	return path.begins_with("shader_parameter/")
 
-func _parse_property(object_: Object, type, path: String, hint: int, hint_text: String, usage: int, wide: bool) -> bool:
+func _parse_property(object_: Object, type, path: String, hint, hint_text: String, usage, wide: bool) -> bool:
 	var object: ShaderMaterial = object_
 	if not last_tex_property.is_empty():
 		_process_tex_property(object)
