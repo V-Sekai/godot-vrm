@@ -7,8 +7,6 @@ const vrm_collidergroup = preload("./vrm_collidergroup.gd")
 const vrm_springbone = preload("./vrm_springbone.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
 
-const mtoon_template = preload("./mtoon_template.tres") # Must be preload to workaround #72143
-
 var vrm_meta: Resource = null
 
 const ROTATE_180_BASIS = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1))
@@ -400,7 +398,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if godot_outline_shader_name:
 		godot_shader_outline = ResourceLoader.load(godot_outline_shader_name + ".gdshader")
 
-	var new_mat : ShaderMaterial = mtoon_template.duplicate()
+	var new_mat : ShaderMaterial = ShaderMaterial.new()
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
 	if godot_shader_outline == null:
