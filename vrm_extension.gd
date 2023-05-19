@@ -4,7 +4,6 @@ const vrm_constants_class = preload("./vrm_constants.gd")
 const vrm_meta_class = preload("./vrm_meta.gd")
 const vrm_secondary = preload("./vrm_secondary.gd")
 const vrm_collidergroup = preload("./vrm_collidergroup.gd")
-const vrm_springbone = preload("./vrm_springbone.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
 
 var vrm_meta: Resource = null
@@ -404,7 +403,10 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if godot_shader_outline == null:
 		new_mat.next_pass = null
 	else:
-		new_mat.next_pass = new_mat.next_pass.duplicate()
+		if new_mat.next_pass == null:
+			new_mat.next_pass = null
+		else:
+			new_mat.next_pass = new_mat.next_pass.duplicate()
 	var outline_mat: ShaderMaterial = new_mat.next_pass
 
 	var texture_repeat = Vector4(maintex_info["scale"].x, maintex_info["scale"].y, maintex_info["offset"].x, maintex_info["offset"].y)
@@ -929,7 +931,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
 		var skeleton: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton)
 
-		var spring_bone = vrm_springbone.new()
+		var spring_bone = preload("./vrm_springbone.gd").new()
 		spring_bone.skeleton = secondary_node.get_path_to(skeleton)
 		spring_bone.comment = sbone.get("comment", "")
 		spring_bone.stiffness_force = float(sbone.get("stiffiness", 1.0))
