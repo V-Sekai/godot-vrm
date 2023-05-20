@@ -13,28 +13,6 @@ var prev_tail: Vector3
 var initial_transform: Transform3D
 
 
-static func global_pose_to_local_pose(p_skeleton: Skeleton3D, p_bone_idx: int,  p_global_pose: Transform3D) -> Transform3D:
-	var bone_size : int = p_skeleton.get_bone_count()
-	if p_bone_idx < 0 or p_bone_idx >= bone_size:
-		return Transform3D()
-	if p_skeleton.get_bone_parent(p_bone_idx) >= 0:
-		var parent_bone_idx : int = p_skeleton.get_bone_parent(p_bone_idx)
-		var conversion_transform : Transform3D = p_skeleton.get_bone_global_pose(parent_bone_idx).affine_inverse()
-		return conversion_transform * p_global_pose
-	else:
-		return p_global_pose
-		
-static func local_pose_to_global_pose(p_skeleton : Skeleton3D, p_bone_idx: int, p_local_pose: Transform3D) -> Transform3D:
-	var bone_size : int = p_skeleton.get_bone_count()
-	if p_bone_idx < 0 or p_bone_idx >= bone_size:
-		return Transform3D()
-	if p_skeleton.get_bone_parent(p_bone_idx) >= 0:
-		var parent_bone_idx : int = p_skeleton.get_bone_parent(p_bone_idx)
-		return p_skeleton.get_bone_global_pose(parent_bone_idx) * p_local_pose;
-	else:
-		return p_local_pose
-
-
 func get_transform(skel: Skeleton3D) -> Transform3D:
 	return skel.get_global_transform() * skel.get_bone_global_pose_no_override(bone_idx)
 
