@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3 uid="uid://b18p0ducofk6f"]
+
+[ext_resource type="PackedScene" uid="uid://dhb5fwabnjanw" path="res://vrm_samples/node_constraint/vrm_node_constraint_examples.gltf" id="1_v4tu1"]
+[ext_resource type="AnimationLibrary" uid="uid://6e6vevi4t6d7" path="res://vrm_samples/node_constraint/vrm_node_constraint_examples.anim.tres" id="2_jpu0k"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hxrnq"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_3i1l4"]
+sky_material = SubResource("ProceduralSkyMaterial_hxrnq")
+
+[sub_resource type="Environment" id="Environment_pkcx5"]
+background_mode = 2
+sky = SubResource("Sky_3i1l4")
+tonemap_mode = 2
+glow_enabled = true
+
+[node name="VRMNodeConstraintTest" type="Node3D"]
+
+[node name="vrm_node_constraint_examples" parent="." instance=ExtResource("1_v4tu1")]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+root_node = NodePath("../vrm_node_constraint_examples/VRMNodeConstraintExamples")
+autoplay = "motion"
+libraries = {
+"": ExtResource("2_jpu0k")
+}
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_pkcx5")

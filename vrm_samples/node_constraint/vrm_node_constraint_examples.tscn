@@ -1,0 +1,378 @@
+[gd_scene load_steps=27 format=3 uid="uid://dr2lqv3te78lp"]
+
+[ext_resource type="Material" uid="uid://df8n5t6sgi88m" path="res://vrm_samples/node_constraint/materials/x.mat.tres" id="1_8nqcx"]
+[ext_resource type="Script" path="res://addons/vrm/node_constraint/bone_node_constraint_applier.gd" id="1_susl1"]
+[ext_resource type="Material" uid="uid://5dop7l08o2xp" path="res://vrm_samples/node_constraint/materials/y.mat.tres" id="1_wnfbx"]
+[ext_resource type="Script" path="res://addons/vrm/node_constraint/bone_node_constraint.gd" id="2_6wron"]
+[ext_resource type="Material" uid="uid://clcr56hhkpmnl" path="res://vrm_samples/node_constraint/materials/z.mat.tres" id="2_ygydn"]
+[ext_resource type="Material" uid="uid://bxohjw25iwq3l" path="res://vrm_samples/node_constraint/materials/o.mat.tres" id="3_phabg"]
+[ext_resource type="Material" uid="uid://dnbneygijykcj" path="res://vrm_samples/node_constraint/materials/t.mat.tres" id="5_sdga2"]
+[ext_resource type="AnimationLibrary" uid="uid://6e6vevi4t6d7" path="res://vrm_samples/node_constraint/vrm_node_constraint_examples.anim.tres" id="8_tlo1o"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_t81m7"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_rulhr"]
+size = Vector3(0.5, 0.125, 0.125)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8tfbc"]
+size = Vector3(0.125, 0.5, 0.125)
+
+[sub_resource type="BoxMesh" id="BoxMesh_focj7"]
+size = Vector3(0.125, 0.125, 0.5)
+
+[sub_resource type="Resource" id="Resource_h8qym"]
+script = ExtResource("2_6wron")
+constraint_type = 3
+aim_or_roll_axis = 0
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RotationNN/SameSpaceRTNN/SourceRTNNSS")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RotationNN/SameSpaceRTNN/TargetRTNNSS")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_bnula"]
+script = ExtResource("2_6wron")
+constraint_type = 3
+aim_or_roll_axis = 0
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RotationNN/DifferentSpaceRTNN/SourceSpaceRTNNDS/SourceRTNNDS")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RotationNN/DifferentSpaceRTNN/TargetSpaceRTNNDS/TargetRTNNDS")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_052dn"]
+script = ExtResource("2_6wron")
+constraint_type = 3
+aim_or_roll_axis = 0
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RotationNN/PosedRTNN/SourceRTNNP")
+source_bone_index = -1
+source_rest_transform = Transform3D(0.965926, -4.27175e-16, -0.258819, 3.48787e-16, 1, -3.48787e-16, 0.258819, 2.4663e-16, 0.965926, -1, 0, 0)
+target_node_path = NodePath("../NodeToNode/RotationNN/PosedRTNN/TargetRTNNP")
+target_bone_index = -1
+target_rest_transform = Transform3D(0.965926, -2.4663e-16, 0.258819, 3.48787e-16, 1, -3.48787e-16, -0.258819, 4.27175e-16, 0.965926, 1, 0, 0)
+
+[sub_resource type="Resource" id="Resource_wroxy"]
+script = ExtResource("2_6wron")
+constraint_type = 2
+aim_or_roll_axis = 1
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/SourceNNRL")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/TargetX_NNRL")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_x5a6f"]
+script = ExtResource("2_6wron")
+constraint_type = 2
+aim_or_roll_axis = 2
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/SourceNNRL")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/TargetY_NNRL")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_ao430"]
+script = ExtResource("2_6wron")
+constraint_type = 2
+aim_or_roll_axis = 3
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/SourceNNRL")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RollNN/SimpleNNRL/TargetZ_NNRL")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_i8f0r"]
+script = ExtResource("2_6wron")
+constraint_type = 2
+aim_or_roll_axis = 2
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/RollNN/FullSpinNNRL/SourceNNRLFS")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+target_node_path = NodePath("../NodeToNode/RollNN/FullSpinNNRL/TargetYNNRLFS")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_2e05f"]
+script = ExtResource("2_6wron")
+constraint_type = 1
+aim_or_roll_axis = 6
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/AimNN/SourceNNA")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 1, 2.08165e-12, 2.08165e-12)
+target_node_path = NodePath("../NodeToNode/AimNN/TargetNegZNNA")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2)
+
+[sub_resource type="Resource" id="Resource_8gih4"]
+script = ExtResource("2_6wron")
+constraint_type = 1
+aim_or_roll_axis = 1
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/AimNN/SourceNNA")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 1, 2.08165e-12, 2.08165e-12)
+target_node_path = NodePath("../NodeToNode/AimNN/TargetPosXNNA")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, -2, 2.08165e-12, 2.08165e-12)
+
+[sub_resource type="Resource" id="Resource_5xg1v"]
+script = ExtResource("2_6wron")
+constraint_type = 1
+aim_or_roll_axis = 3
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/AimNN/SourceNNA")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 1, 2.08165e-12, 2.08165e-12)
+target_node_path = NodePath("../NodeToNode/AimNN/TargetPosZNNA")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, -2)
+
+[sub_resource type="Resource" id="Resource_57gqx"]
+script = ExtResource("2_6wron")
+constraint_type = 1
+aim_or_roll_axis = 5
+weight = 1.0
+source_node_path = NodePath("../NodeToNode/AimNN/SourceNNA")
+source_bone_index = -1
+source_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 1, 2.08165e-12, 2.08165e-12)
+target_node_path = NodePath("../NodeToNode/AimNN/TargetNegYNNA")
+target_bone_index = -1
+target_rest_transform = Transform3D(1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12, 1, 2.08165e-12, 2.5, 0.5)
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_hxrnq"]
+sky_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+ground_horizon_color = Color(0.64625, 0.65575, 0.67075, 1)
+
+[sub_resource type="Sky" id="Sky_3i1l4"]
+sky_material = SubResource("ProceduralSkyMaterial_hxrnq")
+
+[sub_resource type="Environment" id="Environment_pkcx5"]
+background_mode = 2
+sky = SubResource("Sky_3i1l4")
+tonemap_mode = 2
+glow_enabled = true
+
+[node name="VRMNodeConstraintExamples" type="Node3D"]
+
+[node name="NodeToNode" type="Node3D" parent="."]
+
+[node name="AimNN" type="Node3D" parent="NodeToNode"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, -8)
+
+[node name="SourceNNA" type="MeshInstance3D" parent="NodeToNode/AimNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../RollNN/SimpleNNRL")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetPosXNNA" type="MeshInstance3D" parent="NodeToNode/AimNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.08165e-12, 0)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../RollNN/SimpleNNRL")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="AxisLineXPosXNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosXNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_rulhr")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="AxisLineYPosXNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosXNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
+mesh = SubResource("BoxMesh_8tfbc")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineZPosXNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosXNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 0.75)
+mesh = SubResource("BoxMesh_focj7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="TargetNegYNNA" type="MeshInstance3D" parent="NodeToNode/AimNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.5, -0.5)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../RollNN/SimpleNNRL")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineXNegYNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegYNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_rulhr")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="AxisLineYNegYNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegYNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
+mesh = SubResource("BoxMesh_8tfbc")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineZNegYNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegYNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 0.75)
+mesh = SubResource("BoxMesh_focj7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="TargetPosZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, -2)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../RollNN/SimpleNNRL")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="AxisLineXPosZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_rulhr")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="AxisLineYPosZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
+mesh = SubResource("BoxMesh_8tfbc")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineZPosZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetPosZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 0.75)
+mesh = SubResource("BoxMesh_focj7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="TargetNegZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 2)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../RollNN/SimpleNNRL")
+surface_material_override/0 = ExtResource("5_sdga2")
+
+[node name="AxisLineXNegZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_rulhr")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="AxisLineYNegZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.75, 2.08165e-12)
+mesh = SubResource("BoxMesh_8tfbc")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineZNegZNNA" type="MeshInstance3D" parent="NodeToNode/AimNN/TargetNegZNNA"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 0.75)
+mesh = SubResource("BoxMesh_focj7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="RollNN" type="Node3D" parent="NodeToNode"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, 2.08165e-12)
+
+[node name="SimpleNNRL" type="Node3D" parent="NodeToNode/RollNN"]
+
+[node name="SourceNNRL" type="MeshInstance3D" parent="NodeToNode/RollNN/SimpleNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetX_NNRL" type="MeshInstance3D" parent="NodeToNode/RollNN/SimpleNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("1_8nqcx")
+
+[node name="TargetY_NNRL" type="MeshInstance3D" parent="NodeToNode/RollNN/SimpleNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.08165e-12, -2)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="TargetZ_NNRL" type="MeshInstance3D" parent="NodeToNode/RollNN/SimpleNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.08165e-12, -2)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="FullSpinNNRL" type="Node3D" parent="NodeToNode/RollNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 2.08165e-12, -4)
+
+[node name="SourceNNRLFS" type="MeshInstance3D" parent="NodeToNode/RollNN/FullSpinNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../SimpleNNRL")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetYNNRLFS" type="MeshInstance3D" parent="NodeToNode/RollNN/FullSpinNNRL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.08165e-12, 2.08165e-12)
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../../SimpleNNRL")
+surface_material_override/0 = ExtResource("1_wnfbx")
+
+[node name="AxisLineZNNRLFS" type="MeshInstance3D" parent="NodeToNode/RollNN/FullSpinNNRL/TargetYNNRLFS"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 0.5, 0.3)
+mesh = SubResource("BoxMesh_focj7")
+surface_material_override/0 = ExtResource("2_ygydn")
+
+[node name="RotationNN" type="Node3D" parent="NodeToNode"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 2.08165e-12, 2)
+
+[node name="SameSpaceRTNN" type="Node3D" parent="NodeToNode/RotationNN"]
+editor_description = "The rotation should be copied, but not the position."
+
+[node name="SourceRTNNSS" type="MeshInstance3D" parent="NodeToNode/RotationNN/SameSpaceRTNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetRTNNSS" type="MeshInstance3D" parent="NodeToNode/RotationNN/SameSpaceRTNN"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("5_sdga2")
+
+[node name="DifferentSpaceRTNN" type="Node3D" parent="NodeToNode/RotationNN"]
+editor_description = "The rotation copied is the local rotation, so objects in different spaces should only consider local rotation and end up with different global rotation."
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, -3)
+
+[node name="SourceSpaceRTNNDS" type="Node3D" parent="NodeToNode/RotationNN/DifferentSpaceRTNN"]
+transform = Transform3D(0.965926, -4.27175e-16, -0.258819, 3.48787e-16, 1, -3.48787e-16, 0.258819, 2.4663e-16, 0.965926, -1, 0, 0)
+
+[node name="SourceRTNNDS" type="MeshInstance3D" parent="NodeToNode/RotationNN/DifferentSpaceRTNN/SourceSpaceRTNNDS"]
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../..")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetSpaceRTNNDS" type="Node3D" parent="NodeToNode/RotationNN/DifferentSpaceRTNN"]
+transform = Transform3D(0.965926, -2.4663e-16, 0.258819, 3.48787e-16, 1, -3.48787e-16, -0.258819, 4.27175e-16, 0.965926, 1, 0, 0)
+
+[node name="TargetRTNNDS" type="MeshInstance3D" parent="NodeToNode/RotationNN/DifferentSpaceRTNN/TargetSpaceRTNNDS"]
+mesh = SubResource("BoxMesh_t81m7")
+skeleton = NodePath("../..")
+surface_material_override/0 = ExtResource("5_sdga2")
+
+[node name="PosedRTNN" type="Node3D" parent="NodeToNode/RotationNN"]
+editor_description = "Posed objects should consider their rotation relative to the rest transform."
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08165e-12, 2.08165e-12, -6)
+
+[node name="SourceRTNNP" type="MeshInstance3D" parent="NodeToNode/RotationNN/PosedRTNN"]
+transform = Transform3D(0.965926, -4.27175e-16, -0.258819, 3.48787e-16, 1, -3.48787e-16, 0.258819, 2.4663e-16, 0.965926, -1, 0, 0)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("3_phabg")
+
+[node name="TargetRTNNP" type="MeshInstance3D" parent="NodeToNode/RotationNN/PosedRTNN"]
+transform = Transform3D(0.965926, -2.4663e-16, 0.258819, 3.48787e-16, 1, -3.48787e-16, -0.258819, 4.27175e-16, 0.965926, 1, 0, 0)
+mesh = SubResource("BoxMesh_t81m7")
+surface_material_override/0 = ExtResource("5_sdga2")
+
+[node name="BoneNodeConstraintApplier" type="Node" parent="."]
+script = ExtResource("1_susl1")
+constraints = Array[ExtResource("2_6wron")]([SubResource("Resource_h8qym"), SubResource("Resource_bnula"), SubResource("Resource_052dn"), SubResource("Resource_wroxy"), SubResource("Resource_x5a6f"), SubResource("Resource_ao430"), SubResource("Resource_i8f0r"), SubResource("Resource_2e05f"), SubResource("Resource_8gih4"), SubResource("Resource_5xg1v"), SubResource("Resource_57gqx")])
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+autoplay = "motion"
+libraries = {
+"": ExtResource("8_tlo1o")
+}
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.866025, -0.25, 0.433013, 3.02058e-16, 0.866025, 0.5, -0.5, -0.433013, 0.75, 2, 3, 3)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866023, -0.433016, 0.250001, 0, 0.499998, 0.866027, -0.500003, 0.749999, -0.43301, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_pkcx5")
