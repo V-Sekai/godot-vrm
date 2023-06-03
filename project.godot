@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="VRM Project [GODOT Master Branch]"
+config/name="VRM Project (Godot 4.x)"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
 config/features=PackedStringArray("4.0")
 config/icon="res://icon.png"
@@ -18,7 +18,6 @@ enabled=PackedStringArray("vrm")
 
 [display]
 
-window/size/resizable=false
 window/size/width=1920
 window/size/height=1080
 window/size/test_width=1280
