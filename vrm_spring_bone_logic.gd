@@ -16,17 +16,22 @@ var initial_transform: Transform3D
 func get_transform(skel: Skeleton3D) -> Transform3D:
 	return skel.get_global_transform() * skel.get_bone_global_pose_no_override(bone_idx)
 
+
 func get_rotation_relative_to_origin(skel: Skeleton3D) -> Quaternion:
 	return get_transform(skel).basis.get_rotation_quaternion()
+
 
 func get_global_pose(skel: Skeleton3D) -> Transform3D:
 	return skel.get_bone_global_pose_no_override(bone_idx)
 
+
 func get_local_pose_rotation(skel: Skeleton3D) -> Quaternion:
 	return get_global_pose(skel).basis.get_rotation_quaternion()
 
+
 func reset(skel: Skeleton3D) -> void:
 	skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0, true)
+
 
 func _init(skel: Skeleton3D, idx: int, center, local_child_position: Vector3, default_pose: Transform3D) -> void:
 	initial_transform = default_pose
@@ -39,6 +44,7 @@ func _init(skel: Skeleton3D, idx: int, center, local_child_position: Vector3, de
 	prev_tail = current_tail
 	bone_axis = local_child_position.normalized()
 	length = local_child_position.length()
+
 
 func update(skel: Skeleton3D, center, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
 	var tmp_current_tail: Vector3
@@ -76,6 +82,7 @@ func update(skel: Skeleton3D, center, stiffness_force: float, drag_force: float,
 		var global_pose_tr: Transform3D = get_global_pose(skel)
 		global_pose_tr.basis = Basis(qt)
 		skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)
+
 
 func collision(skel: Skeleton3D, colliders: Array, _next_tail: Vector3) -> Vector3:
 	var out: Vector3 = _next_tail
