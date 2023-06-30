@@ -3,6 +3,7 @@ extends EditorSceneFormatImporter
 
 const gltf_document_extension_class = preload("./vrm_extension.gd")
 
+const SAVE_DEBUG_GLTFSTATE_RES: bool = true
 
 func _get_importer_name() -> String:
 	return "Godot-VRM"
@@ -34,5 +35,9 @@ func _import_scene(path: String, flags: int, options: Dictionary) -> Object:
 		gltf.unregister_gltf_document_extension(vrm_extension)
 		return null
 	var generated_scene = gltf.generate_scene(state)
+	if SAVE_DEBUG_GLTFSTATE_RES and path != "":
+		if (!ResourceLoader.exists(path + ".res")):
+			state.take_over_path(path + ".res")
+			ResourceSaver.save(state, path + ".res")
 	gltf.unregister_gltf_document_extension(vrm_extension)
 	return generated_scene
