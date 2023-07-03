@@ -596,7 +596,7 @@ class LinearColorInspector extends MToonProperty:
 	func _color_changed(new_color: Color) -> void:
 		if updating:
 			return
-		var new_val: Vector4 = Vector4(new_color.r, new_color.g, new_color.b, new_color.a)
+		var new_val: Color = Color(new_color.r, new_color.g, new_color.b, new_color.a)
 		emit_changed(get_edited_property(), new_val)
 		set_outline_prop(get_edited_property(), new_val)
 
@@ -604,10 +604,10 @@ class LinearColorInspector extends MToonProperty:
 		var linear_color: Variant = get_edited_object_hack()[get_edited_property()]
 		if typeof(linear_color) == TYPE_NIL:
 			const defaults = {
-				"_Color": Vector4(1.0,1.0,1.0,1.0),
-				"_ShadeColor": Vector4(0.97, 0.81, 0.86, 1.0),
+				"_Color": Color(1.0,1.0,1.0,1.0),
+				"_ShadeColor": Color(0.97, 0.81, 0.86, 1.0),
 			}
-			linear_color = defaults.get(str(get_edited_property()).split("/")[-1], Vector4(0,0,0,1))
+			linear_color = defaults.get(str(get_edited_property()).split("/")[-1], Color(0,0,0,1))
 		updating = true
-		color_picker.color = Color(linear_color.x, linear_color.y, linear_color.z, linear_color.w)
+		color_picker.color = linear_color
 		updating = false

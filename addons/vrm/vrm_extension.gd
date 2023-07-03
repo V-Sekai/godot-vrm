@@ -1109,9 +1109,9 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 	var humanBones: BoneMap = BoneMap.new()
 	humanBones.profile = SkeletonProfileHumanoid.new()
 
-	var vrmconst_inst = vrm_constants_class.new(is_vrm_0)  # vrm 0.0
+	var vrm_to_human_bone = vrm_constants_class.get_vrm_to_human_bone(is_vrm_0)  # vrm 0.0
 	for humanBoneName in human_bone_to_idx:
-		humanBones.set_skeleton_bone_name(vrmconst_inst.vrm_to_human_bone[humanBoneName], gltfnodes[human_bone_to_idx[humanBoneName]].resource_name)
+		humanBones.set_skeleton_bone_name(vrm_to_human_bone[humanBoneName], gltfnodes[human_bone_to_idx[humanBoneName]].resource_name)
 
 	if is_vrm_0:
 		# VRM 0.0 has models facing backwards due to a spec error (flipped z instead of x)

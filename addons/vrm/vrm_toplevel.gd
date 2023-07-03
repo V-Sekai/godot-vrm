@@ -1,11 +1,18 @@
+@tool
 class_name VRMTopLevel
 extends Node3D
+
+const vrm_meta_class = preload("./vrm_meta.gd")
 
 @export var vrm_skeleton: NodePath
 @export var vrm_animplayer: NodePath
 @export var vrm_secondary: NodePath
 
-@export var vrm_meta: Resource
+@export var vrm_meta: Resource = (func():
+	var ret: Resource = vrm_meta_class.new()
+	ret.resource_name = "CLICK TO SEE METADATA"
+	return ret
+).call()
 
 @export var update_secondary_fixed: bool = false
 
