@@ -257,6 +257,20 @@ func _create_meta(
 	vrm_meta.humanoid_bone_mapping = humanBones
 	return vrm_meta
 
+static func _validate_meta(vrm_meta: vrm_meta_class) -> PackedStringArray:
+	if vrm_meta == null:
+		return PackedStringArray(["vrm_meta"])
+	var missing: PackedStringArray = []
+	for prop in ["allowed_user_name","violent_usage","sexual_usage","commercial_usage_type",
+			"political_religious_usage","antisocial_hate_usage",
+			"credit_notation","allow_redistribution", "modification",
+			"title", "author"]:
+		var val: Variant = vrm_meta.get(prop)
+		print(str(prop)+":"+str(val))
+		if typeof(val) != TYPE_STRING or val.strip_edges() == "":
+			missing.append(prop)
+	return missing
+	
 func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: GLTFState):
 	var meta_obj: Dictionary = {}
 	meta_obj["specVersion"] = vrm_meta.spec_version
@@ -274,8 +288,8 @@ func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: G
 	meta_obj["allowExcessivelyViolentUsage"] = vrm_meta.violent_usage == "Allow"
 	meta_obj["allowExcessivelySexualUsage"] = vrm_meta.sexual_usage == "Allow"
 	meta_obj["commercialUsage"] = commercial_usage_map_rev[vrm_meta.commercial_usage_type]
-	meta_obj["allowPoliticalOrReligiousUsage"] = vrm_meta.political_religious_usage == "Allow" if vrm_extension["meta"].get("allowPoliticalOrReligiousUsage", false) else "Disallow"
-	meta_obj["allowAntisocialOrHateUsage"] = vrm_meta.antisocial_hate_usage == "Allow" if vrm_extension["meta"].get("allowAntisocialOrHateUsage", false) else "Disallow"
+	meta_obj["allowPoliticalOrReligiousUsage"] = vrm_meta.political_religious_usage == "Allow"
+	meta_obj["allowAntisocialOrHateUsage"] = vrm_meta.antisocial_hate_usage == "Allow"
 	meta_obj["creditNotation"] = credit_notation_map_rev[vrm_meta.credit_notation]
 	meta_obj["allowRedistribution"] = vrm_meta.allow_redistribution == "Allow"
 	meta_obj["modification"] = modification_map_rev[vrm_meta.modification]
@@ -838,7 +852,7 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	else:
 		look_at["type"] = "expression"
 	if look_at["type"] == "bone":
-		for i in range(len(look_left_anim.get_track_count())):
+		for i in range(look_left_anim.get_track_count()):
 			var key: String
 			if look_left_anim.track_get_path(i).get_subname(0) == "leftEye":
 				key = "rangeMapHorizontalOuter"
@@ -850,14 +864,14 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 			var quat: Quaternion = look_left_anim.track_get_key_value(i, 0)
 			var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
 			look_at[key] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
-		for i in range(len(look_up_anim.get_track_count())):
+		for i in range(look_up_anim.get_track_count()):
 			if look_up_anim.track_get_path(i).get_subname(0) != "leftEye":
 				continue
 			var look_length = look_up_anim.track_get_key_time(i, 0)
 			var quat: Quaternion = look_up_anim.track_get_key_value(i, 0)
 			var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
 			look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
-		for i in range(len(look_down_anim.get_track_count())):
+		for i in range(look_down_anim.get_track_count()):
 			if look_down_anim.track_get_path(i).get_subname(0) != "leftEye":
 				continue
 			var look_length = look_down_anim.track_get_key_time(i, 0)
@@ -889,7 +903,9 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 			blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
 		mesh_bs_lookup[gltf_meshes[i].mesh] = blend_shape_to_idx
 
-	for exp in animplayer.get_animations():
+	for exp in animplayer.get_animation_list():
+		if exp == "RESET":
+			continue
 		var expression: Dictionary = {}
 		var texture_transform_binds = {}
 		var morph_target_binds = []
@@ -990,7 +1006,6 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 	var human_bones: Dictionary = vrm_extension["humanoid"]["humanBones"]
 	for human_bone in human_bones:
 		_add_joints_recursive(new_joints_set, obj["nodes"], int(human_bones[human_bone]["node"]), false)
-
 	_add_joint_set_as_skin(obj, new_joints_set)
 
 	return true
@@ -1008,9 +1023,9 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 	var humanoid_skeleton: Skeleton3D
 	if root_node.has_node("%GeneralSkeleton"):
-		humanoid_skeleton = humanoid_skeleton.get_node("%GeneralSkeleton")
+		humanoid_skeleton = root_node.get_node("%GeneralSkeleton")
 	else:
-		var skels: Array[Node] = humanoid_skeleton.find_children("*", "Skeleton3D", true)
+		var skels: Array[Node] = root_node.find_children("*", "Skeleton3D", true)
 		if not skels.is_empty():
 			humanoid_skeleton = skels[0]
 	return humanoid_skeleton
@@ -1029,7 +1044,8 @@ static func _validate_humanoid(root_node: Node3D) -> Dictionary:
 		if human_to_vrm_bone.has(bone_name):
 			vrm_bone_mapping[human_to_vrm_bone[bone_name]] = bone_name
 	for bone_name in required_bones:
-		if not vrm_bone_mapping.has(required_bones):
+		if not vrm_bone_mapping.has(bone_name):
+			push_warning("Skeleton " + str(humanoid_skeleton.name) + " missing required humanoid bone " + str(bone_name))
 			return {}
 
 	return vrm_bone_mapping

@@ -24,6 +24,7 @@ func _get_import_flags() -> int:
 
 
 func _import_scene(path: String, flags: int, options: Dictionary) -> Object:
+	#print("Import VRM: " + path + " ----------------------")
 	var gltf: GLTFDocument = GLTFDocument.new()
 	flags |= EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
 	var vrm_extension: GLTFDocumentExtension = gltf_document_extension_class.new()
