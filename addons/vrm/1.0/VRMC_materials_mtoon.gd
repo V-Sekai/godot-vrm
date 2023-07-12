@@ -151,21 +151,24 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 	'''
 	return standard_mat
 
-func _export_preflight(state: GLTFState, root: Node):
+func _export_preflight(state: GLTFState, root: Node) -> Error:
 	var materials: Dictionary = {}
 	var meshes = root.find_children("*", "ImporterMeshInstance3D")
 	var texdic: Dictionary = {}
 	var standard_textures: Dictionary = {}
 	var gltf_samp: Array[GLTFTextureSampler] = state.texture_samplers
 	var gltf_tex: Array[GLTFTexture] = state.textures
+	var uses_mtoon: bool = false
 	for meshx in meshes:
 		var mesh: ImporterMeshInstance3D = meshx
 		for m in range(mesh.mesh.get_surface_count()):
 			var mat: Material = mesh.mesh.get_surface_material(m)
 			if mat is ShaderMaterial:
-				if not materials.has(mat):
-					materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
-				mesh.mesh.set_surface_material(m, materials[mat])
+				if mat.shader != null and mat.shader.resource_path.get_file().starts_with("mtoon_"):
+					uses_mtoon = true
+					if not materials.has(mat):
+						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
+					mesh.mesh.set_surface_material(m, materials[mat])
 	meshes = root.find_children("*", "MeshInstance3D")
 	for meshx in meshes:
 		var mesh: MeshInstance3D = meshx
@@ -174,9 +177,15 @@ func _export_preflight(state: GLTFState, root: Node):
 			if mat == null:
 				mat = mesh.mesh.surface_get_material(m)
 			if mat is ShaderMaterial:
-				if not materials.has(mat):
-					materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
-				mesh.set_surface_override_material(m, materials[mat])
+				if mat.shader != null and mat.shader.resource_path.get_file().starts_with("mtoon_"):
+					uses_mtoon = true
+					if not materials.has(mat):
+						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
+					mesh.set_surface_override_material(m, materials[mat])
+
+	if uses_mtoon:
+		state.add_used_extension("VRMC_materials_mtoon", false)
+
 	state.texture_samplers = gltf_samp
 	state.textures = gltf_tex
 	var unique_images_to_add: Dictionary = {}
@@ -188,6 +197,10 @@ func _export_preflight(state: GLTFState, root: Node):
 		gltf_images.push_back(tex)
 	state.images = gltf_images # Any textures not used by a StandardMaterial3D are our responsibility.
 	state.set_meta("texture_dictionary", texdic)
+	return OK
+
+func _export_post(state: GLTFState) -> Error:
+	return OK
 
 func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
 	var texture_info: Dictionary = {}
