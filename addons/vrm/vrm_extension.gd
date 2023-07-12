@@ -96,6 +96,8 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 		for root_bone_id in p_skeleton.get_parentless_bones():
 			if root_bone_id != new_root_bone_id:
 				p_skeleton.set_bone_parent(root_bone_id, new_root_bone_id)
+	else:
+		push_warning("VRM0: Root bone already found despite rename")
 	for gnode in gnodes:
 		var bn: StringName = p_bone_map.find_profile_bone_name(gnode.resource_name)
 		if bn != StringName():
@@ -1058,9 +1060,13 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 		# VRM 1.0 file. Do not parse as a VRM 0.0.
 		return ERR_INVALID_DATA
 	var gltf_json_parsed: Dictionary = gstate.json
+	var gltf_nodes = gltf_json_parsed["nodes"]
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
 		push_error("Failed to find required VRM keys in json")
 		return ERR_INVALID_DATA
+	for node in gltf_nodes:
+		if node.get("name","") == "Root":
+			node["name"] = "Root_"
 	return OK
 
 

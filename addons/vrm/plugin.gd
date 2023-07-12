@@ -49,6 +49,21 @@ func _export_vrm_pressed():
 	file_export_lib.set_current_file(filename + ".vrm")
 	file_export_lib.popup_centered_ratio()
 
+
+func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
+	if node == new_owner:
+		pass
+	elif orig_node.owner == null:
+		node.get_parent().remove_child(node)
+		node.queue_free()
+		return
+	else:
+		node.owner = new_owner
+		print(node.name + " assigned to owner " + node.owner.name)
+	print("Node " + str(node.name) + " orig child " + str(orig_node.get_child_count()) + " new child " + str(node.get_child_count()))
+	for i in range(node.get_child_count()):
+		reassign_owner(new_owner, orig_node.get_child(i), node.get_child(i))
+
 func _export_vrm_dialog_action(path: String):
 	var selected_nodes: Array[Node] = get_editor_interface().get_selection().get_selected_nodes()
 	for selnode in selected_nodes:
@@ -75,6 +90,11 @@ func _export_vrm_dialog_action(path: String):
 			accept_dialog.ok_button_text = "OK"
 			get_editor_interface().popup_dialog_centered(accept_dialog)
 			continue
+		print("Before duplicate")
+		var new_root: Node = root.duplicate(Node.DUPLICATE_SIGNALS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+		reassign_owner(new_root, root, new_root)
+		root = new_root
+		print("After duplicate")
 		var secondary: Node3D
 		if not root.has_node("secondary"):
 			secondary = Node3D.new()
@@ -89,10 +109,17 @@ func _export_vrm_dialog_action(path: String):
 		var gltf_state = GLTFState.new()
 		gltf_state.set_meta("vrm", "1.0")
 		var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
+		print("Do append_from_scene")
 		if gltf_doc.append_from_scene(root, gltf_state, flags) != OK:
 			push_error("VRM scene save error!")
-		if gltf_doc.write_to_filesystem(gltf_state, path) != OK:
+		print("Do write_to_filesystem")
+		var tmp_filename: String = path + ".tmp.glb"
+		if gltf_doc.write_to_filesystem(gltf_state, tmp_filename) != OK:
 			push_error("VRM scene save error!")
+		var da: DirAccess = DirAccess.open("res://")
+		da.rename(tmp_filename, path)
+		print("All done!")
+		root.queue_free()
 
 func _enter_tree() -> void:
 	accept_dialog = AcceptDialog.new()
