@@ -1038,14 +1038,6 @@ func remove_null_owner(node: Node):
 		remove_null_owner(child)
 
 const required_bones = ["hips", "spine", "head", "leftUpperLeg", "leftLowerLeg", "leftFoot", "rightUpperLeg", "rightLowerLeg", "rightFoot", "leftUpperArm", "leftLowerArm", "leftHand", "rightUpperArm", "rightLowerArm", "rightHand"]
-const optional_bones = [
-	"chest", "upperChest", "neck", "leftEye", "rightEye", "jaw", "leftToes", "rightToes", "leftShoulder", "rightShoulder",
-	"leftThumbMetacarpal", "leftThumbProximal", "leftThumbDistal", "leftIndexProximal", "leftIndexIntermediate", "leftIndexDistal",
-	"leftMiddleProximal", "leftMiddleIntermediate", "leftMiddleDistal", "leftRingProximal", "leftRingIntermediate", "leftRingDistal",
-	"leftLittleProximal", "leftLittleIntermediate", "leftLittleDistal", "rightThumbMetacarpal", "rightThumbProximal", "rightThumbDistal",
-	"rightIndexProximal", "rightIndexIntermediate", "rightIndexDistal", "rightMiddleProximal", "rightMiddleIntermediate", "rightMiddleDistal",
-	"rightRingProximal", "rightRingIntermediate", "rightRingDistal", "rightLittleProximal", "rightLittleIntermediate", "rightLittleDistal",
-]
 
 func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 	if gstate.get_meta("vrm", "") != "1.0":
