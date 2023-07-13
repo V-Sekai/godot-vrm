@@ -856,49 +856,50 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	first_person["meshAnnotations"] = mesh_annotations
 	vrm_extension["firstPerson"] = first_person
 
-	var look_left_anim: Animation = animplayer.get_animation("lookLeft")
-	var look_up_anim: Animation = animplayer.get_animation("lookUp")
-	var look_down_anim: Animation = animplayer.get_animation("lookDown")
-	var look_at = {"rangeMapHorizontalInner": {}, "rangeMapHorizontalOuter": {}, "rangeMapVerticalDown": {}, "rangeMapVerticalUp": {}}
-	if look_left_anim.track_get_type(0) == Animation.TYPE_ROTATION_3D:
-		look_at["type"] = "bone"
-	else:
-		look_at["type"] = "expression"
-	if look_at["type"] == "bone":
-		for i in range(look_left_anim.get_track_count()):
-			var key: String
-			if look_left_anim.track_get_path(i).get_subname(0) == "leftEye":
-				key = "rangeMapHorizontalOuter"
-			elif look_left_anim.track_get_path(i).get_subname(0) == "rightEye":
-				key = "rangeMapHorizontalInner"
-			else:
-				continue
-			var look_length = look_left_anim.track_get_key_time(i, 0)
-			var quat: Quaternion = look_left_anim.track_get_key_value(i, 0)
-			var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
-			look_at[key] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
-		for i in range(look_up_anim.get_track_count()):
-			if look_up_anim.track_get_path(i).get_subname(0) != "leftEye":
-				continue
-			var look_length = look_up_anim.track_get_key_time(i, 0)
-			var quat: Quaternion = look_up_anim.track_get_key_value(i, 0)
-			var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
-			look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
-		for i in range(look_down_anim.get_track_count()):
-			if look_down_anim.track_get_path(i).get_subname(0) != "leftEye":
-				continue
-			var look_length = look_down_anim.track_get_key_time(i, 0)
-			var quat: Quaternion = look_down_anim.track_get_key_value(i, 0)
-			var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
-			look_at["rangeMapVerticalDown"] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
-	else:
-		var look_length = look_left_anim.track_get_key_time(0, 0)
-		look_at["rangeMapHorizontalOuter"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
-		look_at["rangeMapHorizontalInner"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
-		look_length = look_up_anim.track_get_key_time(0, 0)
-		look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
-		look_length = look_down_anim.track_get_key_time(0, 0)
-		look_at["rangeMapVerticalDown"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
+	if animplayer.has_animation("lookLeft") and animplayer.has_animation("lookUp") and animplayer.has_animation("lookDown"):
+		var look_left_anim: Animation = animplayer.get_animation("lookLeft")
+		var look_up_anim: Animation = animplayer.get_animation("lookUp")
+		var look_down_anim: Animation = animplayer.get_animation("lookDown")
+		var look_at = {"rangeMapHorizontalInner": {}, "rangeMapHorizontalOuter": {}, "rangeMapVerticalDown": {}, "rangeMapVerticalUp": {}}
+		if look_left_anim.track_get_type(0) == Animation.TYPE_ROTATION_3D:
+			look_at["type"] = "bone"
+		else:
+			look_at["type"] = "expression"
+		if look_at["type"] == "bone":
+			for i in range(look_left_anim.get_track_count()):
+				var key: String
+				if look_left_anim.track_get_path(i).get_subname(0) == "leftEye":
+					key = "rangeMapHorizontalOuter"
+				elif look_left_anim.track_get_path(i).get_subname(0) == "rightEye":
+					key = "rangeMapHorizontalInner"
+				else:
+					continue
+				var look_length = look_left_anim.track_get_key_time(i, 0)
+				var quat: Quaternion = look_left_anim.track_get_key_value(i, 0)
+				var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
+				look_at[key] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
+			for i in range(look_up_anim.get_track_count()):
+				if look_up_anim.track_get_path(i).get_subname(0) != "leftEye":
+					continue
+				var look_length = look_up_anim.track_get_key_time(i, 0)
+				var quat: Quaternion = look_up_anim.track_get_key_value(i, 0)
+				var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
+				look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
+			for i in range(look_down_anim.get_track_count()):
+				if look_down_anim.track_get_path(i).get_subname(0) != "leftEye":
+					continue
+				var look_length = look_down_anim.track_get_key_time(i, 0)
+				var quat: Quaternion = look_down_anim.track_get_key_value(i, 0)
+				var angle_from_quat: float = quat.get_angle() * sign(quat.get_axis().y)
+				look_at["rangeMapVerticalDown"] = {"inputMaxValue": look_length * 180.0, "outputScale": abs(angle_from_quat * 180.0 / PI)}
+		else:
+			var look_length = look_left_anim.track_get_key_time(0, 0)
+			look_at["rangeMapHorizontalOuter"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
+			look_at["rangeMapHorizontalInner"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
+			look_length = look_up_anim.track_get_key_time(0, 0)
+			look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
+			look_length = look_down_anim.track_get_key_time(0, 0)
+			look_at["rangeMapVerticalDown"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
 
 	# TODO: port VRM 0.0 names.
 	var presets: Dictionary = {}
@@ -915,6 +916,20 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 		for bsi in range(mesh.get_blend_shape_count()):
 			blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
 		mesh_bs_lookup[gltf_meshes[i].mesh] = blend_shape_to_idx
+	var mesh_instances = animplayer.get_parent().find_children("*", "MeshInstance3D")
+	for meshinst in mesh_instances:
+		var mesh: Mesh = meshinst.mesh
+		var blend_shape_to_idx: Dictionary = {}
+		for bsi in range(mesh.get_blend_shape_count()):
+			blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
+		mesh_bs_lookup[mesh] = blend_shape_to_idx
+	mesh_instances = animplayer.get_parent().find_children("*", "ImporterMeshInstance3D")
+	for meshinst in mesh_instances:
+		var mesh: ImporterMesh = meshinst.mesh
+		var blend_shape_to_idx: Dictionary = {}
+		for bsi in range(mesh.get_blend_shape_count()):
+			blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
+		mesh_bs_lookup[mesh] = blend_shape_to_idx
 
 	for exp in animplayer.get_animation_list():
 		if exp == "RESET":
@@ -926,14 +941,22 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 		var anim: Animation = animplayer.get_animation(exp)
 		for i in range(anim.get_track_count()):
 			var anim_path = anim.track_get_path(i)
-			var meshinst = animplayer.get_parent().get_node(NodePath(str(anim_path.get_concatenated_names()))) as ImporterMeshInstance3D
+			var meshinst: Node = animplayer.get_parent().get_node(NodePath(str(anim_path.get_concatenated_names())))
 			var val = anim.track_get_key_value(i, 0)
 			if anim.track_get_type(i) == Animation.TYPE_BLEND_SHAPE:
-				var gltf_blendshape_idx = mesh_bs_lookup[meshinst][anim_path.get_subname(0)]
+				var gltf_blendshape_idx = mesh_bs_lookup[meshinst.mesh][anim_path.get_subname(0)]
 				morph_target_binds.push_back({"node": gstate.get_node_index(meshinst), "index": gltf_blendshape_idx, "weight": val})
 			elif anim.track_get_type(i) == Animation.TYPE_VALUE:
 				var material_idx = int(anim_path.get_subname(1).split("/")[0].split("_")[1])
-				var gltf_material_idx = mat_lookup[meshinst.mesh.get_surface_material(material_idx)]
+				var gltf_material_idx: int
+				if meshinst is ImporterMeshInstance3D:
+					gltf_material_idx = mat_lookup[meshinst.mesh.get_surface_material(material_idx)]
+				if meshinst is MeshInstance3D:
+					# wtf lol
+					if meshinst.get_surface_override_material(material_idx) == null:
+						gltf_material_idx = mat_lookup[meshinst.mesh.surface_get_material(material_idx)]
+					else:
+						gltf_material_idx = mat_lookup[meshinst.get_surface_override_material(material_idx)]
 				if typeof(val) == TYPE_COLOR:
 					var property_mapping = {
 						"shader_parameter/_Color": "color",

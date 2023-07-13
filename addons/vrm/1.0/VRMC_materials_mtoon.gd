@@ -35,7 +35,7 @@ func _import_preflight(state: GLTFState, extensions = PackedStringArray()) -> Er
 		return OK
 	return ERR_INVALID_DATA
 
-func _prepare_gltf_texture(gltf_samplers: Array[GLTFTextureSampler], gltf_textures: Array[GLTFTexture], texture_dictionary: Dictionary, tex: Texture2D) -> int:
+func _prepare_gltf_texture(gltf_samplers: Array[GLTFTextureSampler], gltf_textures: Array[GLTFTexture], texdic: Dictionary, tex: Texture2D) -> int:
 	var gltf_sampler: GLTFTextureSampler = GLTFTextureSampler.new()
 	# FIXME: We do not currently have a way to set texture wrap / repeat settings for each shader, so we use defaults for now
 	var sampler_idx: int = len(gltf_samplers)
@@ -52,7 +52,7 @@ func _prepare_gltf_texture(gltf_samplers: Array[GLTFTextureSampler], gltf_textur
 	gltf_tex.sampler = sampler_idx
 	var texture_idx: int = len(gltf_textures)
 	gltf_textures.push_back(gltf_tex)
-	texture_dictionary[texture_idx] = tex
+	texdic[texture_idx] = tex
 	return texture_idx
 
 func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex: Array[GLTFTexture], texdic: Dictionary, standard_textures: Dictionary, mtoon_material: ShaderMaterial) -> StandardMaterial3D:
@@ -67,10 +67,19 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 		has_outline = outline_shader.find("mtoon_outline") > 0
 
 	var standard_mat: StandardMaterial3D = StandardMaterial3D.new()
-	standard_mat.albedo_color = mtoon_material.get_shader_parameter("_Color")
+	var col: Variant = mtoon_material.get_shader_parameter("_Color")
+	if typeof(col) == TYPE_VECTOR4:
+		col = Color(col.x, col.y, col.z, col.w)
+	if typeof(col) == TYPE_PLANE:
+		col = Color(col.x, col.y, col.z, col.d)
+	standard_mat.albedo_color = col
 	standard_mat.albedo_texture = mtoon_material.get_shader_parameter("_MainTex")
 	standard_textures[standard_mat.albedo_texture] = true
-	var col = mtoon_material.get_shader_parameter("_EmissionColor")
+	col = mtoon_material.get_shader_parameter("_EmissionColor")
+	if typeof(col) == TYPE_VECTOR4:
+		col = Color(col.x, col.y, col.z, col.w)
+	if typeof(col) == TYPE_PLANE:
+		col = Color(col.x, col.y, col.z, col.d)
 	if typeof(col) == TYPE_COLOR:
 		col.a = 1.0
 		standard_mat.emission_enabled =  mtoon_material.get_shader_parameter("_EmissionMap") != null or !col.is_equal_approx(Color.BLACK)
@@ -113,42 +122,7 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 
 	standard_mat.set_meta("mtoon_material", mtoon_material)
 	standard_mat.set_meta("additional_textures", additional_textures)
-	'''
-	_assign_color(new_mat, false, "_ShadeColor", vrm_mat_props.get("shadeColorFactor", [0,0,0]))
-	_assign_color(new_mat, false, "_RimColor", vrm_mat_props.get("parametricRimColorFactor", [0,0,0]))
-	# FIXME: _MatcapColor does not exist!!
-	_assign_color(new_mat, false, "_MatcapColor", vrm_mat_props.get("matcapFactor", [1,1,1]))
-	_assign_color(new_mat, false, "_OutlineColor", vrm_mat_props.get("outlineColorFactor", [0,0,0,1]))
-
-	var outline_width_idx: float = 0
-	if outline_width_mode == "worldCoordinates":
-		outline_width_idx = 1
-	if outline_width_mode == "screenCoordinates":
-		outline_width_idx = 2
-	_assign_property(new_mat, "_OutlineWidthMode", outline_width_idx)
-
-	#"_ReceiveShadowRate": ["Shadow Receive", "Texture (R) * Rate. White is Default. Black attenuates shadows."],
-	#"_LightColorAttenuation": ["Light Color Atten", "Light Color Attenuation"],
-	#"_IndirectLightIntensity": ["GI Intensity", "Indirect Light Intensity"],
-	#"_OutlineScaledMaxDistance": ["Outline Scaled Dist", "Width Scaled Max Distance"],
-
-	_assign_property(new_mat, "_ShadeToony", vrm_mat_props.get("shadingToonyFactor", 0.9))
-	_assign_property(new_mat, "_ShadeShift", vrm_mat_props.get("shadingShiftFactor", 0.0))
-	_assign_property(new_mat, "_ShadingGradeRate", vrm_mat_props.get("shadeMultiplyTexture", {}).get("scale", 1.0))
-	_assign_property(new_mat, "_ReceiveShadowRate", 1.0) # 0 disables directional light shadows. no longer supported?
-	_assign_property(new_mat, "_LightColorAttenuation", 0.0) # not useful
-	_assign_property(new_mat, "_IndirectLightIntensity", 1.0 - vrm_mat_props.get("giEqualizationFactor", 0.9))
-	_assign_property(new_mat, "_OutlineScaledMaxDistance", 99.0) # FIXME: different calulcation
-	_assign_property(new_mat, "_RimLightingMix", vrm_mat_props.get("rimLightingMixFactor", 0.0))
-	_assign_property(new_mat, "_RimFresnelPower", vrm_mat_props.get("parametricRimFresnelPowerFactor", 1.0))
-	_assign_property(new_mat, "_RimLift", vrm_mat_props.get("parametricRimLiftFactor", 0.0))
-	_assign_property(new_mat, "_OutlineWidth", vrm_mat_props.get("outlineWidthFactor", 0.0))
-	_assign_property(new_mat, "_OutlineColorMode", 1.0) # MixedLighting always. FixedColor if outlineLightingMixFactor==0
-	_assign_property(new_mat, "_OutlineLightingMix", vrm_mat_props.get("outlineLightingMixFactor", 1.0))
-	_assign_property(new_mat, "_UvAnimScrollX", vrm_mat_props.get("uvAnimationScrollXSpeedFactor", 0.0))
-	_assign_property(new_mat, "_UvAnimScrollY", vrm_mat_props.get("uvAnimationScrollYSpeedFactor", 0.0))
-	_assign_property(new_mat, "_UvAnimRotation", vrm_mat_props.get("uvAnimationRotationSpeedFactor", 0.0))
-	'''
+	standard_mat.set_meta("has_zwrite", has_zwrite)
 	return standard_mat
 
 func _export_preflight(state: GLTFState, root: Node) -> Error:
@@ -164,7 +138,7 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 		for m in range(mesh.mesh.get_surface_count()):
 			var mat: Material = mesh.mesh.get_surface_material(m)
 			if mat is ShaderMaterial:
-				if mat.shader != null and mat.shader.resource_path.get_file().starts_with("mtoon_"):
+				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon_"):
 					uses_mtoon = true
 					if not materials.has(mat):
 						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
@@ -177,7 +151,7 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 			if mat == null:
 				mat = mesh.mesh.surface_get_material(m)
 			if mat is ShaderMaterial:
-				if mat.shader != null and mat.shader.resource_path.get_file().starts_with("mtoon_"):
+				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon_"):
 					uses_mtoon = true
 					if not materials.has(mat):
 						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
@@ -199,7 +173,103 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 	state.set_meta("texture_dictionary", texdic)
 	return OK
 
+func _to_gltf_color(c: Variant):
+	if typeof(c) == TYPE_VECTOR4:
+		return [c.x, c.y, c.z]
+	if typeof(c) == TYPE_PLANE:
+		return [c.x, c.y, c.z]
+	if typeof(c) == TYPE_NIL:
+		return [0, 0, 0]
+	return [c.r, c.g, c.b]
+
+func _export_mtoon_texture(texture_index, vrm_mat_props, key):
+	if texture_index >= 0:
+		vrm_mat_props[key] = {"index": texture_index}
+
+func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionary, texture_to_index: Dictionary):
+	if "extensions" not in mat_props:
+		mat_props["extensions"] = {}
+	var new_mat: ShaderMaterial = standard.get_meta("mtoon_material")
+	var vrm_mat_props: Dictionary = {}
+	mat_props["extensions"]["VRMC_materials_mtoon"] = vrm_mat_props
+
+	vrm_mat_props["specVersion"] = "1.0"
+	if standard.get_meta("has_zwrite"):
+		vrm_mat_props["transparentWithZWrite"] = true
+	if new_mat.get_shader_parameter("_OutlineWidthMode") == 1:
+		vrm_mat_props["outlineWidthMode"] = "worldCoordinates"
+	if new_mat.get_shader_parameter("_OutlineWidthMode") == 2:
+		vrm_mat_props["outlineWidthMode"] = "screenCoordinates"
+
+	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_ShadeTexture"), -1), vrm_mat_props, "shadeMultiplyTexture")
+	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_RimTexture"), -1), vrm_mat_props, "rimMultiplyTexture")
+	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_SphereAdd"), -1), vrm_mat_props, "matcapTexture")
+	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_UvAnimMaskTexture"), -1), vrm_mat_props, "uvAnimationMaskTexture")
+	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_OutlineWidthTexture"), -1), vrm_mat_props, "outlineWidthMultiplyTexture")
+
+	vrm_mat_props["shadeColorFactor"] = _to_gltf_color(new_mat.get_shader_parameter("_ShadeColor"))
+	vrm_mat_props["parametricRimColorFactor"] = _to_gltf_color(new_mat.get_shader_parameter("_RimColor"))
+	vrm_mat_props["matcapFactor"] = _to_gltf_color(new_mat.get_shader_parameter("_MatcapColor"))
+	vrm_mat_props["outlineColorFactor"] = _to_gltf_color(new_mat.get_shader_parameter("_OutlineColor"))
+
+	vrm_mat_props["shadingToonyFactor"] = new_mat.get_shader_parameter("_ShadeToony")
+	vrm_mat_props["shadingShiftFactor"] = new_mat.get_shader_parameter("_ShadeShift")
+	if vrm_mat_props.has("shadingShiftTexture"):
+		vrm_mat_props["shadingShiftTexture"]["scale"] = new_mat.get_shader_parameter("_ShadingGradeRate")
+	vrm_mat_props["giEqualizationFactor"] = 1.0 - new_mat.get_shader_parameter("_IndirectLightIntensity")
+	vrm_mat_props["rimLightingMixFactor"] = new_mat.get_shader_parameter("_RimLightingMix")
+	vrm_mat_props["parametricRimFresnelPowerFactor"] = new_mat.get_shader_parameter("_RimFresnelPower")
+	vrm_mat_props["parametricRimLiftFactor"] = new_mat.get_shader_parameter("_RimLift")
+	vrm_mat_props["outlineWidthFactor"] = new_mat.get_shader_parameter("_OutlineWidth")
+	vrm_mat_props["outlineLightingMixFactor"] = new_mat.get_shader_parameter("_OutlineLightingMix")
+	vrm_mat_props["uvAnimationScrollXSpeedFactor"] = new_mat.get_shader_parameter("_UvAnimScrollX")
+	vrm_mat_props["uvAnimationScrollYSpeedFactor"] = new_mat.get_shader_parameter("_UvAnimScrollY")
+	vrm_mat_props["uvAnimationRotationSpeedFactor"] = new_mat.get_shader_parameter("_UvAnimRotation")
+
+	if mat_props.get("alphaMode", "OPAQUE") == "BLEND":
+		var delta_render_queue = new_mat.render_priority
+		if standard.get_meta("has_zwrite"):
+			# These numbers are set negative if zwrite, to comply with the spec
+			delta_render_queue += 19
+			delta_render_queue = clampi(delta_render_queue + 19, 0, 9)
+		else:
+			delta_render_queue = clampi(delta_render_queue, -9, 0)
+		# render_priority only makes sense for transparent materials.
+		vrm_mat_props["renderQueueOffsetNumbers"] = delta_render_queue
+
 func _export_post(state: GLTFState) -> Error:
+	var texdic: Dictionary = state.get_meta("texture_dictionary")
+	var texture_to_gltf_image_idx: Dictionary = {}
+	var gltf_image_idx_to_first_gltf_texture_idx: Dictionary = {}
+	var json = state.json
+
+	var gltf_images: Array[Texture2D] = state.images
+	var gltf_tex: Array[GLTFTexture] = state.textures
+	var gltf_samp: Array[GLTFTextureSampler] = state.texture_samplers
+	for i in range(len(gltf_images)):
+		texture_to_gltf_image_idx[gltf_images[i]] = i
+
+	var texture_to_index: Dictionary = {} # Texture to index in the textures array, not images array
+	for texture_idx in texdic:
+		texture_to_index[texdic[texture_idx]] = texture_idx
+		gltf_tex[texture_idx].src_image = texture_to_gltf_image_idx[texdic[texture_idx]]
+		json["textures"][texture_idx]["source"] = texture_to_gltf_image_idx[texdic[texture_idx]]
+
+	# Use the first matched index instead of the extra one we created.
+	for texture_idx in range(len(gltf_tex)):
+		if not gltf_image_idx_to_first_gltf_texture_idx.has(gltf_tex[texture_idx].src_image):
+			gltf_image_idx_to_first_gltf_texture_idx[gltf_tex[texture_idx].src_image] = texture_idx
+			if texdic.has(texture_idx):
+				texture_to_index[texdic[texture_idx]] = texture_idx
+	state.textures = gltf_tex
+
+	var gltf_materials: Array[Material] = state.materials
+	for i in range(len(gltf_materials)):
+		if gltf_materials[i] is StandardMaterial3D:
+			_export_mtoon_properties(gltf_materials[i], json["materials"][i], texture_to_index)
+		else:
+			print("Material index " + str(i) + " has incorrect type " + str(gltf_materials[i].get_class()))
+
 	return OK
 
 func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
@@ -227,13 +297,13 @@ func _assign_property(new_mat: ShaderMaterial, property_name: String, property_v
 	if new_mat.next_pass != null:
 		new_mat.next_pass.set_shader_parameter(property_name, property_value)
 
-func _assign_texture(new_mat: ShaderMaterial, gltf_images: Array, texture_name: String, texture_info: Dictionary) -> void:
+func _assign_texture(new_mat: ShaderMaterial, gltf_images: Array[Texture2D], gltf_tex: Array[GLTFTexture], texture_name: String, texture_info: Dictionary) -> void:
 	# TODO: something with texCoord
 	# TODO: something with extensions[KHR_texture_transform].texCoord
 	# TODO: something with extensions[KHR_texture_transform].offset/scale?
 	var tex: Texture2D = null
 	if texture_info.has("index"):
-		tex = gltf_images[texture_info["index"]]
+		tex = gltf_images[gltf_tex[texture_info["index"]].src_image]
 
 	_assign_property(new_mat, texture_name, tex)
 
@@ -246,7 +316,7 @@ func _assign_color(new_mat: ShaderMaterial, has_alpha: bool, property_name: Stri
 
 	_assign_property(new_mat, property_name, col)
 
-func _process_vrm_material(orig_mat: Material, gltf_images: Array, mat_props: Dictionary, vrm_mat_props: Dictionary) -> Material:
+func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gltf_tex: Array[GLTFTexture], mat_props: Dictionary, vrm_mat_props: Dictionary) -> Material:
 
 	if vrm_mat_props.get("specVersion", "") != "1.0":
 		push_warning("Unsupported VRM MToon specVersion " + str(vrm_mat_props.get("specVersion", "")))
@@ -298,19 +368,19 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, mat_props: Di
 	# KHR_texture_transform is only supported by `baseColorTexture`
 	var texture_repeat = Vector4(scale[0], scale[1], offset[0], offset[1])
 
-	_assign_texture(new_mat, gltf_images, "_MainTex", base_color_texture)
-	_assign_texture(new_mat, gltf_images, "_ShadeTexture", vrm_mat_props.get("shadeMultiplyTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_ShadingGradeTexture", vrm_mat_props.get("shadingShiftTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_BumpMap", mat_props.get("normalTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_EmissionMap", mat_props.get("emissiveTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_MainTex", base_color_texture)
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_ShadeTexture", vrm_mat_props.get("shadeMultiplyTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_ShadingGradeTexture", vrm_mat_props.get("shadingShiftTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_BumpMap", mat_props.get("normalTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_EmissionMap", mat_props.get("emissiveTexture", {}))
 	# TODO: implement emission factor?
 	# var vrmc_emissive: Dictionary = mat_props.get("extensions", {}).get("VRMC_materials_hdr_emissiveMultiplier", {})
 	# var khr_emissive: Dictionary = mat_props.get("extensions", {}).get("KHR_materials_emissive_strength", {})
 
-	_assign_texture(new_mat, gltf_images, "_RimTexture", vrm_mat_props.get("rimMultiplyTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_SphereAdd", vrm_mat_props.get("matcapTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_UvAnimMaskTexture", vrm_mat_props.get("uvAnimationMaskTexture", {}))
-	_assign_texture(new_mat, gltf_images, "_OutlineWidthTexture", vrm_mat_props.get("outlineWidthMultiplyTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_RimTexture", vrm_mat_props.get("rimMultiplyTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_SphereAdd", vrm_mat_props.get("matcapTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_UvAnimMaskTexture", vrm_mat_props.get("uvAnimationMaskTexture", {}))
+	_assign_texture(new_mat, gltf_images, gltf_tex, "_OutlineWidthTexture", vrm_mat_props.get("outlineWidthMultiplyTexture", {}))
 
 	_assign_color(new_mat, true, "_Color", mat_props.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1,1,1,1]))
 	_assign_color(new_mat, false, "_ShadeColor", vrm_mat_props.get("shadeColorFactor", [0,0,0]))
@@ -376,9 +446,10 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, mat_props: Di
 
 # Called when the node enters the scene tree for the first time.
 func _import_post(gstate, root):
-	var images = gstate.get_images()
+	var images: Array[Texture2D] = gstate.get_images()
+	var gltf_textures: Array[GLTFTexture] = gstate.get_textures()
 	#print(images)
-	var materials: Array = gstate.get_materials()
+	var materials: Array[Material] = gstate.get_materials()
 	var materials_json: Array[Dictionary] = []
 	var materials_vrm_json: Array[Dictionary] = []
 	var spatial_to_shader_mat: Dictionary = {}
@@ -400,7 +471,7 @@ func _import_post(gstate, root):
 		var newmat: Material = oldmat
 		var mat_props: Dictionary = materials_json[i]
 		var vrm_mat_props: Dictionary = materials_vrm_json[i]
-		newmat = _process_vrm_material(newmat, images, mat_props, vrm_mat_props)
+		newmat = _process_vrm_material(newmat, images, gltf_textures, mat_props, vrm_mat_props)
 		spatial_to_shader_mat[oldmat] = newmat
 		spatial_to_shader_mat[newmat] = newmat
 		# print("Replacing shader " + str(oldmat) + "/" + str(oldmat.resource_name) + " with " + str(newmat) + "/" + str(newmat.resource_name))

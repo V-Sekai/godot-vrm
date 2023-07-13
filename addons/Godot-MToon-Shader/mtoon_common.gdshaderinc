@@ -59,6 +59,7 @@ uniform vec4 _RimColor /*: source_color*/ = vec4(0,0,0,1);
 uniform float _RimLightingMix : hint_range(0.0, 1.0) = 0.0;
 uniform float _RimFresnelPower : hint_range(0.0, 100.0) = 1.0;
 uniform float _RimLift : hint_range(0.0, 1.0) = 0.0;
+uniform vec4 _MatcapColor : source_color = vec4(0,0,0,1);
 uniform sampler2D _SphereAdd : source_color, hint_default_black; // "Sphere Texture(Add)"
 uniform vec4 _EmissionColor /*: source_color*/ = vec4(0,0,0,1); // "Color"
 uniform sampler2D _EmissionMap : source_color, hint_default_white;
@@ -268,7 +269,7 @@ void fragment() {
 	vec3 viewViewUp = normalize(viewCameraUp - viewView * dot(viewView, viewCameraUp));
 	vec3 viewViewRight = normalize(cross(viewView, viewViewUp));
 	vec2 matcapUv = vec2(-dot(viewViewRight, viewNormal), dot(viewViewUp, viewNormal)) * 0.5 + 0.5;
-	vec3 matcapLighting = texture(_SphereAdd, matcapUv).rgb;
+	vec3 matcapLighting = _MatcapColor.rgb * texture(_SphereAdd, matcapUv).rgb;
 	emission += mix(matcapLighting, vec3(0, 0, 0), isOutline);
 
 	// outline

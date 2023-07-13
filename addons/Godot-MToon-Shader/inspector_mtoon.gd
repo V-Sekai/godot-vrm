@@ -44,7 +44,8 @@ var property_text: Dictionary = {
 	"_Color": ["Lit Color, Alpha", "Lit (RGB), Alpha (A)"],
 	"_ShadeColor": ["Shade Color", "Shade (RGB)"],
 	"_Cutoff": ["Alpha Cutoff", "Discard pixels below this value in Cutout mode"],
-	"_SphereAdd": ["MatCap", "Additive Sphere map / MatCap Texture (RGB)", false],
+	"_SphereAdd": ["MatCap", "Additive Sphere map / MatCap Texture (RGB)"],
+	"_MatcapColor": ["MatCap Color", "Color multiplied with MatCap texture"],
 	"_ShadeToony": ["Shading Toony", "0.0 is Lambert. Higher value get toony shading."],
 	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normals in tangent space"],
 	"_ShadeShift": ["Shading Shift", "Zero is Default. Negative value increase lit area. Positive value increase shade area."],
@@ -80,10 +81,11 @@ const single_line_properties = {
 	"_RimTexture": "_RimColor",
 	"_EmissionMap": "_EmissionColor",
 	"_OutlineWidthTexture": "_OutlineWidth",
+	"_SphereAdd": "_MatcapColor",
 }
 
 const single_line_after_properties = {
-	"_SphereAdd": "_EmissionColor",
+	# "_SphereAdd": "_EmissionColor",
 	"_UvAnimMaskTexture": "_MainTex_ST",
 }
 
