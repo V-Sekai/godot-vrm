@@ -39,8 +39,8 @@ const bool CALCULATE_LIGHTING_IN_FRAGMENT = true;
 
 uniform float _AlphaCutoutEnable : hint_range(0,1,1) = 0.0;
 uniform float _Cutoff : hint_range(0,1) = 0.5;
-uniform vec4 _Color /*: source_color*/ = vec4(1.0,1.0,1.0,1.0); // "Lit Texture + Alpha"
-uniform vec4 _ShadeColor /*: source_color*/ = vec4(0.97, 0.81, 0.86, 1); // "Shade Color"
+uniform vec4 _Color : source_color = vec4(1.0,1.0,1.0,1.0); // "Lit Texture + Alpha"
+uniform vec4 _ShadeColor : source_color = vec4(0.97, 0.81, 0.86, 1); // "Shade Color"
 uniform sampler2D _MainTex : source_color, hint_default_white;
 uniform vec4 _MainTex_ST = vec4(1.0,1.0,0.0,0.0);
 uniform sampler2D _ShadeTexture : source_color, hint_default_white;
@@ -55,13 +55,14 @@ uniform float _ShadeToony : hint_range(0.0, 1.0) = 0.9;
 uniform float _LightColorAttenuation : hint_range(0.0, 1.0) = 0.0;
 uniform float _IndirectLightIntensity : hint_range(0.0, 1.0) = 0.1;
 uniform sampler2D _RimTexture : source_color, hint_default_white;
-uniform vec4 _RimColor /*: source_color*/ = vec4(0,0,0,1);
+uniform vec4 _RimColor : source_color = vec4(0,0,0,1);
 uniform float _RimLightingMix : hint_range(0.0, 1.0) = 0.0;
 uniform float _RimFresnelPower : hint_range(0.0, 100.0) = 1.0;
 uniform float _RimLift : hint_range(0.0, 1.0) = 0.0;
 uniform vec4 _MatcapColor : source_color = vec4(0,0,0,1);
 uniform sampler2D _SphereAdd : source_color, hint_default_black; // "Sphere Texture(Add)"
-uniform vec4 _EmissionColor /*: source_color*/ = vec4(0,0,0,1); // "Color"
+uniform vec4 _EmissionColor : source_color = vec4(0,0,0,1); // "Color"
+uniform float _EmissionMultiplier = 1.0;
 uniform sampler2D _EmissionMap : source_color, hint_default_white;
 // Not implemented:
 uniform float _OutlineWidthMode : hint_range(0,2,1) = 1;
@@ -69,7 +70,7 @@ uniform sampler2D _OutlineWidthTexture : hint_default_white;
 uniform float _OutlineWidth : hint_range(0.01, 1.0) = 0.5;
 uniform float _OutlineScaledMaxDistance : hint_range(1,10) = 1;
 uniform float _OutlineColorMode : hint_range(0,1,1) = 0;
-uniform vec4 _OutlineColor /*: source_color*/ = vec4(0,0,0,1);
+uniform vec4 _OutlineColor : source_color = vec4(0,0,0,1);
 uniform float _OutlineLightingMix : hint_range(0,1) = 0;
 uniform sampler2D _UvAnimMaskTexture : hint_default_white;
 uniform float _UvAnimScrollX = 0;
@@ -221,16 +222,16 @@ void fragment() {
 	 // Albedo color
 	shade = texture(_ShadeTexture, mainUv);
 	lit = mainTex;
-	vec3 emission = texture(_EmissionMap, mainUv).rgb * _EmissionColor.rgb;
+	vec3 emission = texture(_EmissionMap, mainUv).rgb * _EmissionColor.rgb * _EmissionMultiplier;
 
 	vec3 tangentNormal = vec3(0.0,0.0,1.0);
 	if (_NORMALMAP) {
 		tangentNormal = UnpackScaleNormal(texture(_BumpMap, mainUv), _BumpScale);
 	}
 
-	shade *= (OUTPUT_IS_SRGB ? _ShadeColor : GammaToLinearSpace(_ShadeColor));
-	lit *= (OUTPUT_IS_SRGB ? _Color : GammaToLinearSpace(_Color));
-
+	shade *= _ShadeColor;
+	lit *= _Color;
+	
 	//shade = min(shade, lit); ///// Mimic look of non-PBR min() clamp we commented out below.
 
 	// normal
@@ -274,7 +275,7 @@ void fragment() {
 
 	// outline
 	if (isOutline == 1.0) {
-		vec3 outlineColor = (OUTPUT_IS_SRGB ? _OutlineColor.rgb : GammaToLinearSpace(_OutlineColor).rgb);
+		vec3 outlineColor = _OutlineColor.rgb;
 		if (MTOON_OUTLINE_COLOR_FIXED) {
 			albedo = vec3(0.0);
 			emission = outlineColor;

@@ -84,6 +84,7 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 		col.a = 1.0
 		standard_mat.emission_enabled =  mtoon_material.get_shader_parameter("_EmissionMap") != null or !col.is_equal_approx(Color.BLACK)
 		standard_mat.emission_texture = mtoon_material.get_shader_parameter("_EmissionMap")
+		standard_mat.emission_energy_multiplier = mtoon_material.get_shader_parameter("_EmissionMultiplier")
 		standard_textures[standard_mat.emission_texture] = true
 		standard_mat.emission = col
 	standard_mat.normal_texture = mtoon_material.get_shader_parameter("_BumpMap")
@@ -123,6 +124,7 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 	standard_mat.set_meta("mtoon_material", mtoon_material)
 	standard_mat.set_meta("additional_textures", additional_textures)
 	standard_mat.set_meta("has_zwrite", has_zwrite)
+	standard_mat.set_meta("has_cull_off", has_cull_off)
 	return standard_mat
 
 func _export_preflight(state: GLTFState, root: Node) -> Error:
@@ -200,6 +202,8 @@ func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionar
 		vrm_mat_props["outlineWidthMode"] = "worldCoordinates"
 	if new_mat.get_shader_parameter("_OutlineWidthMode") == 2:
 		vrm_mat_props["outlineWidthMode"] = "screenCoordinates"
+	if standard.get_meta("has_cull_off"):
+		mat_props["doubleSided"] = true
 
 	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_ShadeTexture"), -1), vrm_mat_props, "shadeMultiplyTexture")
 	_export_mtoon_texture(texture_to_index.get(new_mat.get_shader_parameter("_RimTexture"), -1), vrm_mat_props, "rimMultiplyTexture")
@@ -376,6 +380,16 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	# TODO: implement emission factor?
 	# var vrmc_emissive: Dictionary = mat_props.get("extensions", {}).get("VRMC_materials_hdr_emissiveMultiplier", {})
 	# var khr_emissive: Dictionary = mat_props.get("extensions", {}).get("KHR_materials_emissive_strength", {})
+
+	var emission_mult = 1.0
+	var extensions: Dictionary = mat_props.get("extensions", {})
+	var vrmc_emissive: Dictionary = extensions.get("VRMC_materials_hdr_emissiveMultiplier", {})
+	var khr_emissive: Dictionary = extensions.get("KHR_materials_emissive_strength", {})
+	if khr_emissive.has("emissiveStrength"):
+		emission_mult = khr_emissive["emissiveStrength"]
+	elif vrmc_emissive.has("emissiveMultiplier"):
+		emission_mult = vrmc_emissive["emissiveMultiplier"]
+	new_mat.set_shader_parameter("_EmissionMultiplier", emission_mult)
 
 	_assign_texture(new_mat, gltf_images, gltf_tex, "_RimTexture", vrm_mat_props.get("rimMultiplyTexture", {}))
 	_assign_texture(new_mat, gltf_images, gltf_tex, "_SphereAdd", vrm_mat_props.get("matcapTexture", {}))

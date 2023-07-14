@@ -433,7 +433,19 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 			var param_val = vrm_mat_props["vectorProperties"][param_name]
 			# TODO: Use Color for non-HDR color slots (_Color, _ShadeColor and _OutlineColor?)
 			# Or, use Color for all, and split _EmissionColor into emission color and emission strength.
-			var color_param: Vector4 = Vector4(param_val[0], param_val[1], param_val[2], param_val[3])
+			var color_param: Color = Color(param_val[0], param_val[1], param_val[2], param_val[3])
+			if param_name == "_RimColor": # Marked [HDR] in MToon.shader
+				color_param = color_param.linear_to_srgb()
+			if param_name == "_EmissionColor":
+				var mult = maxf(color_param.r, maxf(color_param.g, color_param.b))
+				var emission_mult = 1.0
+				if mult > 1.0:
+					emission_mult = mult
+					color_param = color_param / mult
+				color_param = color_param.linear_to_srgb()
+				new_mat.set_shader_parameter("_EmissionMultiplier", emission_mult)
+				if outline_mat != null:
+					outline_mat.set_shader_parameter("_EmissionMultiplier", emission_mult)
 			new_mat.set_shader_parameter(param_name, color_param)
 			if outline_mat != null:
 				outline_mat.set_shader_parameter(param_name, color_param)
