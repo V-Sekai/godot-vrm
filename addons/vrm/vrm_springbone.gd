@@ -2,24 +2,25 @@
 extends Resource
 
 const VRMSpringBoneLogic = preload("./vrm_spring_bone_logic.gd")
+const vrm_collider_group = preload("./vrm_collider_group.gd")
 
 # Annotation comment
 @export var comment: String
 
-# The resilience of the swaying object (the power of returning to the initial pose).
-@export_range(0, 4) var stiffness_force: float = 1.0
-# The strength of gravity.
-@export_range(0, 2) var gravity_power: float = 0.0
+# bone name of the root bone of the swaying object, within skeleton.
+@export var joint_nodes: PackedStringArray
 
+# The resilience of the swaying object (the power of returning to the initial pose).
+@export var stiffness_force: PackedFloat64Array
+# The strength of gravity.
+@export var gravity_power: PackedFloat64Array
 # The direction of gravity. Set (0, -1, 0) for simulating the gravity.
 # Set (1, 0, 0) for simulating the wind.
-@export var gravity_dir: Vector3 = Vector3(0.0, -1.0, 0.0)
-
+@export var gravity_dir: PackedVector3Array
 # The resistance (deceleration) of automatic animation.
-@export_range(0, 1) var drag_force: float = 0.4
-
-# Bone name references are only valid within a given Skeleton.
-@export var skeleton: NodePath
+@export var drag_force: PackedFloat64Array
+# The radius of the sphere used for the collision detection with colliders.
+@export var hit_radius: PackedFloat64Array
 
 # The reference point of a swaying object can be set at any location except the origin.
 # When implementing UI moving with warp, the parent node to move with warp can be
@@ -28,14 +29,8 @@ const VRMSpringBoneLogic = preload("./vrm_spring_bone_logic.gd")
 @export var center_bone: String = ""
 @export var center_node: NodePath
 
-# The radius of the sphere used for the collision detection with colliders.
-@export_range(0.0, 0.5) var hit_radius: float = 0.02
-
-# bone name of the root bone of the swaying object, within skeleton.
-@export var root_bones: Array = []  # DO NOT INITIALIZE HERE
-
 # Reference to the vrm_collidergroup for collisions with swaying objects.
-@export var collider_groups: Array = []  # DO NOT INITIALIZE HERE
+@export var collider_groups: Array[vrm_collider_group]
 
 # Props
 var verlets: Array = []
@@ -43,50 +38,57 @@ var colliders: Array = []
 var center = null
 var skel: Skeleton3D = null
 
+var has_warned: bool = false
 
-func setup(force: bool = false) -> void:
+func setup(center_transform_inv: Transform3D, force: bool = false) -> void:
+	if len(joint_nodes) < 2:
+		if force and not has_warned:
+			has_warned = true
+			push_warning(str(resource_name) + ": Springbone chain has insufficient joints.")
+		return
 	if not self.root_bones.is_empty() && skel != null:
 		if force || verlets.is_empty():
 			if not verlets.is_empty():
 				for verlet in verlets:
 					verlet.reset(skel)
 			verlets.clear()
-			for go in root_bones:
-				if typeof(go) != TYPE_NIL and not go.is_empty():
-					setup_recursive(skel.find_bone(go), center)
+			for id in range(len(joint_nodes) - 1):
+				var verlet: VRMSpringBoneLogic = create_vertlet(id, center_transform_inv)
+				verlets.append(verlet)
 
 
-func setup_recursive(id: int, center_tr) -> void:
-	if skel.get_bone_children(id).is_empty():
-		var delta: Vector3 = skel.get_bone_rest(id).origin
-		var child_position: Vector3 = delta.normalized() * 0.07
-		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, child_position, skel.get_bone_global_pose_no_override(id)))
-	else:
-		var first_child: int = skel.get_bone_children(id)[0]
-		var local_position: Vector3 = skel.get_bone_rest(first_child).origin
-		var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
-		var pos: Vector3 = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
-		verlets.append(VRMSpringBoneLogic.new(skel, id, center_tr, pos, skel.get_bone_global_pose_no_override(id)))
-	for child in skel.get_bone_children(id):
-		setup_recursive(child, center_tr)
+func create_vertlet(id: int, center_tr_inv: Transform3D) -> VRMSpringBoneLogic:
+	var verlet: VRMSpringBoneLogic
+	if id < len(joint_nodes) - 1:
+		var bone_idx: int = skel.find_bone(joint_nodes[id])
+		var pos: Vector3
+		if joint_nodes[id + 1].is_empty():
+			var delta: Vector3 = skel.get_bone_rest(bone_idx).origin
+			pos = delta.normalized() * 0.07
+		else:
+			var first_child: int = skel.find_bone(joint_nodes[id + 1])
+			var local_position: Vector3 = skel.get_bone_rest(first_child).origin
+			var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
+			pos = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
+		verlet = VRMSpringBoneLogic.new(skel, bone_idx, center_tr_inv, pos, skel.get_bone_global_pose_no_override(id))
+	return verlet
 
 
-func _ready(ready_skel: Object, colliders_ref: Array) -> void:
+func ready(ready_skel: Skeleton3D, colliders_ref: Array, center_transform_inv: Transform3D) -> void:
 	if ready_skel != null:
 		self.skel = ready_skel
-	setup()
+	setup(center_transform_inv)
 	colliders = colliders_ref.duplicate(false)
 
 
-func _process(delta) -> void:
+func update(delta: float, center_transform: Transform3D, center_transform_inv: Transform3D) -> void:
 	if verlets.is_empty():
-		if root_bones.is_empty():
+		if joint_nodes.is_empty():
 			return
-		setup()
+		setup(center_transform_inv)
 
-	var stiffness = stiffness_force * delta
-	var external = gravity_dir * (gravity_power * delta)
-
-	for verlet in verlets:
-		verlet.radius = hit_radius
-		verlet.update(skel, center, stiffness, drag_force, external, colliders)
+	for i in range(len(verlets)):
+		var stiffness = stiffness_force[i] * delta
+		var external = gravity_dir[i] * (gravity_power[i] * delta)
+		verlets[i].radius = hit_radius[i]
+		verlets[i].update(skel, center_transform, center_transform_inv, stiffness, drag_force[i], external, colliders)

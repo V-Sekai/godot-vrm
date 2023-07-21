@@ -1175,6 +1175,8 @@ static func _validate_humanoid(root_node: Node3D) -> Dictionary:
 func _export_post(gstate: GLTFState) -> Error:
 	var json_gltf_nodes: Array = gstate.json["nodes"]
 	for i in range(len(json_gltf_nodes)):
+		if json_gltf_nodes[i].has("extensions") and json_gltf_nodes[i]["extensions"].is_empty():
+			json_gltf_nodes[i].erase("extensions")
 		if json_gltf_nodes[i]["name"] == "Root":
 			print("Found a Root at index " + str(i))
 		if json_gltf_nodes[i]["name"] == "BoneNodeConstraintApplier":
@@ -1234,7 +1236,7 @@ func _export_post(gstate: GLTFState) -> Error:
 	var ei: EditorInspector = EditorInspector.new()
 
 	if not _add_vrm_nodes_to_skin(json):
-		push_error("Failed to find vrm humanBones in VRMC_vrm extension")
+		push_error("Export post failed to find vrm humanBones in VRMC_vrm extension")
 		return ERR_INVALID_DATA
 	# firstPerson
 	# lookAt
@@ -1248,9 +1250,11 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 	var gltf_json_parsed: Dictionary = gstate.json
 	var gltf_nodes = gltf_json_parsed["nodes"]
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
-		push_error("Failed to find vrm humanBones in VRMC_vrm extension")
+		push_error("Failed to find vrm humanBones in VRMC_vrm extension during import preflight")
 		return ERR_INVALID_DATA
 	for node in gltf_nodes:
+		if node.has("extensions") and node["extensions"].is_empty():
+			node.erase("extensions")
 		if node.get("name","") == "Root":
 			node["name"] = "Root_"
 		if node.get("name","") == "AnimationPlayer":
@@ -1279,6 +1283,10 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 	var root_node: Node = node
 
 	var gltf_json: Dictionary = gstate.json
+	var gltf_nodes = gltf_json["nodes"]
+	for nodex in gltf_nodes:
+		if nodex.has("extensions") and nodex["extensions"].is_empty():
+			nodex.erase("extensions")
 	var vrm_extension: Dictionary = gltf_json["extensions"]["VRMC_vrm"]
 
 	var human_bone_to_idx: Dictionary = {}
