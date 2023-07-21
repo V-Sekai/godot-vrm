@@ -446,6 +446,9 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 	for bind in expression.get("morphTargetBinds", []):
 		# FIXME: Is this a mesh_idx or a node_idx???
 		var node_maybe: Node = gstate.get_scene_node(int(bind["node"]))
+		if node_maybe == null:
+			push_warning("Morph target bind is null")
+			continue
 		if not node_maybe is ImporterMeshInstance3D:
 			push_warning("Morph target bind is a " + str(node_maybe.get_class()))
 			continue

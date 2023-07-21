@@ -31,7 +31,7 @@ func _import_scene(path: String, flags: int, options: Dictionary) -> Object:
 	gltf.register_gltf_document_extension(vrm_extension, true)
 	var state: GLTFState = GLTFState.new()
 	# HANDLE_BINARY_EMBED_AS_BASISU crashes on some files in 4.0 and 4.1
-	state.handle_binary_image = GLTFState.HANDLE_BINARY_EXTRACT_TEXTURES
+	state.handle_binary_image = GLTFState.HANDLE_BINARY_EMBED_AS_UNCOMPRESSED # GLTFState.HANDLE_BINARY_EXTRACT_TEXTURES
 	var err = gltf.append_from_file(path, state, flags)
 	if err != OK:
 		gltf.unregister_gltf_document_extension(vrm_extension)

@@ -251,6 +251,7 @@ func _export_post(state: GLTFState):
 	var secondary: vrm_secondary = state.get_additional_data("VRMC_springBone")
 	var collider_groups: Array = secondary.collider_groups
 	var spring_bones: Array = secondary.spring_bones
+	var skel: Skeleton3D = secondary.get_node(secondary.skeleton)
 
 	var unique_colliders: Dictionary = {}
 	var colliders: Array[vrm_collider] = []
@@ -268,8 +269,8 @@ func _export_post(state: GLTFState):
 	var humanoid_skeleton: Skeleton3D = _get_humanoid_skel(secondary.get_parent())
 
 	var skel_to_godot_bone_to_gltf_node_map: Dictionary
-	for skel in state.skeletons:
-		skel_to_godot_bone_to_gltf_node_map[skel.get_godot_skeleton()] = skel.get_godot_bone_node()
+	for skely in state.skeletons:
+		skel_to_godot_bone_to_gltf_node_map[skely.get_godot_skeleton()] = skely.get_godot_bone_node()
 	var godot_node_to_idx: Dictionary = {}
 	for i in range(len(json["nodes"])):
 		godot_node_to_idx[state.get_scene_node(i)] = i
@@ -289,15 +290,13 @@ func _export_post(state: GLTFState):
 				"offset": [collider.offset.x, collider.offset.y, collider.offset.z],
 				"radius": collider.radius,
 			}}
-		var node_ref: Node = secondary.get_node(collider.skeleton_or_node)
 		var node_idx: int
 		if collider.bone != "":
-			print(skel_to_godot_bone_to_gltf_node_map[node_ref].keys())
 			print("LOoking up " + str(collider.bone))
-			node_idx = skel_to_godot_bone_to_gltf_node_map[node_ref][collider.bone]
+			node_idx = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(collider.bone)]
 		else:
 			# FIXME: This case should perhaps no longer be supported.
-			node_idx = godot_node_to_idx[node_ref]
+			node_idx = godot_node_to_idx[secondary.get_node(collider.node_path)]
 		json_colliders.push_back({"node": node_idx, "shape": shape})
 	sbone_extension["colliders"] = json_colliders
 
@@ -318,21 +317,24 @@ func _export_post(state: GLTFState):
 	var json_springs: Array = []
 	for springbone in spring_bones:
 		var spring: Dictionary = {}
-		var skeleton_node: Skeleton3D = secondary.get_node(springbone.skeleton)
+		# var skeleton_node: Skeleton3D = secondary.get_node(secondary.skeleton)
 		if springbone.resource_name != "":
 			spring["name"] = springbone.resource_name
 		if springbone.center_node == NodePath():
-			spring["center"] = skel_to_godot_bone_to_gltf_node_map[skeleton_node][springbone.center_bone]
+			spring["center"] = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.center_bone)]
 		else:
 			spring["center"] = godot_node_to_idx[secondary.get_node(springbone.center_node)]
 		var spring_groups: Array = []
 		for collider_group in springbone.collider_groups:
-			spring_groups.push_back(collider_group_indices[collider_group])
+			if collider_group_indices.has(collider_group):
+				spring_groups.push_back(collider_group_indices[collider_group])
+			else:
+				push_warning("Missing collider_group_indices in vrm export.")
 		spring["colliderGroups"] = spring_groups
 		var joints: Array = []
-		for i in range(len(springbone.joints)):
+		for i in range(len(springbone.joint_nodes)):
 			var joint: Dictionary = {}
-			joint["node"] = skel_to_godot_bone_to_gltf_node_map[skeleton_node][springbone.joint_nodes[i]]
+			joint["node"] = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
 			joint["hitRadius"] = springbone.hit_radius[i]
 			joint["stiffness"] = springbone.stiffness_force[i]
 			joint["gravityPower"] = springbone.gravity_power[i]
