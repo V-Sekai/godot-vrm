@@ -42,29 +42,33 @@ func _init(skel: Skeleton3D, idx: int, center_transform_inv: Transform3D, local_
 	length = local_child_position.length()
 
 func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_inv: Transform3D, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
-	var tmp_current_tail: Vector3 = center_transform * current_tail
-	var tmp_prev_tail: Vector3 = center_transform * prev_tail
+	var tmp_current_tail: Vector3 = current_tail
+	var tmp_prev_tail: Vector3 = prev_tail
 	var global_pose_tr: Transform3D = get_global_pose(skel)
 
+	var tmp_external: Vector3 = center_transform * external
+
 	# Integration of velocity verlet
-	var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + (get_local_pose_rotation(skel) * (bone_axis)) * stiffness_force + external
+	var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force)  + center_transform.basis.get_rotation_quaternion() * (get_local_pose_rotation(skel) * bone_axis * stiffness_force + external)
 
 	# Limiting bone length
-	var origin: Vector3 = global_pose_tr.origin
+	var origin: Vector3 = center_transform * global_pose_tr.origin
+
 	next_tail = origin + (next_tail - origin).normalized() * length
+	#next_tail = center_transform_inv * next_tail
 
 	# Collision movement
 	for collider in colliders:
 		next_tail = collider.collision(origin, radius, length, next_tail)
 
 	# Recording current tails for next process
-	prev_tail = center_transform_inv * current_tail
-	current_tail = center_transform_inv * next_tail
+	prev_tail = current_tail # center_transform_inv * current_tail
+	current_tail = next_tail # center_transform_inv * next_tail
 
 	# Apply rotation
-	var ft = from_to_rotation_safe(get_local_pose_rotation(skel) * (bone_axis), next_tail - origin)
+	var ft = from_to_rotation_safe(get_local_pose_rotation(skel) * (bone_axis), center_transform_inv.basis * (next_tail - origin))
 	if typeof(ft) != TYPE_NIL:
-		ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
+		# ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
 		var qt: Quaternion = ft * get_local_pose_rotation(skel)
 		global_pose_tr.basis = Basis(qt)
 		skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)

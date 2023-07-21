@@ -941,31 +941,33 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
 
+	# Assume that all SpringBone are part of one skeleton for now.
+	var skeleton_path: NodePath = secondary_node.get_path_to(secondary_node.get_parent().get_node("%GeneralSkeleton"))
+
 	var offset_flip: Vector3 = Vector3(-1, 1, 1) if is_vrm_0 else Vector3(1, 1, 1)
 
-	var collider_groups: Array = [].duplicate()
+	var collider_groups: Array[vrm_collider_group]
 	for cgroup in vrm_extension["secondaryAnimation"]["colliderGroups"]:
 		var gltfnode: GLTFNode = nodes[int(cgroup["node"])]
 		var collider_group: vrm_collider_group = vrm_collider_group.new()
-		var skeleton_or_node: NodePath
+		var node_path: NodePath
 		var bone: String = ""
 		var new_resource_name: String = ""
 		var pose_diff: Basis = Basis()
 		if gltfnode.skeleton == -1:
 			var found_node: Node = gstate.get_scene_node(int(cgroup["node"]))
-			skeleton_or_node = secondary_node.get_path_to(found_node)
+			node_path = secondary_node.get_path_to(found_node)
 			bone = ""
 			new_resource_name = found_node.name
 		else:
 			var skeleton: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton)
-			skeleton_or_node = secondary_node.get_path_to(skeleton)
 			bone = nodes[int(cgroup["node"])].resource_name
 			new_resource_name = bone
 			pose_diff = pose_diffs[skeleton.find_bone(bone)]
 
 		for collider_info in cgroup["colliders"]:
 			var collider: vrm_collider = vrm_collider.new()
-			collider.skeleton_or_node = skeleton_or_node
+			collider.node_path = node_path
 			collider.bone = bone
 			collider.resource_name = new_resource_name
 			var offset_obj = collider_info.get("offset", {"x": 0.0, "y": 0.0, "z": 0.0})
@@ -978,7 +980,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			collider_group.colliders.append(collider)
 		collider_groups.append(collider_group)
 
-	var spring_bones: Array = [].duplicate()
+	var spring_bones: Array[vrm_spring_bone]
 	for sbone in vrm_extension["secondaryAnimation"]["boneGroups"]:
 		if sbone.get("bones", []).size() == 0:
 			continue
@@ -986,7 +988,8 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
 		var skeleton: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton)
 
-		var skeleton_path: NodePath = secondary_node.get_path_to(skeleton)
+		if skeleton_path != secondary_node.get_path_to(skeleton):
+			push_error("boneGroups somehow references a different skeleton... " + str(skeleton_path) + " vs " + str(secondary_node.get_path_to(skeleton)))
 		var comment: String = sbone.get("comment", "")
 		var stiffness_force = float(sbone.get("stiffiness", 1.0))
 		var gravity_power = float(sbone.get("gravityPower", 0.0))
@@ -995,7 +998,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		var drag_force = float(sbone.get("dragForce", 0.4))
 		var hit_radius = float(sbone.get("hitRadius", 0.02))
 
-		var spring_collider_groups: Array = []
+		var spring_collider_groups: Array[vrm_collider_group]
 		for cgroup_idx in sbone.get("colliderGroups", []):
 			spring_collider_groups.append(collider_groups[int(cgroup_idx)])
 
@@ -1005,7 +1008,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			_create_joints_recursive(joint_chains, skeleton, skeleton.find_bone(nodes[int(bone_node)].resource_name), 1, -1)
 
 		# Center commonly points outside of the glTF Skeleton, such as the root node.
-		var center_node: NodePath = secondary_node.get_path_to(secondary_node)
+		var center_node: NodePath = NodePath()
 		var center_bone: String = ""
 		var center_node_idx = sbone.get("center", -1)
 		if center_node_idx != -1:
@@ -1023,7 +1026,6 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 
 		for chain in joint_chains:
 			var spring_bone: vrm_spring_bone = vrm_spring_bone.new()
-			spring_bone.skeleton = skeleton_path
 			spring_bone.comment = comment
 			spring_bone.center_bone = center_bone
 			spring_bone.center_node = center_node
@@ -1044,6 +1046,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			spring_bones.append(spring_bone)
 
 	secondary_node.set_script(vrm_secondary)
+	secondary_node.set("skeleton", skeleton_path)
 	secondary_node.set("spring_bones", spring_bones)
 	secondary_node.set("collider_groups", collider_groups)
 

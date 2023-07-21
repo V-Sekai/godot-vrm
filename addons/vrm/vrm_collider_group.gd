@@ -1,4 +1,5 @@
 @tool
+class_name VRMColliderGroup
 extends Resource
 
 const vrm_collider = preload("./vrm_collider.gd")

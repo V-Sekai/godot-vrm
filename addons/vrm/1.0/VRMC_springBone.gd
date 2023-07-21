@@ -25,6 +25,7 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
+	var skeleton: Skeleton3D = secondary_node.get_parent().get_node("%GeneralSkeleton")
 
 	var colliders: Array[vrm_collider]
 	var collider_groups: Array[vrm_collider_group]
@@ -35,18 +36,18 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		var pose_diff: Basis = Basis()
 		if gltfnode.skeleton == -1:
 			var found_node: Node = gstate.get_scene_node(int(collider_gltf["node"]))
-			collider.skeleton_or_node = secondary_node.get_path_to(found_node)
+			collider.node_path = secondary_node.get_path_to(found_node)
 			collider.bone = ""
 			collider.resource_name = found_node.name
 		else:
-			var skeleton: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton)
+			if skeleton != _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton):
+				push_error("VRM1: collider points to differnt skeleton")
 			if skeleton.has_meta("vrm_pose_diffs"):
 				# FIXME: We haven't decided yet which format is better
 				if typeof(skeleton.get_meta("vrm_pose_diffs")) == TYPE_DICTIONARY:
 					pose_diff = skeleton.get_meta("vrm_pose_diffs")[collider.bone]
 				else: # array by bone idx.
 					pose_diff = skeleton.get_meta("vrm_pose_diffs")[skeleton.find_bone(collider.bone)]
-			collider.skeleton_or_node = secondary_node.get_path_to(skeleton)
 			collider.bone = nodes[int(collider_gltf["node"])].resource_name
 			collider.resource_name = collider.bone
 		
@@ -85,17 +86,17 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			collider_group.colliders.append(colliders[collider_node])
 		collider_groups.append(collider_group)
 
-	var spring_bones: Array = [].duplicate()
+	var spring_bones: Array[vrm_spring_bone]
 	for sbone in vrm_extension.get("springs", []):
 		if sbone.get("joints", []).size() == 0:
 			continue
 		var first_joint: Dictionary = sbone["joints"][0]
 		var first_bone_node: int = first_joint["node"]
 		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
-		var skeleton: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton)
+		if skeleton != _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton):
+			push_error("VRM1: spring joint points to differnt skeleton")
 
 		var spring_bone: vrm_spring_bone = vrm_spring_bone.new()
-		spring_bone.skeleton = secondary_node.get_path_to(skeleton)
 		spring_bone.comment = sbone.get("name", "")
 		for sjoint in sbone["joints"]:
 			spring_bone.hit_radius.append(float(sbone.get("hitRadius", 0.0)))
@@ -120,7 +121,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		else:
 			spring_bone.resource_name = nodes[int(first_bone_node)].resource_name
 
-		spring_bone.collider_groups = [].duplicate()  # HACK HACK HACK
+		spring_bone.collider_groups.clear()
 		for cgroup_idx in sbone.get("colliderGroups", []):
 			spring_bone.collider_groups.append(collider_groups[int(cgroup_idx)])
 
@@ -144,6 +145,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		spring_bones.append(spring_bone)
 
 	secondary_node.set_script(vrm_secondary)
+	secondary_node.set("skeleton", secondary_node.get_path_to(skeleton))
 	secondary_node.set("spring_bones", spring_bones)
 	secondary_node.set("collider_groups", collider_groups)
 

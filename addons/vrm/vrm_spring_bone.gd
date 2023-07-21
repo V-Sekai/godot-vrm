@@ -1,8 +1,10 @@
 @tool
+class_name VRMSpringBone
 extends Resource
 
 const VRMSpringBoneLogic = preload("./vrm_spring_bone_logic.gd")
 const vrm_collider_group = preload("./vrm_collider_group.gd")
+const vrm_collider = preload("./vrm_collider.gd")
 
 # Annotation comment
 @export var comment: String
@@ -27,14 +29,14 @@ const vrm_collider_group = preload("./vrm_collider_group.gd")
 # specified if you don't want to make the object swaying with warp movement.",
 # Exactly one of the following must be set.
 @export var center_bone: String = ""
-@export var center_node: NodePath
+@export var center_node: NodePath = NodePath()
 
 # Reference to the vrm_collidergroup for collisions with swaying objects.
 @export var collider_groups: Array[vrm_collider_group]
 
 # Props
-var verlets: Array = []
-var colliders: Array = []
+var verlets: Array[VRMSpringBoneLogic]
+var colliders: Array[vrm_collider.VrmRuntimeCollider]
 var center = null
 var skel: Skeleton3D = null
 
@@ -46,7 +48,7 @@ func setup(center_transform_inv: Transform3D, force: bool = false) -> void:
 			has_warned = true
 			push_warning(str(resource_name) + ": Springbone chain has insufficient joints.")
 		return
-	if not self.root_bones.is_empty() && skel != null:
+	if not self.joint_nodes.is_empty() && skel != null:
 		if force || verlets.is_empty():
 			if not verlets.is_empty():
 				for verlet in verlets:

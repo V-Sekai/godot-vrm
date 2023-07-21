@@ -1,4 +1,5 @@
 @tool
+class_name VRMSecondary
 extends Node3D
 
 const spring_bone_class = preload("./vrm_spring_bone.gd")
@@ -51,9 +52,13 @@ func _ready() -> void:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 
+#	if secondary_gizmo != null:
+#		secondary_gizmo.get_parent().remove_child(secondary_gizmo)
+#		secondary_gizmo.queue_free()
+#		secondary_gizmo = null
 	if secondary_gizmo == null and (Engine.is_editor_hint() or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
-		add_child(secondary_gizmo, true)
+		skel.add_child(secondary_gizmo, true)
 	colliders_internal.clear()
 	spring_bones_internal.clear()
 	var center_to_collider_to_internal: Dictionary = {}
@@ -69,12 +74,15 @@ func _ready() -> void:
 				center_bones.push_back(skel.find_bone(spring_bone.center_bone))
 			else:
 				center_bones.push_back(-1)
-			center_nodes.push_back(get_node(spring_bone.center_node))
+			if spring_bone.center_node == NodePath():
+				center_nodes.push_back(null)
+			else:
+				center_nodes.push_back(get_node(spring_bone.center_node))
 			center_transforms.push_back(Transform3D.IDENTITY)
 			center_transforms_inv.push_back(Transform3D.IDENTITY)
 		var center_idx: int = center_to_index[center_key]
 
-	update_centers(skel.global_transform.affine_inverse())
+	update_centers(skel.global_transform) # .affine_inverse())
 
 	for spring_bone in spring_bones:
 		var center_key: Variant = spring_bone.center_bone
@@ -85,20 +93,21 @@ func _ready() -> void:
 		var tmp_colliders: Array[collider_class.VrmRuntimeCollider] = []
 		for collider_group in spring_bone.collider_groups:
 			for collider in collider_group.colliders:
-				var collider_runtime: collider_class.SphereCollider
+				var collider_runtime: collider_class.VrmRuntimeCollider
 				if center_key not in center_to_collider_to_internal:
 					center_to_collider_to_internal[center_key] = {}
 				if center_to_collider_to_internal[center_key].has(collider):
 					collider_runtime = center_to_collider_to_internal[center_key][collider]
 				else:
 					collider_runtime = collider.create_runtime(self, skel)
+					collider_runtime.gizmo_color = collider.gizmo_color
 					colliders_internal.append(collider_runtime)
 					colliders_centers.append(center_idx)
 					center_to_collider_to_internal[center_key][collider] = collider_runtime
 				tmp_colliders.append(collider_runtime)
 
 		var new_spring_bone = spring_bone.duplicate(false)
-		new_spring_bone._ready(skel, tmp_colliders)
+		new_spring_bone.ready(skel, tmp_colliders, center_transforms_inv[center_idx])
 		spring_bones_internal.append(new_spring_bone)
 		springs_centers.append(center_idx)
 
@@ -118,13 +127,17 @@ func check_for_editor_update() -> bool:
 	return update_in_editor
 
 
-func update_centers(skel_transform_inv: Transform3D):
+func update_centers(skel_transform: Transform3D):
 	skel.get_bone_global_pose_no_override(0)
+	var skel_transform_inv: Transform3D = skel_transform.affine_inverse()
 	for center_i in range(len(center_nodes)):
-		if center_bones[center_i] == -1:
-			var center_node: Node3D = center_nodes[center_i]
-			center_transforms[center_i] = center_node.global_transform.affine_inverse() * skel_transform_inv
+		var center_node: Node3D = center_nodes[center_i]
+		if center_bones[center_i] == -1 and center_node != null:
+			center_transforms[center_i] = center_node.global_transform.affine_inverse() * skel_transform
 			center_transforms_inv[center_i] = skel_transform_inv * center_node.global_transform
+		elif center_bones[center_i] == -1 and center_node == null:
+			center_transforms[center_i] = skel_transform
+			center_transforms_inv[center_i] = skel_transform_inv
 		else:
 			center_transforms[center_i] = skel.get_bone_global_pose(center_bones[center_i])
 			center_transforms_inv[center_i] = center_transforms[center_i].affine_inverse()
@@ -133,12 +146,14 @@ func update_centers(skel_transform_inv: Transform3D):
 func tick_spring_bones(delta: float) -> void:
 	# force update skeleton
 
-	var skel_transform_inv: Transform3D = skel.global_transform.affine_inverse()
+	if skel == null:
+		return
+	var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
 
-	update_centers(skel_transform_inv)
+	update_centers(skel_transform)
 
 	for collider_i in range(len(colliders_internal)):
-		colliders_internal[collider_i].update(skel_transform_inv, center_transforms_inv[colliders_centers[collider_i]], skel)
+		colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
 	for spring_i in range(len(spring_bones_internal)):
 		spring_bones_internal[spring_i].update(delta, center_transforms[springs_centers[spring_i]], center_transforms_inv[springs_centers[spring_i]])
 
@@ -156,7 +171,12 @@ func _process(delta: float) -> void:
 			tick_spring_bones(delta)
 		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
-				secondary_gizmo.draw_in_editor()
+				if skel != null:
+					var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
+					update_centers(skel_transform)
+					for collider_i in range(len(colliders_internal)):
+						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
+					secondary_gizmo.draw_in_editor()
 
 
 func _physics_process(delta: float) -> void:
@@ -165,7 +185,12 @@ func _physics_process(delta: float) -> void:
 			tick_spring_bones(delta)
 		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
-				secondary_gizmo.draw_in_editor()
+				if skel != null:
+					var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
+					update_centers(skel_transform)
+					for collider_i in range(len(colliders_internal)):
+						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
+					secondary_gizmo.draw_in_editor()
 
 
 class SecondaryGizmo:
@@ -196,54 +221,42 @@ class SecondaryGizmo:
 
 	func draw_spring_bones(color: Color) -> void:
 		set_material_override(m)
+		var i: int = 0
 		var s_sk: Skeleton3D = secondary_node.skel
-		var s_sk_transform_inv: Transform3D = secondary_node.skel.global_transform.affine_inverse()
+		var s_sk_transform_inv: Transform3D = Transform3D.IDENTITY # secondary_node.skel.global_transform.affine_inverse()
 		# Spring bones
 		for spring_bone in secondary_node.spring_bones_internal:
+			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.springs_centers[i]]
 			mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 			for v in spring_bone.verlets:
 				var s_tr: Transform3D = Transform3D.IDENTITY
-				if Engine.is_editor_hint():
-					if v.bone_idx != -1:
-						s_tr = s_sk.get_bone_global_pose(v.bone_idx)
-				else:
-					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
-				draw_line(s_tr.origin, s_sk_transform_inv * v.current_tail, color)
+				if v.bone_idx != -1:
+					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+				draw_line(s_tr.origin, center_transform_inv * v.current_tail, color)
 			mesh.surface_end()
 			for v in spring_bone.verlets:
 				mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
 				var s_tr: Transform3D = Transform3D.IDENTITY
-				if Engine.is_editor_hint():
-					if v.bone_idx != -1:
-						s_tr = s_sk.get_bone_global_pose(v.bone_idx)
-				else:
-					s_tr = spring_bone.skel.get_bone_global_pose_no_override(v.bone_idx)
-				draw_sphere(s_tr.basis, s_sk_transform_inv * v.current_tail, spring_bone.hit_radius, color)
+				if v.bone_idx != -1:
+					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
+				draw_sphere(center_transform_inv.basis * s_tr.basis, center_transform_inv * v.current_tail, v.radius, color)
 				mesh.surface_end()
+			i += 1
 
 	func draw_collider_groups() -> void:
 		set_material_override(m)
-		for collider_group in secondary_node.collider_groups if Engine.is_editor_hint() else secondary_node.collider_groups_internal:
+		var i: int = 0
+		var skel_inv: Transform3D = secondary_node.skel.global_transform.affine_inverse()
+		for collider in secondary_node.colliders_internal:
+			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.colliders_centers[i]] # * skel_inv
 			mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
-			var c_tr = Transform3D.IDENTITY
-			if Engine.is_editor_hint():
-				var c_sk: Node = secondary_node.get_node_or_null(collider_group.skeleton_or_node)
-				if c_sk is Skeleton3D:
-					if collider_group.bone_idx == -1:
-						collider_group.bone_idx = c_sk.find_bone(collider_group.bone)
-					c_tr = c_sk.get_bone_global_pose(collider_group.bone_idx)
-			elif collider_group.parent is Skeleton3D:
-				c_tr = (collider_group.skel.get_bone_global_pose_no_override(collider_group.parent.find_bone(collider_group.bone)))
-			for collider in collider_group.sphere_colliders:
-				var c_ps: Vector3 = Vector3(collider.x, collider.y, collider.z)  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
-				draw_sphere(c_tr.basis, c_tr * c_ps, collider.d, collider_group.gizmo_color)
+			#var c_tr = Transform3D.IDENTITY
+			#for collider in collider_group.sphere_colliders:
+			#var c_ps: Vector3 = center_transform * collider.position  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
+			collider.draw_debug(mesh, center_transform_inv)
+			#draw_sphere(c_tr.basis, c_tr * c_ps, collider.radius, collider.gizmo_color)
 			mesh.surface_end()
-
-	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
-		mesh.surface_set_color(color)
-		mesh.surface_add_vertex(begin_pos)
-		mesh.surface_set_color(color)
-		mesh.surface_add_vertex(end_pos)
+			i += 1
 
 	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color) -> void:
 		var step: int = 15
@@ -257,3 +270,9 @@ class SecondaryGizmo:
 		for i in range(step + 1):
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * radius).rotated(bas * Vector3.UP, sppi * (i % step))))
+
+	func draw_line(begin_pos: Vector3, end_pos: Vector3, color: Color) -> void:
+		mesh.surface_set_color(color)
+		mesh.surface_add_vertex(begin_pos)
+		mesh.surface_set_color(color)
+		mesh.surface_add_vertex(end_pos)
