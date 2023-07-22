@@ -10,6 +10,9 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 @export var collider_groups: Array[collider_group_class]
 @export_node_path("Skeleton3D") var skeleton: NodePath
 
+var default_springbone_center: Node3D
+var override_springbone_center: bool = false
+
 var update_secondary_fixed: bool = false
 var update_in_editor: bool = false
 
@@ -117,6 +120,8 @@ func check_for_editor_update() -> bool:
 		return false
 	var parent: Node = get_parent()
 	if parent is VRMTopLevel:
+		override_springbone_center = parent.override_springbone_center
+		default_springbone_center = parent.default_springbone_center
 		if parent.update_in_editor and not update_in_editor:
 			update_in_editor = true
 			_ready()
@@ -130,14 +135,22 @@ func check_for_editor_update() -> bool:
 func update_centers(skel_transform: Transform3D):
 	skel.get_bone_global_pose_no_override(0)
 	var skel_transform_inv: Transform3D = skel_transform.affine_inverse()
+	var center_xform: Transform3D
+	var center_xform_inv: Transform3D
+	if default_springbone_center != null:
+		center_xform = default_springbone_center.global_transform
+		center_xform_inv = center_xform.affine_inverse()
 	for center_i in range(len(center_nodes)):
 		var center_node: Node3D = center_nodes[center_i]
-		if center_bones[center_i] == -1 and center_node != null:
-			center_transforms[center_i] = center_node.global_transform.affine_inverse() * skel_transform
-			center_transforms_inv[center_i] = skel_transform_inv * center_node.global_transform
-		elif center_bones[center_i] == -1 and center_node == null:
+		if (center_bones[center_i] == -1 and center_node == null) or override_springbone_center:
 			center_transforms[center_i] = skel_transform
 			center_transforms_inv[center_i] = skel_transform_inv
+			if default_springbone_center != null:
+				center_transforms[center_i] = center_xform_inv * center_transforms[center_i]
+				center_transforms_inv[center_i] = center_transforms_inv[center_i] * center_xform
+		elif center_bones[center_i] == -1 and center_node != null:
+			center_transforms[center_i] = center_node.global_transform.affine_inverse() * skel_transform
+			center_transforms_inv[center_i] = skel_transform_inv * center_node.global_transform
 		else:
 			center_transforms[center_i] = skel.get_bone_global_pose(center_bones[center_i])
 			center_transforms_inv[center_i] = center_transforms[center_i].affine_inverse()

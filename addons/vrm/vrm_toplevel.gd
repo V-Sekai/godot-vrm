@@ -14,8 +14,13 @@ const vrm_meta_class = preload("./vrm_meta.gd")
 	return ret
 ).call()
 
+@export_category("Springbone Settings")
 @export var update_secondary_fixed: bool = false
 
+@export var default_springbone_center: Node3D
+@export var override_springbone_center: bool = false
+
+@export_category("Editor and Debugging")
 @export var update_in_editor: bool = false
 @export var gizmo_spring_bone: bool = false
 @export var gizmo_spring_bone_color: Color = Color.LIGHT_YELLOW
