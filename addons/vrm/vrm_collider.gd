@@ -73,13 +73,17 @@ class VrmRuntimeCollider:
 	func collision(bone_position: Vector3, bone_radius: float, bone_length: float, out: Vector3, position_offset: Vector3=Vector3.ZERO) -> Vector3:
 		var this_position = self.position + position_offset
 		var r = bone_radius + self.radius
+		if r <= 0:
+			return out
 		var diff: Vector3 = out - this_position
-		if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z) <= r * r:
+		if diff.length_squared() <= r * r:
 			# Hit, move to orientation of normal
 			var normal: Vector3 = (out - this_position).normalized()
 			var pos_from_collider = this_position + normal * (bone_radius + self.radius)
 			# Limiting bone length
+			##print("Collision hit! " + str(pos_from_collider - bone_position) + " at " + str(bone_length) + ": " + str((pos_from_collider - bone_position).normalized()) + " -> " + str((pos_from_collider - bone_position).normalized() * bone_length))
 			out = bone_position + (pos_from_collider - bone_position).normalized() * bone_length
+			# out = out + 1.0 * (pos_from_collider - bone_position).normalized() * bone_length
 		return out
 
 class SphereCollider extends VrmRuntimeCollider:
@@ -91,13 +95,19 @@ class SphereCollider extends VrmRuntimeCollider:
 		var sppi: float = 2 * PI / step
 		var center: Vector3 = center_transform_inv * self.position
 		var bas: Basis = center_transform_inv.basis
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(self.gizmo_color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.UP * self.radius).rotated(bas * Vector3.RIGHT, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.UP * self.radius).rotated(bas * Vector3.RIGHT, sppi * (i % step))))
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(self.gizmo_color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.RIGHT * self.radius).rotated(bas * Vector3.FORWARD, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.RIGHT * self.radius).rotated(bas * Vector3.FORWARD, sppi * (i % step))))
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(self.gizmo_color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * self.radius).rotated(bas * Vector3.UP, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * self.radius).rotated(bas * Vector3.UP, sppi * (i % step))))
 
@@ -138,29 +148,34 @@ class CapsuleCollider extends VrmRuntimeCollider:
 		var bas: Basis = center_transform_inv.basis
 
 		var up_axis: Vector3 = (tail - position).normalized()
-		var right_axis: Vector3
-		if up_axis.is_equal_approx(Vector3.FORWARD):
+		if up_axis.is_equal_approx(Vector3.ZERO):
+			up_axis = Vector3(0,1,0)
+		var right_axis: Vector3 #= up_axis.cross(Vector3.RIGHT).normalized()
+		if abs(up_axis.dot(Vector3.RIGHT)) < 0.8:
 			right_axis = up_axis.cross(Vector3.RIGHT).normalized()
-		else:
+		elif abs(up_axis.dot(Vector3.FORWARD)) < 0.8:
 			right_axis = up_axis.cross(Vector3.FORWARD).normalized()
+		else:
+			right_axis = up_axis.cross(Vector3.UP).normalized()
 		var forward_axis: Vector3 = up_axis.cross(right_axis).normalized()
 		right_axis = forward_axis.cross(up_axis).normalized()
-
-		for i in range(step / 2):
+		for i in range(1, step + 1):
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex(center + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * (i % step))))
-		for i in range(step / 2, step + 1):
+			mesh.surface_add_vertex((center if i - 1 < step/2 else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex(tail + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * (i % step))))
-		for i in range(step / 2):
+			mesh.surface_add_vertex((center if i < step/2 or i == step else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * (i % step))))
+		for i in range(1, step + 1):
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex(center + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * (i % step))))
-		for i in range(step / 2, step + 1):
+			mesh.surface_add_vertex((center if i - 1 < step/2 else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex(tail + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * (i % step))))
-		for i in range(step + 1):
+			mesh.surface_add_vertex((center if i < step/2 or i == step else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * (i % step))))
+		for i in range(1, step + 1):
+			mesh.surface_set_color(self.gizmo_color)
+			mesh.surface_add_vertex(center + ((bas * forward_axis * self.radius).rotated(bas * up_axis, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * forward_axis * self.radius).rotated(bas * up_axis, sppi * (i % step))))
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(self.gizmo_color)
+			mesh.surface_add_vertex(tail + ((bas * forward_axis * self.radius).rotated(bas * up_axis, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(tail + ((bas * forward_axis * self.radius).rotated(bas * up_axis, sppi * (i % step))))

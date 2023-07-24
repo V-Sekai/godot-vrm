@@ -86,6 +86,11 @@ func skeleton_rotate(p_base_scene: Node, src_skeleton: Skeleton3D, p_bone_map: B
 	var diffs: Array[Basis]
 	diffs.resize(src_skeleton.get_bone_count())
 
+	# Short circuit the rotations
+	if false:
+		prof_skeleton.queue_free()
+		return diffs
+
 	var bones_to_process: PackedInt32Array = src_skeleton.get_parentless_bones()
 	var bpidx = 0
 	while bpidx < len(bones_to_process):
@@ -675,7 +680,10 @@ func _create_animation_player(
 				head_hidden_node.owner = node.owner
 				head_hidden_node.set_meta("layers", 2) # ImporterMeshInstance3D is missing APIs.
 				node.add_sibling(head_hidden_node)
-				gstate.meshes.append(head_hidden_mesh)
+				var gltf_mesh: GLTFMesh = GLTFMesh.new()
+				gltf_mesh.mesh = head_hidden_mesh
+				# FIXME: do we need to assign gltf_mesh.instance_materials?
+				gstate.meshes.append(gltf_mesh)
 				node_to_head_hidden_node[node] = head_hidden_node
 				layer_mask = 4
 
@@ -746,8 +754,6 @@ func _create_animation_player(
 		var anim: Animation = null
 		var animtrack: int
 		var input_val: float
-		pose_diffs[lefteye] = Quaternion()
-		pose_diffs[righteye] = Quaternion()
 		anim = Animation.new()
 		animation_library.add_animation("lookLeft", anim)
 		animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)

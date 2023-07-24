@@ -41,6 +41,10 @@ var center = null
 var skel: Skeleton3D = null
 
 var has_warned: bool = false
+var disable_colliders: bool = false
+var gravity_multiplier: float = 1.0
+var gravity_rotation: Quaternion = Quaternion.IDENTITY
+var add_force: Vector3 = Vector3.ZERO
 
 func setup(center_transform_inv: Transform3D, force: bool = false) -> void:
 	if len(joint_nodes) < 2:
@@ -76,7 +80,7 @@ func create_vertlet(id: int, center_tr_inv: Transform3D) -> VRMSpringBoneLogic:
 	return verlet
 
 
-func ready(ready_skel: Skeleton3D, colliders_ref: Array, center_transform_inv: Transform3D) -> void:
+func ready(ready_skel: Skeleton3D, colliders_ref: Array[vrm_collider.VrmRuntimeCollider], center_transform_inv: Transform3D) -> void:
 	if ready_skel != null:
 		self.skel = ready_skel
 	setup(center_transform_inv)
@@ -89,8 +93,15 @@ func update(delta: float, center_transform: Transform3D, center_transform_inv: T
 			return
 		setup(center_transform_inv)
 
+	var tmp_colliders: Array[vrm_collider.VrmRuntimeCollider]
+	if not disable_colliders:
+		tmp_colliders = colliders
+
 	for i in range(len(verlets)):
-		var stiffness = stiffness_force[i] * delta
-		var external = gravity_dir[i] * (gravity_power[i] * delta)
+		var stiffness: float = stiffness_force[i] * delta
+		var external: Vector3 = gravity_dir[i] * (gravity_power[i] * delta) * gravity_multiplier
+		if !gravity_rotation.is_equal_approx(Quaternion.IDENTITY):
+			external = gravity_rotation * external
+		external += add_force * delta
 		verlets[i].radius = hit_radius[i]
-		verlets[i].update(skel, center_transform, center_transform_inv, stiffness, drag_force[i], external, colliders)
+		verlets[i].update(skel, center_transform, center_transform_inv, stiffness, drag_force[i], external, tmp_colliders)

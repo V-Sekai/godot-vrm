@@ -42,14 +42,15 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		else:
 			if skeleton != _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton):
 				push_error("VRM1: collider points to differnt skeleton")
-			if skeleton.has_meta("vrm_pose_diffs"):
-				# FIXME: We haven't decided yet which format is better
-				if typeof(skeleton.get_meta("vrm_pose_diffs")) == TYPE_DICTIONARY:
-					pose_diff = skeleton.get_meta("vrm_pose_diffs")[collider.bone]
-				else: # array by bone idx.
-					pose_diff = skeleton.get_meta("vrm_pose_diffs")[skeleton.find_bone(collider.bone)]
 			collider.bone = nodes[int(collider_gltf["node"])].resource_name
 			collider.resource_name = collider.bone
+			if skeleton.has_meta("vrm_pose_diffs"):
+				# array by bone idx.
+				var bone_idx: int = skeleton.find_bone(collider.bone)
+				if bone_idx == -1:
+					push_error("Unrecognized bone " + str(bone_idx) + " used by springBone")
+				pose_diff = skeleton.get_meta("vrm_pose_diffs")[bone_idx]
+			#print(str(collider.bone) + " diff " + str(pose_diff))
 		
 		if collider_gltf.has("name"):
 			collider.resource_name = collider_gltf["name"]
@@ -320,7 +321,9 @@ func _export_post(state: GLTFState):
 		# var skeleton_node: Skeleton3D = secondary.get_node(secondary.skeleton)
 		if springbone.resource_name != "":
 			spring["name"] = springbone.resource_name
-		if springbone.center_node == NodePath():
+		if springbone.center_node == NodePath() and springbone.center_bone == "":
+			pass
+		elif springbone.center_node == NodePath():
 			spring["center"] = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.center_bone)]
 		else:
 			spring["center"] = godot_node_to_idx[secondary.get_node(springbone.center_node)]
@@ -332,9 +335,18 @@ func _export_post(state: GLTFState):
 				push_warning("Missing collider_group_indices in vrm export.")
 		spring["colliderGroups"] = spring_groups
 		var joints: Array = []
+		var prev_node: int = 0
 		for i in range(len(springbone.joint_nodes)):
 			var joint: Dictionary = {}
-			joint["node"] = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
+			if springbone.joint_nodes[i] == "":
+				var node_idx = len(json["nodes"])
+				var delta: Vector3 = skel.get_bone_rest(skel.find_bone(springbone.joint_nodes[i - 1])).origin
+				var pos: Vector3 = delta.normalized() * 0.07
+				json["nodes"].append({"name": json["nodes"][prev_node]["name"] + "_end", "translation": [pos[0], pos[1], pos[2]]})
+				prev_node = node_idx
+			else:
+				prev_node = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
+			joint["node"] = prev_node
 			joint["hitRadius"] = springbone.hit_radius[i]
 			joint["stiffness"] = springbone.stiffness_force[i]
 			joint["gravityPower"] = springbone.gravity_power[i]

@@ -12,6 +12,10 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 
 var default_springbone_center: Node3D
 var override_springbone_center: bool = false
+var disable_colliders: bool = false
+var springbone_gravity_multiplier: float = 1.0
+var springbone_gravity_rotation: Quaternion = Quaternion.IDENTITY
+var springbone_add_force: Vector3 = Vector3.ZERO
 
 var update_secondary_fixed: bool = false
 var update_in_editor: bool = false
@@ -54,6 +58,7 @@ func _ready() -> void:
 	if get_parent() is VRMTopLevel:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
+		disable_colliders = get_parent().get("disable_colliders")
 
 #	if secondary_gizmo != null:
 #		secondary_gizmo.get_parent().remove_child(secondary_gizmo)
@@ -111,6 +116,7 @@ func _ready() -> void:
 
 		var new_spring_bone = spring_bone.duplicate(false)
 		new_spring_bone.ready(skel, tmp_colliders, center_transforms_inv[center_idx])
+		new_spring_bone.disable_colliders = disable_colliders
 		spring_bones_internal.append(new_spring_bone)
 		springs_centers.append(center_idx)
 
@@ -120,6 +126,18 @@ func check_for_editor_update() -> bool:
 		return false
 	var parent: Node = get_parent()
 	if parent is VRMTopLevel:
+		if parent.springbone_gravity_rotation != springbone_gravity_rotation or parent.springbone_gravity_multiplier != springbone_gravity_multiplier or parent.springbone_add_force != springbone_add_force:
+			springbone_add_force = parent.springbone_add_force
+			springbone_gravity_rotation = parent.springbone_gravity_rotation
+			springbone_gravity_multiplier = parent.springbone_gravity_multiplier
+			for sb in spring_bones_internal:
+				sb.add_force = springbone_add_force
+				sb.gravity_rotation = springbone_gravity_rotation
+				sb.gravity_multiplier = springbone_gravity_multiplier
+		if parent.disable_colliders != disable_colliders:
+			disable_colliders = parent.disable_colliders
+			for sb in spring_bones_internal:
+				sb.disable_colliders = disable_colliders
 		override_springbone_center = parent.override_springbone_center
 		default_springbone_center = parent.default_springbone_center
 		if parent.update_in_editor and not update_in_editor:
@@ -238,49 +256,53 @@ class SecondaryGizmo:
 		var s_sk: Skeleton3D = secondary_node.skel
 		var s_sk_transform_inv: Transform3D = Transform3D.IDENTITY # secondary_node.skel.global_transform.affine_inverse()
 		# Spring bones
+		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for spring_bone in secondary_node.spring_bones_internal:
 			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.springs_centers[i]]
-			mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 			for v in spring_bone.verlets:
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				if v.bone_idx != -1:
 					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				draw_line(s_tr.origin, center_transform_inv * v.current_tail, color)
-			mesh.surface_end()
 			for v in spring_bone.verlets:
-				mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				if v.bone_idx != -1:
 					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
 				draw_sphere(center_transform_inv.basis * s_tr.basis, center_transform_inv * v.current_tail, v.radius, color)
-				mesh.surface_end()
 			i += 1
+		mesh.surface_end()
 
 	func draw_collider_groups() -> void:
 		set_material_override(m)
 		var i: int = 0
 		var skel_inv: Transform3D = secondary_node.skel.global_transform.affine_inverse()
+		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for collider in secondary_node.colliders_internal:
 			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.colliders_centers[i]] # * skel_inv
-			mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
 			#var c_tr = Transform3D.IDENTITY
 			#for collider in collider_group.sphere_colliders:
 			#var c_ps: Vector3 = center_transform * collider.position  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
 			collider.draw_debug(mesh, center_transform_inv)
 			#draw_sphere(c_tr.basis, c_tr * c_ps, collider.radius, collider.gizmo_color)
-			mesh.surface_end()
 			i += 1
+		mesh.surface_end()
 
 	func draw_sphere(bas: Basis, center: Vector3, radius: float, color: Color) -> void:
 		var step: int = 15
 		var sppi: float = 2 * PI / step
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.UP * radius).rotated(bas * Vector3.RIGHT, sppi * (i - 1 % step))))
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.UP * radius).rotated(bas * Vector3.RIGHT, sppi * (i % step))))
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.RIGHT * radius).rotated(bas * Vector3.FORWARD, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.RIGHT * radius).rotated(bas * Vector3.FORWARD, sppi * (i % step))))
-		for i in range(step + 1):
+		for i in range(1, step + 1):
+			mesh.surface_set_color(color)
+			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * radius).rotated(bas * Vector3.UP, sppi * ((i - 1) % step))))
 			mesh.surface_set_color(color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * radius).rotated(bas * Vector3.UP, sppi * (i % step))))
 

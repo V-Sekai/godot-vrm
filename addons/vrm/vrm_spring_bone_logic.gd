@@ -1,5 +1,7 @@
 extends RefCounted
 
+const vrm_collider = preload("./vrm_collider.gd")
+
 var force_update: bool = true
 var bone_idx: int = -1
 var parent_idx: int = -1
@@ -41,7 +43,7 @@ func _init(skel: Skeleton3D, idx: int, center_transform_inv: Transform3D, local_
 	bone_axis = local_child_position.normalized()
 	length = local_child_position.length()
 
-func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_inv: Transform3D, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array) -> void:
+func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_inv: Transform3D, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array[vrm_collider.VrmRuntimeCollider]) -> void:
 	var tmp_current_tail: Vector3 = current_tail
 	var tmp_prev_tail: Vector3 = prev_tail
 	var global_pose_tr: Transform3D = get_global_pose(skel)
@@ -59,7 +61,10 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 
 	# Collision movement
 	for collider in colliders:
+		var oldt: Vector3 = next_tail
 		next_tail = collider.collision(origin, radius, length, next_tail)
+		#if not oldt.is_equal_approx(next_tail):
+		#	print("Tail " + str(oldt) + " pushed to " + str(next_tail))
 
 	# Recording current tails for next process
 	prev_tail = current_tail # center_transform_inv * current_tail
