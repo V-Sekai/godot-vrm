@@ -8,6 +8,8 @@ const vrm_collider = preload("./vrm_collider.gd")
 const vrm_spring_bone = preload("./vrm_spring_bone.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
 
+const vrmc_vrm_utils = preload("./1.0/VRMC_vrm.gd")
+
 var vrm_meta: Resource = null
 
 const ROTATE_180_BASIS = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, -1))
@@ -763,46 +765,89 @@ func _create_animation_player(
 
 	var firstperson = vrm_extension["firstPerson"]
 
-	var firstpersanim: Animation = Animation.new()
-	animation_library.add_animation("FirstPerson", firstpersanim)
-
-	var thirdpersanim: Animation = Animation.new()
-	animation_library.add_animation("ThirdPerson", thirdpersanim)
-
 	var skeletons: Array = gstate.get_skeletons()
 
-	var head_bone_idx = firstperson.get("firstPersonBone", -1)
+	var mesh_to_head_hidden_mesh: Dictionary = {}
+	var node_to_head_hidden_node: Dictionary = {}
+
+	var head_relative_bones: Dictionary = {} # To determine which meshes to hide.
+
+	var head_bone_idx = firstperson.get("firstPersonBone", human_bone_to_idx.get("head", -1))
 	if head_bone_idx >= 0:
 		var headNode: GLTFNode = nodes[head_bone_idx]
-		var skeletonPath: NodePath = animplayer.get_parent().get_path_to(_get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton))
-		var headBone: String = headNode.resource_name
-		var headPath = str(skeletonPath) + ":" + headBone
-		var firstperstrack = firstpersanim.add_track(Animation.TYPE_SCALE_3D)
-		firstpersanim.track_set_path(firstperstrack, headPath)
-		firstpersanim.scale_track_insert_key(firstperstrack, 0.0, Vector3(0.00001, 0.00001, 0.00001))
-		var thirdperstrack = thirdpersanim.add_track(Animation.TYPE_SCALE_3D)
-		thirdpersanim.track_set_path(thirdperstrack, headPath)
-		thirdpersanim.scale_track_insert_key(thirdperstrack, 0.0, Vector3.ONE)
+		var skel: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton)
+		vrmc_vrm_utils._recurse_bones(head_relative_bones, skel, head_bone_idx)
 
-	for meshannotation in firstperson["meshAnnotations"]:
-		var flag = FirstPersonParser.get(meshannotation["firstPersonFlag"], -1)
-		var first_person_visibility
-		var third_person_visibility
-		if flag == FirstPersonFlag.ThirdPersonOnly:
-			first_person_visibility = 0.0
-			third_person_visibility = 1.0
-		elif flag == FirstPersonFlag.FirstPersonOnly:
-			first_person_visibility = 1.0
-			third_person_visibility = 0.0
-		else:
-			continue
-		var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(meshannotation["mesh"])]
-		var firstperstrack = firstpersanim.add_track(Animation.TYPE_VALUE)
-		firstpersanim.track_set_path(firstperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
-		firstpersanim.track_insert_key(firstperstrack, 0.0, first_person_visibility)
-		var thirdperstrack = thirdpersanim.add_track(Animation.TYPE_VALUE)
-		thirdpersanim.track_set_path(thirdperstrack, str(animplayer.get_parent().get_path_to(node)) + ":visible")
-		thirdpersanim.track_insert_key(thirdperstrack, 0.0, third_person_visibility)
+	var mesh_annotations_by_mesh = {}
+	for meshannotation in firstperson.get("meshAnnotations", []):
+		mesh_annotations_by_mesh[int(meshannotation["mesh"])] = meshannotation
+
+	for node_idx in range(len(nodes)):
+		var gltf_node: GLTFNode = nodes[node_idx]
+		var node: Node = gstate.get_scene_node(node_idx)
+		if node is ImporterMeshInstance3D:
+			var meshannotation = mesh_annotations_by_mesh.get(gltf_node.mesh, {})
+
+			var flag: String = meshannotation.get("firstPersonFlag", "Auto")
+
+			# Non-skinned meshes: use flag.
+			var mesh: ImporterMesh = node.mesh
+			var head_hidden_mesh: ImporterMesh = mesh
+			if flag == "Auto":
+				if node.skin == null:
+					var parent_node = node.get_parent()
+					if parent_node is BoneAttachment3D:
+						if head_relative_bones.has(parent_node.bone_name):
+							flag = "ThirdPersonOnly"
+				else:
+					head_hidden_mesh = vrmc_vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones)
+					if head_hidden_mesh == null:
+						flag = "ThirdPersonOnly"
+					if head_hidden_mesh == mesh:
+						flag = "Both" # Nothing to do: No head verts.
+
+			var layer_mask: int = 6 # "both"
+			if flag == "ThirdPersonOnly":
+				layer_mask = 4
+			elif flag == "FirstPersonOnly":
+				layer_mask = 2
+
+			if flag == "Auto" and head_hidden_mesh != mesh: # If it is still "auto", we have something to hide.
+				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
+				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
+				head_hidden_node.name = node.name + " (Headless)"
+				head_hidden_node.skin = node.skin
+				head_hidden_node.mesh = head_hidden_mesh
+				head_hidden_node.skeleton_path = node.skeleton_path
+				head_hidden_node.set_meta("layers", 2) # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.set_meta("first_person_flag", "head_removed")
+				# HACK:
+				var meta_hack_skin = head_hidden_node.skin.duplicate()
+				meta_hack_skin.set_meta("layers", head_hidden_node.get_meta("layers"))
+				meta_hack_skin.set_meta("first_person_flag", head_hidden_node.get_meta("first_person_flag"))
+				head_hidden_node.skin = meta_hack_skin
+				# End HACK
+				node.add_sibling(head_hidden_node)
+				head_hidden_node.owner = node.owner
+				var gltf_mesh: GLTFMesh = GLTFMesh.new()
+				gltf_mesh.mesh = head_hidden_mesh
+				# FIXME: do we need to assign gltf_mesh.instance_materials?
+				gstate.meshes.append(gltf_mesh)
+				node_to_head_hidden_node[node] = head_hidden_node
+				layer_mask = 4
+
+			node.set_meta("layers", layer_mask) # ImporterMeshInstance3D is missing APIs.
+			node.set_meta("first_person_flag", flag.substr(0, 1).to_lower() + flag.substr(1))
+
+			# Node and mesh metadata is lost, so we have to store it on the Skin :'-(
+			if node.skin == null:
+				node.skin = Skin.new() # HACK
+			# HACK:
+			var meta_hack_skin = node.skin.duplicate()
+			meta_hack_skin.set_meta("layers", node.get_meta("layers"))
+			meta_hack_skin.set_meta("first_person_flag", node.get_meta("first_person_flag"))
+			node.skin = meta_hack_skin
+
 
 	if firstperson.get("lookAtTypeName", "") == "Bone":
 		var horizout = firstperson["lookAtHorizontalOuter"]

@@ -470,13 +470,13 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 
 	return anim
 
-func _recurse_bones(bones: Dictionary, skel: Skeleton3D, bone_idx: int):
+static func _recurse_bones(bones: Dictionary, skel: Skeleton3D, bone_idx: int):
 	bones[skel.get_bone_name(bone_idx)] = bone_idx
 	for child in skel.get_bone_children(bone_idx):
 		_recurse_bones(bones, skel, child)
 
 
-func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide: Dictionary) -> ImporterMesh:
+static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide: Dictionary) -> ImporterMesh:
 	var bind_indices_to_hide: Dictionary = {}
 	
 	for i in range(skin.get_bind_count()):
@@ -517,7 +517,7 @@ func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide
 			for i in range(vert_arr_len):
 				var keepvert = true
 				for j in range(bones_per_vert):
-					if bind_indices_to_hide.has(bonearr[i + j * bones_per_vert]):
+					if bind_indices_to_hide.has(bonearr[i * bones_per_vert + j]):
 						hide_verts[i] = 1
 						did_hide_verts = true
 						did_hide_any_surface_verts = true
@@ -652,17 +652,24 @@ func _create_animation_player(
 				layer_mask = 4
 			elif flag == "firstPersonOnly":
 				layer_mask = 2
-				
-			if flag == "auto": # If it is still "auto", we have something to hide.
+
+			if flag == "auto" and head_hidden_mesh != mesh: # If it is still "auto", we have something to hide.
 				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
 				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
 				head_hidden_node.name = node.name + " (Headless)"
 				head_hidden_node.skin = node.skin
 				head_hidden_node.mesh = head_hidden_mesh
 				head_hidden_node.skeleton_path = node.skeleton_path
-				head_hidden_node.owner = node.owner
 				head_hidden_node.set_meta("layers", 2) # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.set_meta("first_person_flag", "head_removed")
+				# HACK:
+				var meta_hack_skin = head_hidden_node.skin.duplicate()
+				meta_hack_skin.set_meta("layers", head_hidden_node.get_meta("layers"))
+				meta_hack_skin.set_meta("first_person_flag", head_hidden_node.get_meta("first_person_flag"))
+				head_hidden_node.skin = meta_hack_skin
+				# End HACK
 				node.add_sibling(head_hidden_node)
+				head_hidden_node.owner = node.owner
 				var gltf_mesh: GLTFMesh = GLTFMesh.new()
 				gltf_mesh.mesh = head_hidden_mesh
 				# FIXME: do we need to assign gltf_mesh.instance_materials?
@@ -671,7 +678,16 @@ func _create_animation_player(
 				layer_mask = 4
 
 			node.set_meta("layers", layer_mask) # ImporterMeshInstance3D is missing APIs.
+			node.set_meta("first_person_flag", flag)
 
+			# Node and mesh metadata is lost, so we have to store it on the Skin :'-(
+			if node.skin == null:
+				node.skin = Skin.new() # HACK
+			# HACK:
+			var meta_hack_skin = node.skin.duplicate()
+			meta_hack_skin.set_meta("layers", node.get_meta("layers"))
+			meta_hack_skin.set_meta("first_person_flag", node.get_meta("first_person_flag"))
+			node.skin = meta_hack_skin
 
 	var expressions = vrm_extension.get("expressions", {})
 	# FIXME: Do we need to handle multiple references to the same mesh???
@@ -824,30 +840,6 @@ func _create_animation_player(
 	return animplayer
 
 func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState):
-
-	var first_person = {}
-	var mesh_annotations = []
-
-	var nodes = gstate.nodes
-	for node_idx in range(len(nodes)):
-		var gltf_node: GLTFNode = nodes[node_idx]
-		var node: Node = gstate.get_scene_node(node_idx)
-		if node is ImporterMeshInstance3D:
-			var layers = node.get_meta("layers", 0) # ImporterMeshInstance3D is missing APIs.
-			var mesh_annotation = {"node": node_idx}
-			if layers == 2:
-				mesh_annotation["firstPersonType"] = "firstPersonOnly"
-			elif layers == 4:
-				mesh_annotation["firstPersonType"] = "thirdPersonOnly"
-			elif layers == 6:
-				mesh_annotation["firstPersonType"] = "both"
-			else:
-				mesh_annotation["firstPersonType"] = "auto"
-			mesh_annotations.append(mesh_annotation)
-
-	first_person["meshAnnotations"] = mesh_annotations
-	vrm_extension["firstPerson"] = first_person
-
 	if animplayer.has_animation("lookLeft") and animplayer.has_animation("lookUp") and animplayer.has_animation("lookDown"):
 		var look_left_anim: Animation = animplayer.get_animation("lookLeft")
 		var look_up_anim: Animation = animplayer.get_animation("lookUp")
@@ -892,6 +884,7 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 			look_at["rangeMapVerticalUp"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
 			look_length = look_down_anim.track_get_key_time(0, 0)
 			look_at["rangeMapVerticalDown"] = {"inputMaxValue": look_length * 180.0, "outputScale": 1.0}
+		vrm_extension["lookAt"] = look_at
 
 	# TODO: port VRM 0.0 names.
 	var presets: Dictionary = {}
@@ -899,10 +892,13 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	var mat_lookup: Dictionary = {}
 	var gltf_materials: Array[Material] = gstate.materials
 	var shader_to_standard_material: Dictionary = gstate.get_meta("shader_to_standard_material")
+	print(shader_to_standard_material)
 	for i in range(len(gltf_materials)):
 		if shader_to_standard_material.has(gltf_materials[i]):
 			mat_lookup[shader_to_standard_material[gltf_materials[i]]] = i
 		mat_lookup[gltf_materials[i]] = i
+	print(mat_lookup)
+	print(gltf_materials)
 	var mesh_bs_lookup: Dictionary = {}
 	var gltf_meshes: Array[GLTFMesh] = gstate.meshes
 	for i in range(len(gltf_meshes)):
@@ -942,9 +938,11 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 			var meshinst: Node = animplayer.get_parent().get_node(NodePath(str(anim_path.get_concatenated_names())))
 			var val = anim.track_get_key_value(i, 0)
 			if anim.track_get_type(i) == Animation.TYPE_BLEND_SHAPE:
+				print("Found blend shape")
 				var gltf_blendshape_idx = mesh_bs_lookup[meshinst.mesh][anim_path.get_subname(0)]
 				morph_target_binds.push_back({"node": gstate.get_node_index(meshinst), "index": gltf_blendshape_idx, "weight": val})
 			elif anim.track_get_type(i) == Animation.TYPE_VALUE:
+				print("Found value")
 				if anim_path.get_subname_count() < 3 or anim_path.get_subname(0) != "mesh" or not anim_path.get_subname(1).begins_with("surface_") or not anim_path.get_subname(1).ends_with("/material"):
 					push_warning("Ignoring unsupported animation value track " + str(anim_path))
 					continue
@@ -1132,6 +1130,14 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 			var mesh: MeshInstance3D = meshx
 			if mesh.skin != null:
 				skins[mesh.skin] = true
+			if mesh.has_meta("first_person_flag") and mesh.get_meta("first_person_flag") == "head_removed":
+				mesh.get_parent().remove_child(mesh)
+				mesh.queue_free()
+			elif mesh.skin != null and mesh.skin.has_meta("first_person_flag") and mesh.skin.get_meta("first_person_flag") == "head_removed":
+				# HACK (ImporterMesh api limit)
+				mesh.get_parent().remove_child(mesh)
+				mesh.queue_free()
+
 		for skinx in skins:
 			var skin: Skin = skinx
 			for b in range(skin.get_bind_count()):
@@ -1215,6 +1221,10 @@ func _export_post(gstate: GLTFState) -> Error:
 		#print(orig_children)
 
 	var gltf_nodes: Array[GLTFNode] = gstate.nodes
+	var godot_node_to_gltf_mesh_node_idx: Dictionary = {}
+	for i in range(len(gltf_nodes)):
+		if gltf_nodes[i].mesh != -1:
+			godot_node_to_gltf_mesh_node_idx[gstate.get_scene_node(i)] = i
 
 	var vrm_extension: Dictionary = gstate.get_meta("vrm_extension")
 	vrm_extension["specVersion"] = "1.0"
@@ -1222,6 +1232,8 @@ func _export_post(gstate: GLTFState) -> Error:
 		json["extensions"] = {}
 	json["extensions"]["VRMC_vrm"] = vrm_extension
 	_export_meta(root_node.vrm_meta, vrm_extension, gstate)
+	# FIXME: despite more than one material in use, only one material is in json["materials"]
+	print(json.get("materials"))
 
 	var orig_bone_map: BoneMap = root_node.vrm_meta.humanoid_bone_mapping
 	var orig_bone_name_dict: Dictionary = {}
@@ -1261,14 +1273,34 @@ func _export_post(gstate: GLTFState) -> Error:
 		push_error("Export post failed to find vrm humanBones in VRMC_vrm extension")
 		return ERR_INVALID_DATA
 	# firstPerson
+	var first_person = {}
+	var mesh_annotations = []
+
+	var nodes = gstate.nodes
+	for node_idx in range(len(nodes)):
+		var gltf_node: GLTFNode = nodes[node_idx]
+		var node: Node = gstate.get_scene_node(node_idx)
+		if node is ImporterMeshInstance3D or node is MeshInstance3D:
+			var first_person_flag: String = "auto"
+			if node.has_meta("first_person_flag"):
+				first_person_flag = node.get_meta("first_person_flag")
+			elif node.skin != null and node.skin.has_meta("first_person_flag"): # HACK (ImporterMesh api limit)
+				first_person_flag = node.skin.get_meta("first_person_flag")
+			var mesh_annotation = {"node": node_idx, "firstPersonFlag": first_person_flag }
+			mesh_annotations.append(mesh_annotation)
+
+	first_person["meshAnnotations"] = mesh_annotations
+	vrm_extension["firstPerson"] = first_person
+
 	# lookAt
 	var look_at: Dictionary = {}
+	if vrm_extension.has("lookAt"):
+		look_at = vrm_extension["lookAt"]
 	var look_offset: Vector3 = gstate.get_meta("look_offset")
 	if look_offset.is_equal_approx(Vector3.ZERO):
 		push_warning("Model must have a Head bone attachment with a child LookOffset.")
 	look_at["offsetFromHeadBone"] = [look_offset.x, look_offset.y, look_offset.z]
 	vrm_extension["lookAt"] = look_at
-	# expressions
 
 	return OK
 
