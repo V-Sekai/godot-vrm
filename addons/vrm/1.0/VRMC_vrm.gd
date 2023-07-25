@@ -212,22 +212,6 @@ func _create_meta(
 	#var animPath: NodePath = root_node.get_path_to(animplayer)
 	#root_node.set("vrm_animplayer", animPath)
 
-	var firstperson = vrm_extension.get("lookAt", null)
-	var eyeOffset: Vector3
-
-	if firstperson:
-		# FIXME: Technically this is supposed to be offset relative to the "firstPersonBone"
-		# However, firstPersonBone defaults to Head...
-		# and the semantics of a VR player having their viewpoint out of something which does
-		# not rotate with their head is unclear.
-		# Additionally, the spec schema says this:
-		# "It is assumed that an offset from the head bone to the VR headset is added."
-		# Which implies that the Head bone is used, not the firstPersonBone.
-		var fpboneoffsetxyz = firstperson["offsetFromHeadBone"]  # example: 0,0.06,0
-		eyeOffset = Vector3(fpboneoffsetxyz[0], fpboneoffsetxyz[1], fpboneoffsetxyz[2])
-		if human_bone_to_idx["head"] != -1:
-			eyeOffset = pose_diffs[human_bone_to_idx["head"]] * eyeOffset
-
 	vrm_meta = vrm_meta_class.new()
 
 	vrm_meta.resource_name = "CLICK TO SEE METADATA"
@@ -260,7 +244,6 @@ func _create_meta(
 		vrm_meta.third_party_licenses = vrm_extension["meta"].get("thirdPartyLicenses", "")
 		vrm_meta.other_license_url = vrm_extension["meta"].get("otherLicenseUrl", "")
 
-	vrm_meta.eye_offset = eyeOffset
 	vrm_meta.humanoid_bone_mapping = humanBones
 	return vrm_meta
 
@@ -629,7 +612,7 @@ func _create_animation_player(
 			var look_offset = Vector3(0,0,0)
 			if lookAt.has("offsetFromHeadBone"):
 				var gltf_look_offset = lookAt["offsetFromHeadBone"]
-				look_offset = Vector3(gltf_look_offset[0], gltf_look_offset[1], gltf_look_offset[2])
+				look_offset = pose_diffs[skel.find_bone("Head")] * Vector3(gltf_look_offset[0], gltf_look_offset[1], gltf_look_offset[2])
 			elif lefteye >= 0 and righteye >= 0:
 				look_offset = skel.get_bone_rest(lefteye).origin.lerp(skel.get_bone_rest(righteye).origin, 0.5)
 			head_bone_offset.position = look_offset
@@ -915,7 +898,10 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	var custom: Dictionary = {}
 	var mat_lookup: Dictionary = {}
 	var gltf_materials: Array[Material] = gstate.materials
+	var shader_to_standard_material: Dictionary = gstate.get_meta("shader_to_standard_material")
 	for i in range(len(gltf_materials)):
+		if shader_to_standard_material.has(gltf_materials[i]):
+			mat_lookup[shader_to_standard_material[gltf_materials[i]]] = i
 		mat_lookup[gltf_materials[i]] = i
 	var mesh_bs_lookup: Dictionary = {}
 	var gltf_meshes: Array[GLTFMesh] = gstate.meshes
@@ -929,8 +915,9 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	for meshinst in mesh_instances:
 		var mesh: Mesh = meshinst.mesh
 		var blend_shape_to_idx: Dictionary = {}
-		for bsi in range(mesh.get_blend_shape_count()):
-			blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
+		if mesh is ArrayMesh:
+			for bsi in range(mesh.get_blend_shape_count()):
+				blend_shape_to_idx[mesh.get_blend_shape_name(bsi)] = bsi
 		mesh_bs_lookup[mesh] = blend_shape_to_idx
 	mesh_instances = animplayer.get_parent().find_children("*", "ImporterMeshInstance3D")
 	for meshinst in mesh_instances:
@@ -948,6 +935,8 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 		var morph_target_binds = []
 		var material_color_binds = []
 		var anim: Animation = animplayer.get_animation(exp)
+		if anim.get_track_count() == 0:
+			continue
 		for i in range(anim.get_track_count()):
 			var anim_path = anim.track_get_path(i)
 			var meshinst: Node = animplayer.get_parent().get_node(NodePath(str(anim_path.get_concatenated_names())))
@@ -956,6 +945,9 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 				var gltf_blendshape_idx = mesh_bs_lookup[meshinst.mesh][anim_path.get_subname(0)]
 				morph_target_binds.push_back({"node": gstate.get_node_index(meshinst), "index": gltf_blendshape_idx, "weight": val})
 			elif anim.track_get_type(i) == Animation.TYPE_VALUE:
+				if anim_path.get_subname_count() < 3 or anim_path.get_subname(0) != "mesh" or not anim_path.get_subname(1).begins_with("surface_") or not anim_path.get_subname(1).ends_with("/material"):
+					push_warning("Ignoring unsupported animation value track " + str(anim_path))
+					continue
 				var material_idx = int(anim_path.get_subname(1).split("/")[0].split("_")[1])
 				var gltf_material_idx: int
 				if meshinst is ImporterMeshInstance3D:
@@ -997,7 +989,8 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 						tex_bind["offset"] = [val.z, val.w]
 					elif shader_prop == "uv1_scale":
 						tex_bind["scale"] = [val.x, val.y]
-
+		if morph_target_binds.is_empty() or material_color_binds.is_empty() or texture_transform_binds.is_empty():
+			continue
 		expression["morphTargetBinds"] = morph_target_binds
 		expression["materialColorBinds"] = material_color_binds
 		expression["textureTransformBinds"] = texture_transform_binds.values()
@@ -1092,10 +1085,11 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 				anim_player = n
 				break
 	if anim_player != null:
-		_export_animations(root, humanoid_skeleton, anim_player, vrm_extension, gstate)
-		anim_player.get_parent().remove_child(anim_player)
-		anim_player.queue_free()
+		gstate.set_meta("anim_player", anim_player)
+		anim_player.owner = null
+		root.remove_child(anim_player)
 	gstate.set_meta("vrm_extension", vrm_extension)
+	gstate.set_meta("look_offset", Vector3.ZERO)
 
 	gstate.add_used_extension("VRMC_vrm", false)
 	var skels = root.find_children("*", "Skeleton3D")
@@ -1146,6 +1140,18 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 				var bind_bone = skin.get_bind_bone(b)
 				if bind_bone != -1 and bind_bone > root_bone:
 					skin.set_bind_bone(b, bind_bone - 1)
+		print(skel.get_children())
+		for ch in skel.find_children("*", "BoneAttachment3D"):
+			print("Look Off2 " + str(ch.name))
+			var attach: BoneAttachment3D = ch as BoneAttachment3D
+			if attach.bone_name == "Head" or attach.bone_idx == skel.find_bone("Head"):
+				var look_offset: Node3D = attach.get_node("LookOffset") as Node3D
+				print("Look Off1 ")
+				if look_offset != null:
+					gstate.set_meta("look_offset", look_offset.position)
+					attach.remove_child(look_offset)
+					look_offset.queue_free()
+
 	#var ps:PackedScene = PackedScene.new()
 	#ps.pack(root)
 	#ResourceSaver.save(ps, "res://saved_outgoing_vrm.tscn", ResourceSaver.FLAG_REPLACE_SUBRESOURCE_PATHS)
@@ -1199,14 +1205,14 @@ func _export_post(gstate: GLTFState) -> Error:
 	if len(gltf_root_nodes) == 1:
 		var orig_gltf_root_node: Dictionary = json["nodes"][gltf_root_nodes[0]]
 		var orig_children: Array = orig_gltf_root_node["children"]
-		print("Orig root: " + orig_gltf_root_node["name"])
-		print("First child: " + json["nodes"][orig_children[0]]["name"])
+		#print("Orig root: " + orig_gltf_root_node["name"])
+		#print("First child: " + json["nodes"][orig_children[0]]["name"])
 		orig_gltf_root_node["name"] = "_unused" # Removing nodes in glTF is very difficulty.
 		orig_gltf_root_node.erase("children")
 		gltf_root_nodes.clear()
 		gltf_root_nodes.append_array(orig_children)
-		print(gltf_root_nodes)
-		print(orig_children)
+		#print(gltf_root_nodes)
+		#print(orig_children)
 
 	var gltf_nodes: Array[GLTFNode] = gstate.nodes
 
@@ -1226,6 +1232,13 @@ func _export_post(gstate: GLTFState) -> Error:
 				orig_bone_name_dict[orig_bone_map.profile.get_bone_name(i)] = bn
 
 	var humanoid_skeleton: Skeleton3D = _get_humanoid_skel(root_node)
+
+	var anim_player = gstate.get_meta("anim_player")
+	if anim_player != null:
+		root_node.add_child(anim_player)
+		anim_player.owner = root_node
+		_export_animations(root_node, humanoid_skeleton, anim_player, vrm_extension, gstate)
+
 	var humanoid_bone_mapping: Dictionary = _validate_humanoid(root_node)
 	var godot_bone_to_gltf_node_map: Dictionary
 	var human_bones: Dictionary = {}
@@ -1249,6 +1262,12 @@ func _export_post(gstate: GLTFState) -> Error:
 		return ERR_INVALID_DATA
 	# firstPerson
 	# lookAt
+	var look_at: Dictionary = {}
+	var look_offset: Vector3 = gstate.get_meta("look_offset")
+	if look_offset.is_equal_approx(Vector3.ZERO):
+		push_warning("Model must have a Head bone attachment with a child LookOffset.")
+	look_at["offsetFromHeadBone"] = [look_offset.x, look_offset.y, look_offset.z]
+	vrm_extension["lookAt"] = look_at
 	# expressions
 
 	return OK

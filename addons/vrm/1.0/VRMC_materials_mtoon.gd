@@ -140,7 +140,7 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 		for m in range(mesh.mesh.get_surface_count()):
 			var mat: Material = mesh.mesh.get_surface_material(m)
 			if mat is ShaderMaterial:
-				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon_"):
+				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon"):
 					uses_mtoon = true
 					if not materials.has(mat):
 						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
@@ -153,7 +153,7 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 			if mat == null:
 				mat = mesh.mesh.surface_get_material(m)
 			if mat is ShaderMaterial:
-				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon_"):
+				if mat.shader != null and mat.shader.resource_path.get_file().begins_with("mtoon"):
 					uses_mtoon = true
 					if not materials.has(mat):
 						materials[mat] = _prepare_material_for_export(gltf_samp, gltf_tex, texdic, standard_textures, mat)
@@ -173,6 +173,7 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 		gltf_images.push_back(tex)
 	state.images = gltf_images # Any textures not used by a StandardMaterial3D are our responsibility.
 	state.set_meta("texture_dictionary", texdic)
+	state.set_meta("shader_to_standard_material", materials)
 	return OK
 
 func _to_gltf_color(c: Variant):

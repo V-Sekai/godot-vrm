@@ -35,6 +35,9 @@ const export_as_id: int = 0x56524d31 # 'VRM1'
 var file_export_lib: EditorFileDialog
 var accept_dialog: AcceptDialog
 
+var selected_nodes: Array[Node]
+var current_export_node: Node
+
 func _export_vrm_pressed():
 	var root = get_tree().get_edited_scene_root()
 	if not root:
@@ -43,12 +46,54 @@ func _export_vrm_pressed():
 		get_editor_interface().popup_dialog_centered(accept_dialog)
 		return
 
-	var filename: String = root.get_scene_file_path().get_file().get_basename()
-	if filename.is_empty():
-		filename = root.get_name()
-	file_export_lib.set_current_file(filename + ".vrm")
-	file_export_lib.popup_centered_ratio()
+	selected_nodes = get_editor_interface().get_selection().get_selected_nodes()
+	for selnode in selected_nodes:
+		if selnode.script != vrm_top_level:
+			var bleh: Array[Node]
+			selected_nodes = bleh
+			break
+	if selected_nodes.is_empty():
+		var bleh: Array[Node]
+		selected_nodes = bleh
+		selected_nodes.append(get_tree().get_edited_scene_root())
+		var filename: String = root.get_scene_file_path().get_file().get_basename()
+		if filename.is_empty():
+			filename = root.get_name()
+		file_export_lib.set_current_file(filename + ".vrm")
+		file_export_lib.popup_centered_ratio()
+	else:
+		for node in selected_nodes:
+			if node.script != vrm_top_level:
+				accept_dialog.dialog_text = "VRM Export requires the selected or top-level node to contain a vrm_top_level script with meta."
+				accept_dialog.ok_button_text = "OK"
+				get_editor_interface().popup_dialog_centered(accept_dialog)
+				selected_nodes.clear()
+				break
+			var meta: vrm_meta_class = node.vrm_meta
+			var failed_validate: PackedStringArray = VRMC_vrm._validate_meta(meta)
+			if node.vrm_meta == null:
+				node.vrm_meta = vrm_meta_class.new()
+			if not failed_validate.is_empty():
+				var res_path = meta.resource_path.split("::")[0]
+				if not res_path.is_empty() and (not res_path.begins_with("res://") or FileAccess.file_exists(res_path + ".import")):
+					node.vrm_meta = node.vrm_meta.duplicate(true)
+				get_editor_interface().inspect_object(node.vrm_meta)
+				accept_dialog.dialog_text = "VRM Export requires filling out license dropdowns and basic data:\n" + ",".join(failed_validate) + "\n\nExpand CLICK TO SEE METADATA in the Inspector"
+				accept_dialog.ok_button_text = "OK"
+				get_editor_interface().popup_dialog_centered(accept_dialog)
+				selected_nodes.clear()
+				break
+		_popup_next_node_export()
 
+func _popup_next_node_export():
+	if not selected_nodes.is_empty():
+		current_export_node = selected_nodes[-1]
+		selected_nodes.pop_back()
+		var filename: String = current_export_node.get_scene_file_path().get_file().get_basename()
+		if filename.is_empty():
+			filename = current_export_node.get_name()
+		file_export_lib.set_current_file(filename + ".vrm")
+		file_export_lib.popup_centered_ratio()
 
 func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
 	if node == new_owner:
@@ -59,67 +104,70 @@ func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
 		return
 	else:
 		node.owner = new_owner
-		print(node.name + " assigned to owner " + node.owner.name)
-	print("Node " + str(node.name) + " orig child " + str(orig_node.get_child_count()) + " new child " + str(node.get_child_count()))
+		#print(node.name + " assigned to owner " + node.owner.name)
+	#print("Node " + str(node.name) + " orig child " + str(orig_node.get_child_count()) + " new child " + str(node.get_child_count()))
 	for i in range(node.get_child_count()):
 		reassign_owner(new_owner, orig_node.get_child(i), node.get_child(i))
 
-func _export_vrm_dialog_action(path: String):
-	var selected_nodes: Array[Node] = get_editor_interface().get_selection().get_selected_nodes()
-	for selnode in selected_nodes:
-		if selnode.script != vrm_top_level:
-			var bleh: Array[Node]
-			selected_nodes = bleh
-			break
-	if selected_nodes.is_empty():
-		var bleh: Array[Node]
-		selected_nodes = bleh
-		selected_nodes.append(get_tree().get_edited_scene_root())
-	for root in selected_nodes:
-		if root.script != vrm_top_level:
-			accept_dialog.dialog_text = "VRM Export requires the selected or top-level node to contain a vrm_top_level script with meta."
-			accept_dialog.ok_button_text = "OK"
-			get_editor_interface().popup_dialog_centered(accept_dialog)
-			continue
-		var meta: vrm_meta_class = root.vrm_meta
-		var failed_validate: PackedStringArray = VRMC_vrm._validate_meta(meta)
-		if root.vrm_meta == null:
-			root.vrm_meta = vrm_meta_class.new()
-		if not failed_validate.is_empty():
-			accept_dialog.dialog_text = "VRM Export requires filling out license dropdowns and basic data:\n" + ",".join(failed_validate) + "\n\nExpand CLICK TO SEE METADATA in the Inspector"
-			accept_dialog.ok_button_text = "OK"
-			get_editor_interface().popup_dialog_centered(accept_dialog)
-			continue
-		print("Before duplicate")
-		var new_root: Node = root.duplicate(Node.DUPLICATE_SIGNALS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
-		reassign_owner(new_root, root, new_root)
-		root = new_root
-		print("After duplicate")
-		var secondary: Node3D
-		if not root.has_node("secondary"):
-			secondary = Node3D.new()
-			secondary.owner = root
-			root.add_child(secondary)
+func remove_internals(node: Node, to_reparent: Dictionary):
+	for chld in node.get_children():
+		if chld.owner == null:
+			to_reparent[chld] = node
+			node.remove_child(chld)
 		else:
-			secondary = root.get_node("secondary")
-		if secondary.script == null:
-			secondary.script = vrm_secondary
+			remove_internals(chld, to_reparent)
 
-		var gltf_doc = GLTFDocument.new()
-		var gltf_state = GLTFState.new()
-		gltf_state.set_meta("vrm", "1.0")
-		var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
-		print("Do append_from_scene")
-		if gltf_doc.append_from_scene(root, gltf_state, flags) != OK:
-			push_error("VRM scene save error!")
-		print("Do write_to_filesystem")
-		var tmp_filename: String = path + ".tmp.glb"
-		if gltf_doc.write_to_filesystem(gltf_state, tmp_filename) != OK:
-			push_error("VRM scene save error!")
-		var da: DirAccess = DirAccess.open("res://")
-		da.rename(tmp_filename, path)
-		print("All done!")
-		root.queue_free()
+func _export_vrm_dialog_action(path: String):
+	var root: Node = current_export_node
+	current_export_node = null
+	if root.script != vrm_top_level:
+		accept_dialog.dialog_text = "VRM Export requires the selected or top-level node to contain a vrm_top_level script with meta."
+		accept_dialog.ok_button_text = "OK"
+		get_editor_interface().popup_dialog_centered(accept_dialog)
+		return
+	print("Before duplicate")
+	var to_reparent: Dictionary = {}
+	# Before:
+	# ERROR: Index p_index = 4 is out of bounds ((int)data.children_cache.size() - data.internal_children_front_count_cache - data.internal_children_back_count_cache = 3).
+	# at: Node::get_child (scene\main\node.cpp:1511)
+	remove_internals(root, to_reparent)
+	var new_root: Node = root.duplicate(Node.DUPLICATE_SIGNALS | Node.DUPLICATE_GROUPS | Node.DUPLICATE_SCRIPTS)
+	for chld in to_reparent:
+		to_reparent[chld].add_child(chld)
+	reassign_owner(new_root, root, new_root)
+	root = new_root
+	print("After duplicate")
+	var secondary: Node3D
+	if not root.has_node("secondary"):
+		secondary = Node3D.new()
+		secondary.owner = root
+		root.add_child(secondary)
+	else:
+		secondary = root.get_node("secondary")
+	if secondary.script == null:
+		secondary.script = vrm_secondary
+
+	var gltf_doc = GLTFDocument.new()
+	var gltf_state = GLTFState.new()
+	gltf_state.set_meta("vrm", "1.0")
+	var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
+	print("Do append_from_scene")
+	if gltf_doc.append_from_scene(root, gltf_state, flags) != OK:
+		push_error("VRM scene save error!")
+	print("Do write_to_filesystem")
+	var tmp_filename: String = path + ".tmp.glb"
+	if gltf_doc.write_to_filesystem(gltf_state, tmp_filename) != OK:
+		push_error("VRM scene save error!")
+	var da: DirAccess = DirAccess.open("res://")
+	da.rename(tmp_filename, path)
+	print("All done!")
+	root.queue_free()
+	_popup_next_node_export()
+	print(path)
+
+	if ProjectSettings.localize_path(path) != "":
+		get_editor_interface().get_resource_filesystem().update_file(path)
+		get_editor_interface().get_resource_filesystem().reimport_files(PackedStringArray([path]))
 
 func _enter_tree() -> void:
 	accept_dialog = AcceptDialog.new()

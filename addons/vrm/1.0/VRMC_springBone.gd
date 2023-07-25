@@ -293,7 +293,6 @@ func _export_post(state: GLTFState):
 			}}
 		var node_idx: int
 		if collider.bone != "":
-			print("LOoking up " + str(collider.bone))
 			node_idx = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(collider.bone)]
 		else:
 			# FIXME: This case should perhaps no longer be supported.

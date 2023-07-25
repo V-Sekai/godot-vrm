@@ -608,6 +608,24 @@ func _create_meta(
 		eyeOffset = Vector3(fpboneoffsetxyz["x"], fpboneoffsetxyz["y"], fpboneoffsetxyz["z"])
 		if human_bone_to_idx["head"] != -1:
 			eyeOffset = pose_diffs[human_bone_to_idx["head"]] * eyeOffset
+		var head_attach: BoneAttachment3D = null
+		for child in skeleton.find_children("*", "BoneAttachment3D"):
+			var child_attach: BoneAttachment3D = child as BoneAttachment3D
+			if child_attach.bone_name == "Head":
+				head_attach = child_attach
+				break
+		if head_attach == null:
+			head_attach = BoneAttachment3D.new()
+			head_attach.name = "Head"
+			skeleton.add_child(head_attach)
+			head_attach.owner = skeleton.owner
+			head_attach.bone_name = "Head"
+			var head_bone_offset: Node3D = Node3D.new()
+			head_bone_offset.name = "LookOffset"
+			head_attach.add_child(head_bone_offset)
+			head_bone_offset.unique_name_in_owner = true
+			head_bone_offset.owner = skeleton.owner
+			head_bone_offset.position = eyeOffset
 
 	vrm_meta = vrm_meta_class.new()
 
@@ -645,7 +663,6 @@ func _create_meta(
 			vrm_meta.allow_redistribution = "Disallow"
 		vrm_meta.other_license_url = vrm_extension["meta"].get("otherLicenseUrl", "")
 
-	vrm_meta.eye_offset = eyeOffset
 	vrm_meta.humanoid_bone_mapping = humanBones
 	return vrm_meta
 

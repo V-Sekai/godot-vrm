@@ -70,10 +70,6 @@ extends Resource
 # We may need to store it somewhere in case we wish to re-export.
 @export var humanoid_bone_mapping: BoneMap  # VRM boneName -> bone name (within skeleton)
 
-# firstPersonBoneOffset:
-# The target position of the VR headset in first-person view.
-# It is assumed that an offset from the head bone to the VR headset is added.
-@export var eye_offset: Vector3
 # NOTE: Mouth offset is not stored in any model metadata.
 # As an alternative, we could get the centroid of vertices moved by viseme blend shapes.
 # But for now, users should assume same as eyeOffset with y=0 (relative to head)
