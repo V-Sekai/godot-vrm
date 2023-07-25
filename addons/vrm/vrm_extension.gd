@@ -406,14 +406,14 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	var new_mat : ShaderMaterial = ShaderMaterial.new()
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
+	var outline_mat: ShaderMaterial = null
 	if godot_shader_outline == null:
 		new_mat.next_pass = null
 	else:
-		if new_mat.next_pass == null:
-			new_mat.next_pass = null
-		else:
-			new_mat.next_pass = new_mat.next_pass.duplicate()
-	var outline_mat: ShaderMaterial = new_mat.next_pass
+		outline_mat = ShaderMaterial.new()
+		outline_mat.resource_name = orig_mat.resource_name + "_Outline"
+		outline_mat.shader = godot_shader_outline
+		new_mat.next_pass = outline_mat
 
 	var texture_repeat = Vector4(maintex_info["scale"].x, maintex_info["scale"].y, maintex_info["offset"].x, maintex_info["offset"].y)
 	new_mat.set_shader_parameter("_MainTex_ST", texture_repeat)
@@ -494,7 +494,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 		var oldmat: Material = materials[i]
 		if oldmat is ShaderMaterial:
 			# Indicates that the user asked to keep existing materials. Avoid changing them.
-			print("Material " + str(i) + ": " + str(oldmat.resource_name) + " already is shader.")
+			# print("Material " + str(i) + ": " + str(oldmat.resource_name) + " already is shader.")
 			continue
 		var newmat: Material = _process_khr_material(oldmat, gstate.json["materials"][i])
 		var vrm_mat_props: Dictionary = vrm_extension["materialProperties"][i]
@@ -669,6 +669,26 @@ func _create_meta(
 	return vrm_meta
 
 
+const vrm0_to_vrm1_presets: Dictionary = {
+		"joy": "happy",
+		"angry": "angry",
+		"sorrow": "sad",
+		"fun": "relaxed",
+		"a": "aa",
+		"i": "ih",
+		"u": "ou",
+		"e": "ee",
+		"o": "oh",
+		"blink": "blink",
+		"blink_l": "blinkLeft",
+		"blink_r": "blinkRight",
+		"lookup": "lookUp",
+		"lookdown": "lookDown",
+		"lookleft": "lookLeft",
+		"lookright": "lookRight",
+		"neutral": "neutral",
+}
+
 func _create_animation_player(
 	animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]
 ) -> AnimationPlayer:
@@ -699,6 +719,11 @@ func _create_animation_player(
 			var scenenode: ImporterMeshInstance3D = gstate.get_scene_node(i)
 			mesh_idx_to_meshinstance[mesh_idx] = scenenode
 			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
+
+	var firstperson = vrm_extension["firstPerson"]
+
+	var reset_anim = Animation.new()
+	reset_anim.resource_name = "RESET"
 
 	for shape in blend_shape_groups:
 		#print("Blend shape group: " + shape["name"])
@@ -734,8 +759,11 @@ func _create_animation_player(
 				var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
 				anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":mesh:surface_" + str(surface_idx) + "/material:" + paramprop)
 				anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
-				anim.track_insert_key(animtrack, 0.0, origvalue)
 				anim.track_insert_key(animtrack, 0.0, newvalue)
+				animtrack = reset_anim.add_track(Animation.TYPE_VALUE)
+				reset_anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":mesh:surface_" + str(surface_idx) + "/material:" + paramprop)
+				reset_anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_NEAREST if bool(shape["isBinary"]) else Animation.INTERPOLATION_LINEAR)
+				reset_anim.track_insert_key(animtrack, 0.0, origvalue)
 		for bind in shape["binds"]:
 			# FIXME: Is this a mesh_idx or a node_idx???
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
@@ -751,21 +779,33 @@ func _create_animation_player(
 			if shape.has("isBinary") and bool(shape["isBinary"]):
 				interpolation = Animation.INTERPOLATION_NEAREST
 			anim.track_set_interpolation_type(animtrack, interpolation)
-			anim.track_insert_key(animtrack, 0.0, float(0.0))
 			# FIXME: Godot has weird normal/tangent singularities at weight=1.0 or weight=0.5
 			# So we multiply by 0.99999 to produce roughly the same output, avoiding these singularities.
-			anim.track_insert_key(animtrack, 1.0, 0.99999 * float(bind["weight"]) / 100.0)
+			anim.track_insert_key(animtrack, 0.0, 0.99999 * float(bind["weight"]) / 100.0)
+			animtrack = reset_anim.add_track(Animation.TYPE_BLEND_SHAPE)
+			# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
+			reset_anim.track_set_path(animtrack, str(animplayer.get_parent().get_path_to(node)) + ":" + str(nodeMesh.get_blend_shape_name(int(bind["index"]))))
+			reset_anim.track_insert_key(animtrack, 0.0, float(0.0))
 			#var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
 			#print("Mesh name: " + mesh.resource_name)
 			#print("Bind index: " + str(bind["index"]))
 			#print("Bind weight: " + str(float(bind["weight"]) / 100.0))
 
 		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
-		animation_library.add_animation(shape["name"].to_upper() if shape["presetName"] == "unknown" else shape["presetName"].to_upper(), anim)
+		if vrm0_to_vrm1_presets.has(shape["presetName"]):
+			anim.resource_name = vrm0_to_vrm1_presets[shape["presetName"]]
+			if shape["presetName"].begins_with("look"):
+				animation_library.add_animation(vrm0_to_vrm1_presets[shape["presetName"]] + "Raw", anim)
+			if firstperson.get("lookAtTypeName", "") != "Bone" or not shape["presetName"].begins_with("look"):
+				animation_library.add_animation(vrm0_to_vrm1_presets[shape["presetName"]], anim)
+		else:
+			if shape["presetName"] == "custom":
+				anim.resource_name = shape["name"]
+				animation_library.add_animation(shape["name"], anim)
+			else:
+				push_warning("Unrecognized preset name " + str(shape))
 
-	var firstperson = vrm_extension["firstPerson"]
-
-	var skeletons: Array = gstate.get_skeletons()
+	var skeletons: Array[GLTFSkeleton] = gstate.get_skeletons()
 
 	var mesh_to_head_hidden_mesh: Dictionary = {}
 	var node_to_head_hidden_node: Dictionary = {}
@@ -776,7 +816,7 @@ func _create_animation_player(
 	if head_bone_idx >= 0:
 		var headNode: GLTFNode = nodes[head_bone_idx]
 		var skel: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton)
-		vrmc_vrm_utils._recurse_bones(head_relative_bones, skel, head_bone_idx)
+		vrmc_vrm_utils._recurse_bones(head_relative_bones, skel, skel.find_bone(headNode.resource_name)) # FIXME: I forget if this is correct
 
 	var mesh_annotations_by_mesh = {}
 	for meshannotation in firstperson.get("meshAnnotations", []):
@@ -849,6 +889,7 @@ func _create_animation_player(
 			node.skin = meta_hack_skin
 
 
+	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI/2, 0, 0))
 	if firstperson.get("lookAtTypeName", "") == "Bone":
 		var horizout = firstperson["lookAtHorizontalOuter"]
 		var horizin = firstperson["lookAtHorizontalInner"]
@@ -869,115 +910,77 @@ func _create_animation_player(
 			var skeletonPath: NodePath = animplayer.get_parent().get_path_to(skeleton)
 			rightEyePath = (str(skeletonPath) + ":" + nodes[human_bone_to_idx["rightEye"]].resource_name)
 
+		if lefteye > 0 and righteye > 0:
+			var animtrack: int = reset_anim.add_track(Animation.TYPE_ROTATION_3D)
+			reset_anim.track_set_path(animtrack, leftEyePath)
+			reset_anim.rotation_track_insert_key(animtrack, 0.0, eye_bone_horizontal)
+			animtrack = reset_anim.add_track(Animation.TYPE_ROTATION_3D)
+			reset_anim.track_set_path(animtrack, rightEyePath)
+			reset_anim.rotation_track_insert_key(animtrack, 0.0, eye_bone_horizontal)
+
 		var anim: Animation = null
-		if not animplayer.has_animation("LOOKLEFT"):
+		if not animplayer.has_animation("lookLeft"):
 			anim = Animation.new()
-			animation_library.add_animation("LOOKLEFT", anim)
+			animation_library.add_animation("lookLeft", anim)
 		else:
-			anim = animplayer.get_animation("LOOKLEFT")
+			anim = animplayer.get_animation("lookLeft")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, horizout["xRange"] / 90.0, (pose_diffs[lefteye] * Basis(Vector3(0, 1, 0), horizout["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, horizout["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizout["yRange"] * PI / 180.0)).get_rotation_quaternion())
 			animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, horizin["xRange"] / 90.0, (pose_diffs[righteye] * Basis(Vector3(0, 1, 0), horizin["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, horizin["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizin["yRange"] * PI / 180.0)).get_rotation_quaternion())
 
-		if not animplayer.has_animation("LOOKRIGHT"):
+		if not animplayer.has_animation("lookRight"):
 			anim = Animation.new()
-			animation_library.add_animation("LOOKRIGHT", anim)
+			animation_library.add_animation("lookRight", anim)
 		else:
-			anim = animplayer.get_animation("LOOKRIGHT")
+			anim = animplayer.get_animation("lookRight")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, horizin["xRange"] / 90.0, (pose_diffs[lefteye] * Basis(Vector3(0, 1, 0), -horizin["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, horizin["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizin["yRange"] * PI / 180.0)).get_rotation_quaternion())
 			animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, horizout["xRange"] / 90.0, (pose_diffs[righteye] * Basis(Vector3(0, 1, 0), -horizout["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, horizout["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizout["yRange"] * PI / 180.0)).get_rotation_quaternion())
 
-		if not animplayer.has_animation("LOOKUP"):
+		if not animplayer.has_animation("lookUp"):
 			anim = Animation.new()
-			animation_library.add_animation("LOOKUP", anim)
+			animation_library.add_animation("lookUp", anim)
 		else:
-			anim = animplayer.get_animation("LOOKUP")
+			anim = animplayer.get_animation("lookUp")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, vertup["xRange"] / 90.0, (pose_diffs[lefteye] * Basis(Vector3(1, 0, 0), vertup["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, vertup["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup["yRange"] * PI / 180.0)).get_rotation_quaternion())
 			animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, vertup["xRange"] / 90.0, (pose_diffs[righteye] * Basis(Vector3(1, 0, 0), vertup["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, vertup["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup["yRange"] * PI / 180.0)).get_rotation_quaternion())
 
-		if not animplayer.has_animation("LOOKDOWN"):
+		if not animplayer.has_animation("lookDown"):
 			anim = Animation.new()
-			animation_library.add_animation("LOOKDOWN", anim)
+			animation_library.add_animation("lookDown", anim)
 		else:
-			anim = animplayer.get_animation("LOOKDOWN")
+			anim = animplayer.get_animation("lookDown")
 		if anim and lefteye > 0 and righteye > 0:
 			var animtrack: int = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, leftEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, vertdown["xRange"] / 90.0, (pose_diffs[lefteye] * Basis(Vector3(1, 0, 0), -vertdown["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
+			anim.rotation_track_insert_key(animtrack, vertdown["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown["yRange"] * PI / 180.0)).get_rotation_quaternion())
 			animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 			anim.track_set_path(animtrack, rightEyePath)
 			anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
-			anim.rotation_track_insert_key(animtrack, 0.0, Quaternion.IDENTITY)
-			(
-				anim
-				. rotation_track_insert_key(
-					animtrack, vertdown["xRange"] / 90.0, (pose_diffs[righteye] * Basis(Vector3(1, 0, 0), -vertdown["yRange"] * 3.14159 / 180.0)).get_rotation_quaternion()
-				)
-			)
-	animplayer.add_animation_library("vrm", animation_library)
+			anim.rotation_track_insert_key(animtrack, vertdown["xRange"] / 90.0, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown["yRange"] * PI / 180.0)).get_rotation_quaternion())
+
+	animation_library.add_animation("RESET", reset_anim)
+	animplayer.add_animation_library("", animation_library)
 	return animplayer
 
 

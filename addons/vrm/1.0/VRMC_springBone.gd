@@ -127,7 +127,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			spring_bone.collider_groups.append(collider_groups[int(cgroup_idx)])
 
 		# Center commonly points outside of the glTF Skeleton, such as the root node.
-		spring_bone.center_node = secondary_node.get_path_to(secondary_node)
+		spring_bone.center_node = NodePath()
 		spring_bone.center_bone = ""
 		var center_node_idx = sbone.get("center", -1)
 		if center_node_idx != -1:
@@ -250,17 +250,29 @@ static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 
 func _export_post(state: GLTFState):
 	var secondary: vrm_secondary = state.get_additional_data("VRMC_springBone")
-	var collider_groups: Array = secondary.collider_groups
-	var spring_bones: Array = secondary.spring_bones
+	var collider_groups: Array[vrm_collider_group] = secondary.collider_groups.duplicate()
+	var spring_bones: Array[vrm_spring_bone] = secondary.spring_bones
 	var skel: Skeleton3D = secondary.get_node(secondary.skeleton)
 
+	var unique_collider_groups: Dictionary = {}
 	var unique_colliders: Dictionary = {}
 	var colliders: Array[vrm_collider] = []
 	for current_group in collider_groups:
+		unique_collider_groups[current_group] = true
 		for collider in current_group.colliders:
 			if collider not in unique_colliders:
 				unique_colliders[collider] = len(colliders)
 				colliders.push_back(collider)
+	for current_spring in spring_bones:
+		for collider_group in current_spring.collider_groups:
+			if unique_collider_groups.has(collider_group):
+				continue
+			unique_collider_groups[collider_group] = true
+			collider_groups.append(collider_group)
+			for collider in collider_group.colliders:
+				if collider not in unique_colliders:
+					unique_colliders[collider] = len(colliders)
+					colliders.push_back(collider)
 
 	var json: Dictionary = state.json
 	var sbone_extension: Dictionary = {}
@@ -346,12 +358,17 @@ func _export_post(state: GLTFState):
 			else:
 				prev_node = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
 			joint["node"] = prev_node
-			joint["hitRadius"] = springbone.hit_radius[i]
-			joint["stiffness"] = springbone.stiffness_force[i]
-			joint["gravityPower"] = springbone.gravity_power[i]
+			if not is_zero_approx(springbone.hit_radius[i]):
+				joint["hitRadius"] = springbone.hit_radius[i]
+			if not is_equal_approx(springbone.stiffness_force[i], 1.0):
+				joint["stiffness"] = springbone.stiffness_force[i]
+			if not is_zero_approx(springbone.gravity_power[i]):
+				joint["gravityPower"] = springbone.gravity_power[i]
 			var grav: Vector3 = springbone.gravity_dir[i]
-			joint["gravityDir"] = [grav[0], grav[1], grav[2]]
-			joint["dragForce"] = springbone.drag_force[i]
+			if not grav.is_equal_approx(Vector3(0,-1,0)) and not is_zero_approx(springbone.gravity_power[i]):
+				joint["gravityDir"] = [grav[0], grav[1], grav[2]]
+			if not is_equal_approx(springbone.drag_force[i], 0.5):
+				joint["dragForce"] = springbone.drag_force[i]
 			joints.push_back(joint)
 		spring["joints"] = joints
 		json_springs.push_back(spring)

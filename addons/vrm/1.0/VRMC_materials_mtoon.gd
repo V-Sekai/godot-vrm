@@ -481,7 +481,7 @@ func _import_post(gstate, root):
 		var oldmat: Material = materials[i]
 		if oldmat is ShaderMaterial:
 			# Indicates that the user asked to keep existing materials. Avoid changing them.
-			print("Material " + str(i) + ": " + str(oldmat.resource_name) + " already is shader.")
+			# print("Material " + str(i) + ": " + str(oldmat.resource_name) + " already is shader.")
 			continue
 		var newmat: Material = oldmat
 		var mat_props: Dictionary = materials_json[i]
