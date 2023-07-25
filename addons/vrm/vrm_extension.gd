@@ -8,6 +8,8 @@ const vrm_collider = preload("./vrm_collider.gd")
 const vrm_spring_bone = preload("./vrm_spring_bone.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
 
+const importer_mesh_attributes = preload("./importer_mesh_attributes.gd")
+
 const vrmc_vrm_utils = preload("./1.0/VRMC_vrm.gd")
 
 var vrm_meta: Resource = null
@@ -859,14 +861,10 @@ func _create_animation_player(
 				head_hidden_node.skin = node.skin
 				head_hidden_node.mesh = head_hidden_mesh
 				head_hidden_node.skeleton_path = node.skeleton_path
-				head_hidden_node.set_meta("layers", 2) # ImporterMeshInstance3D is missing APIs.
-				head_hidden_node.set_meta("first_person_flag", "head_removed")
-				# HACK:
-				var meta_hack_skin = head_hidden_node.skin.duplicate()
-				meta_hack_skin.set_meta("layers", head_hidden_node.get_meta("layers"))
-				meta_hack_skin.set_meta("first_person_flag", head_hidden_node.get_meta("first_person_flag"))
-				head_hidden_node.skin = meta_hack_skin
-				# End HACK
+				head_hidden_node.script = importer_mesh_attributes
+				head_hidden_node.layers = 2 # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.first_person_flag = "head_removed"
+
 				node.add_sibling(head_hidden_node)
 				head_hidden_node.owner = node.owner
 				var gltf_mesh: GLTFMesh = GLTFMesh.new()
@@ -876,17 +874,9 @@ func _create_animation_player(
 				node_to_head_hidden_node[node] = head_hidden_node
 				layer_mask = 4
 
-			node.set_meta("layers", layer_mask) # ImporterMeshInstance3D is missing APIs.
-			node.set_meta("first_person_flag", flag.substr(0, 1).to_lower() + flag.substr(1))
-
-			# Node and mesh metadata is lost, so we have to store it on the Skin :'-(
-			if node.skin == null:
-				node.skin = Skin.new() # HACK
-			# HACK:
-			var meta_hack_skin = node.skin.duplicate()
-			meta_hack_skin.set_meta("layers", node.get_meta("layers"))
-			meta_hack_skin.set_meta("first_person_flag", node.get_meta("first_person_flag"))
-			node.skin = meta_hack_skin
+			node.script = importer_mesh_attributes
+			node.layers = layer_mask
+			node.first_person_flag = flag.substr(0, 1).to_lower() + flag.substr(1)
 
 
 	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI/2, 0, 0))

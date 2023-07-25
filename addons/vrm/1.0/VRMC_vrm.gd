@@ -4,6 +4,8 @@ const vrm_constants_class = preload("../vrm_constants.gd")
 const vrm_meta_class = preload("../vrm_meta.gd")
 const vrm_top_level = preload("../vrm_toplevel.gd")
 
+const importer_mesh_attributes = preload("../importer_mesh_attributes.gd")
+
 var vrm_meta: Resource = null
 
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
@@ -667,34 +669,22 @@ func _create_animation_player(
 				head_hidden_node.skin = node.skin
 				head_hidden_node.mesh = head_hidden_mesh
 				head_hidden_node.skeleton_path = node.skeleton_path
-				head_hidden_node.set_meta("layers", 2) # ImporterMeshInstance3D is missing APIs.
-				head_hidden_node.set_meta("first_person_flag", "head_removed")
-				# HACK:
-				var meta_hack_skin = head_hidden_node.skin.duplicate()
-				meta_hack_skin.set_meta("layers", head_hidden_node.get_meta("layers"))
-				meta_hack_skin.set_meta("first_person_flag", head_hidden_node.get_meta("first_person_flag"))
-				head_hidden_node.skin = meta_hack_skin
-				# End HACK
+				head_hidden_node.script = importer_mesh_attributes
+				head_hidden_node.layers = 2 # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.first_person_flag = "head_removed"
 				node.add_sibling(head_hidden_node)
 				head_hidden_node.owner = node.owner
 				var gltf_mesh: GLTFMesh = GLTFMesh.new()
 				gltf_mesh.mesh = head_hidden_mesh
 				# FIXME: do we need to assign gltf_mesh.instance_materials?
-				gstate.meshes.append(gltf_mesh)
+				meshes.append(gltf_mesh)
 				node_to_head_hidden_node[node] = head_hidden_node
 				layer_mask = 4
 
-			node.set_meta("layers", layer_mask) # ImporterMeshInstance3D is missing APIs.
-			node.set_meta("first_person_flag", flag)
-
-			# Node and mesh metadata is lost, so we have to store it on the Skin :'-(
-			if node.skin == null:
-				node.skin = Skin.new() # HACK
-			# HACK:
-			var meta_hack_skin = node.skin.duplicate()
-			meta_hack_skin.set_meta("layers", node.get_meta("layers"))
-			meta_hack_skin.set_meta("first_person_flag", node.get_meta("first_person_flag"))
-			node.skin = meta_hack_skin
+			node.script = importer_mesh_attributes
+			node.layers = layer_mask
+			node.first_person_flag = flag
+	gstate.meshes = meshes
 
 	var expressions = vrm_extension.get("expressions", {})
 	# FIXME: Do we need to handle multiple references to the same mesh???
@@ -1138,11 +1128,7 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 			var mesh: MeshInstance3D = meshx
 			if mesh.skin != null:
 				skins[mesh.skin] = true
-			if mesh.has_meta("first_person_flag") and mesh.get_meta("first_person_flag") == "head_removed":
-				mesh.get_parent().remove_child(mesh)
-				mesh.queue_free()
-			elif mesh.skin != null and mesh.skin.has_meta("first_person_flag") and mesh.skin.get_meta("first_person_flag") == "head_removed":
-				# HACK (ImporterMesh api limit)
+			if mesh.has_meta("vrm_first_person_flag") and mesh.get_meta("vrm_first_person_flag") == "head_removed":
 				mesh.get_parent().remove_child(mesh)
 				mesh.queue_free()
 
@@ -1286,10 +1272,10 @@ func _export_post(gstate: GLTFState) -> Error:
 		var node: Node = gstate.get_scene_node(node_idx)
 		if node is ImporterMeshInstance3D or node is MeshInstance3D:
 			var first_person_flag: String = "auto"
-			if node.has_meta("first_person_flag"):
-				first_person_flag = node.get_meta("first_person_flag")
-			elif node.skin != null and node.skin.has_meta("first_person_flag"): # HACK (ImporterMesh api limit)
-				first_person_flag = node.skin.get_meta("first_person_flag")
+			if node.has_meta("vrm_first_person_flag"):
+				first_person_flag = node.get_meta("vrm_first_person_flag")
+			elif node.skin != null and node.skin.has_meta("vrm_first_person_flag"): # HACK (ImporterMesh api limit)
+				first_person_flag = node.skin.get_meta("vrm_first_person_flag")
 			var mesh_annotation = {"node": node_idx, "firstPersonFlag": first_person_flag }
 			mesh_annotations.append(mesh_annotation)
 
