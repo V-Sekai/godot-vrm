@@ -52,6 +52,7 @@ func _export_vrm_pressed():
 			var bleh: Array[Node]
 			selected_nodes = bleh
 			break
+	var next_filename: String = ""
 	if selected_nodes.is_empty():
 		var bleh: Array[Node]
 		selected_nodes = bleh
@@ -59,37 +60,35 @@ func _export_vrm_pressed():
 		var filename: String = root.get_scene_file_path().get_file().get_basename()
 		if filename.is_empty():
 			filename = root.get_name()
-		file_export_lib.set_current_file(filename + ".vrm")
-		file_export_lib.popup_centered_ratio()
-	else:
-		for node in selected_nodes:
-			if node.script != vrm_top_level:
-				accept_dialog.dialog_text = "VRM Export requires the selected or top-level node to contain a vrm_top_level script with meta."
-				accept_dialog.ok_button_text = "OK"
-				get_editor_interface().popup_dialog_centered(accept_dialog)
-				selected_nodes.clear()
-				break
-			var meta: vrm_meta_class = node.vrm_meta
-			var failed_validate: PackedStringArray = VRMC_vrm._validate_meta(meta)
-			if node.vrm_meta == null:
-				node.vrm_meta = vrm_meta_class.new()
-			if not failed_validate.is_empty():
-				var res_path = meta.resource_path.split("::")[0]
-				if not res_path.is_empty() and (not res_path.begins_with("res://") or FileAccess.file_exists(res_path + ".import")):
-					node.vrm_meta = node.vrm_meta.duplicate(true)
-				get_editor_interface().inspect_object(node.vrm_meta)
-				accept_dialog.dialog_text = "VRM Export requires filling out license dropdowns and basic data:\n" + ",".join(failed_validate) + "\n\nExpand CLICK TO SEE METADATA in the Inspector"
-				accept_dialog.ok_button_text = "OK"
-				get_editor_interface().popup_dialog_centered(accept_dialog)
-				selected_nodes.clear()
-				break
-		_popup_next_node_export()
+		next_filename = filename + ".vrm"
+	for node in selected_nodes:
+		if node.script != vrm_top_level:
+			accept_dialog.dialog_text = "VRM Export requires the selected or top-level node to contain a vrm_top_level script with meta."
+			accept_dialog.ok_button_text = "OK"
+			get_editor_interface().popup_dialog_centered(accept_dialog)
+			selected_nodes.clear()
+			break
+		var meta: vrm_meta_class = node.vrm_meta
+		var failed_validate: PackedStringArray = VRMC_vrm._validate_meta(meta)
+		if node.vrm_meta == null:
+			node.vrm_meta = vrm_meta_class.new()
+		if not failed_validate.is_empty():
+			var res_path = meta.resource_path.split("::")[0]
+			if not res_path.is_empty() and (not res_path.begins_with("res://") or FileAccess.file_exists(res_path + ".import")):
+				node.vrm_meta = node.vrm_meta.duplicate(true)
+			get_editor_interface().inspect_object(node.vrm_meta)
+			accept_dialog.dialog_text = "VRM Export requires filling out license dropdowns and basic data:\n" + ",".join(failed_validate) + "\n\nExpand CLICK TO SEE METADATA in the Inspector"
+			accept_dialog.ok_button_text = "OK"
+			get_editor_interface().popup_dialog_centered(accept_dialog)
+			selected_nodes.clear()
+			break
+	_popup_next_node_export(next_filename)
 
-func _popup_next_node_export():
+func _popup_next_node_export(next_filename: String=""):
 	if not selected_nodes.is_empty():
 		current_export_node = selected_nodes[-1]
 		selected_nodes.pop_back()
-		var filename: String = current_export_node.get_scene_file_path().get_file().get_basename()
+		var filename: String = next_filename
 		if filename.is_empty():
 			filename = current_export_node.get_name()
 		file_export_lib.set_current_file(filename + ".vrm")
