@@ -208,6 +208,9 @@ func _import_preflight(state: GLTFState, extensions = PackedStringArray()) -> Er
 func _import_post(state: GLTFState, root_node: Node):
 	var gltf_json: Dictionary = state.json
 	var vrm_extension: Dictionary = gltf_json["extensions"]["VRMC_springBone"]
+	if vrm_extension.get("specVersion", "") != "1.0":
+		push_warning("Unsupported VRMC_springBone specVersion " + str(vrm_extension.get("specVersion", "")))
+
 	var secondary_node: Node
 	if root_node.has_node("secondary"):
 		secondary_node = root_node.get_node("secondary")
@@ -373,3 +376,4 @@ func _export_post(state: GLTFState):
 		spring["joints"] = joints
 		json_springs.push_back(spring)
 	sbone_extension["springs"] = json_springs
+	sbone_extension["specVersion"] = "1.0"

@@ -638,7 +638,7 @@ func _create_animation_player(
 		if node is ImporterMeshInstance3D:
 			var meshannotation = mesh_annotations_by_node.get(node_idx, {})
 
-			var flag: String = meshannotation.get("firstPersonFlag", "auto")
+			var flag: String = meshannotation.get("type", "auto")
 
 			# Non-skinned meshes: use flag.
 			var mesh: ImporterMesh = node.mesh
@@ -1276,7 +1276,7 @@ func _export_post(gstate: GLTFState) -> Error:
 				first_person_flag = node.get_meta("vrm_first_person_flag")
 			elif node.skin != null and node.skin.has_meta("vrm_first_person_flag"): # HACK (ImporterMesh api limit)
 				first_person_flag = node.skin.get_meta("vrm_first_person_flag")
-			var mesh_annotation = {"node": node_idx, "firstPersonFlag": first_person_flag }
+			var mesh_annotation = {"node": node_idx, "type": first_person_flag }
 			mesh_annotations.append(mesh_annotation)
 
 	first_person["meshAnnotations"] = mesh_annotations
