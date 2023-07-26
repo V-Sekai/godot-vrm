@@ -387,18 +387,27 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 		godot_outline_shader_name = mtoon_shader_base_path + "_outline"
 
 	var godot_shader_name = mtoon_shader_base_path
-	if blend_mode == int(RenderMode.Opaque) or blend_mode == int(RenderMode.Cutout):
-		# NOTE: Cutout is not separately implemented due to code duplication.
+	if blend_mode == int(RenderMode.Opaque):
 		if cull_mode == int(CullMode.Off):
 			godot_shader_name = mtoon_shader_base_path + "_cull_off"
+	if blend_mode == int(RenderMode.Cutout):
+		godot_shader_name = mtoon_shader_base_path + "_cutout"
+		if cull_mode == int(CullMode.Off):
+			godot_shader_name = mtoon_shader_base_path + "_cutout_cull_off"
+		if godot_outline_shader_name:
+			godot_outline_shader_name += "_cutout"
 	elif blend_mode == int(RenderMode.Transparent):
 		godot_shader_name = mtoon_shader_base_path + "_trans"
 		if cull_mode == int(CullMode.Off):
 			godot_shader_name = mtoon_shader_base_path + "_trans_cull_off"
+		if godot_outline_shader_name:
+			godot_outline_shader_name += "_trans"
 	elif blend_mode == int(RenderMode.TransparentWithZWrite):
 		godot_shader_name = mtoon_shader_base_path + "_trans_zwrite"
 		if cull_mode == int(CullMode.Off):
 			godot_shader_name = mtoon_shader_base_path + "_trans_zwrite_cull_off"
+		if godot_outline_shader_name:
+			godot_outline_shader_name += "_trans_zwrite"
 
 	var godot_shader: Shader = ResourceLoader.load(godot_shader_name + ".gdshader")
 	var godot_shader_outline: Shader = null

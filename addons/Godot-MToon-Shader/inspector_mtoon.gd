@@ -24,7 +24,7 @@ var property_name_to_editor: Dictionary = {}.duplicate()
 #	for chld in n.get_children():
 #		_dump_tree(chld, ind + "    ")
 
-const color_properties: Array = ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor"]
+const color_properties: Array = ["_Color", "_ShadeColor", "_RimColor", "_EmissionColor", "_OutlineColor", "_MatcapColor"]
 
 const property_headers: Dictionary = {
 	"_Color": "Color",
@@ -39,13 +39,12 @@ const property_headers: Dictionary = {
 	"_DebugMode": "Debugging Options",
 }
 
-var property_text: Dictionary = {
+const property_text: Dictionary = {
 	"_AlphaCutoutEnable": ["Rendering Type", "TransparentWithZWrite mode can cause problems with rendering."],
 	"_Color": ["Lit Color, Alpha", "Lit (RGB), Alpha (A)"],
 	"_ShadeColor": ["Shade Color", "Shade (RGB)"],
 	"_Cutoff": ["Alpha Cutoff", "Discard pixels below this value in Cutout mode"],
-	"_SphereAdd": ["MatCap", "Additive Sphere map / MatCap Texture (RGB)"],
-	"_MatcapColor": ["MatCap Color", "Color multiplied with MatCap texture"],
+	"_MatcapColor": ["MatCap Color", "Color multiplied with Additive Sphere map / MatCap Texture (RGB)"],
 	"_ShadeToony": ["Shading Toony", "0.0 is Lambert. Higher value get toony shading."],
 	"_BumpScale": ["Normal Map", "Normal Map and Multiplier for normals in tangent space"],
 	"_ShadeShift": ["Shading Shift", "Zero is Default. Negative value increase lit area. Positive value increase shade area."],
