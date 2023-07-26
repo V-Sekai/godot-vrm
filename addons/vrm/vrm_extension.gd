@@ -801,7 +801,7 @@ func _create_animation_player(
 			if firstperson.get("lookAtTypeName", "") != "Bone" or not shape["presetName"].begins_with("look"):
 				animation_library.add_animation(vrm0_to_vrm1_presets[shape["presetName"]], anim)
 		else:
-			if shape["presetName"] == "custom":
+			if shape["presetName"] == "unknown":
 				anim.resource_name = shape["name"]
 				animation_library.add_animation(shape["name"], anim)
 			else:
