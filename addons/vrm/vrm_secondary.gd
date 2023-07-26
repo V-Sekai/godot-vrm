@@ -37,8 +37,7 @@ var center_transforms: Array[Transform3D]
 var center_transforms_inv: Array[Transform3D]
 
 var secondary_gizmo: SecondaryGizmo
-
-
+var is_child_of_vrm: bool = false
 
 # Collider state
 # TODO: explore packed data to make processing optimization such as c++ easier.
@@ -55,7 +54,9 @@ func _ready() -> void:
 		return # Not supported.
 
 	var gizmo_spring_bone: bool = false
-	if get_parent() is VRMTopLevel:
+	if get_parent().script != null and get_parent().script.resource_path.get_basename() == "vrm_toplevel.gd":
+		is_child_of_vrm = true
+	if is_child_of_vrm:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 		disable_colliders = get_parent().get("disable_colliders")
@@ -124,8 +125,8 @@ func _ready() -> void:
 func check_for_editor_update() -> bool:
 	if not Engine.is_editor_hint():
 		return false
-	var parent: Node = get_parent()
-	if parent is VRMTopLevel:
+	if is_child_of_vrm:
+		var parent: Node = get_parent()
 		if parent.springbone_gravity_rotation != springbone_gravity_rotation or parent.springbone_gravity_multiplier != springbone_gravity_multiplier or parent.springbone_add_force != springbone_add_force:
 			springbone_add_force = parent.springbone_add_force
 			springbone_gravity_rotation = parent.springbone_gravity_rotation
@@ -240,13 +241,13 @@ class SecondaryGizmo:
 
 	func draw_in_editor(do_draw_spring_bones: bool = false) -> void:
 		mesh.clear_surfaces()
-		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
+		if secondary_node.is_child_of_vrm && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
 
 	func draw_in_game() -> void:
 		mesh.clear_surfaces()
-		if secondary_node.get_parent() is VRMTopLevel && secondary_node.get_parent().gizmo_spring_bone:
+		if secondary_node.is_child_of_vrm && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
 			draw_collider_groups()
 

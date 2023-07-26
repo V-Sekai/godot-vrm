@@ -106,8 +106,8 @@ func evaluate_rotation() -> void:
 	_set_weighted_posed_target_rotation(source_quat)
 
 
-static func from_dictionary(dict: Dictionary) -> BoneNodeConstraint:
-	var ret := BoneNodeConstraint.new()
+static func from_dictionary(dict: Dictionary): # -> BoneNodeConstraint:
+	var ret := new()
 	if not dict.has("constraint"):
 		return ret
 	var constraint_dict: Dictionary = dict["constraint"]
