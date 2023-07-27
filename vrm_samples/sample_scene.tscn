@@ -156,7 +156,7 @@ shadow_bias = 0.03
 [node name="Godette_vrm_v4" parent="." instance=ExtResource("2")]
 update_in_editor = true
 
-[node name="anim" parent="Godette_vrm_v4" index="2"]
+[node name="AnimationPlayer" parent="Godette_vrm_v4" index="2"]
 autoplay = "A"
 libraries = {
 "sample": SubResource("AnimationLibrary_12131")
@@ -169,7 +169,7 @@ update_in_editor = true
 [node name="mesh" parent="AliciaSolid_vrm-051" index="0"]
 visible = false
 
-[node name="anim" parent="AliciaSolid_vrm-051" index="3"]
+[node name="AnimationPlayer" parent="AliciaSolid_vrm-051" index="3"]
 libraries = {
 "sample": SubResource("AnimationLibrary_318jr")
 }
@@ -178,7 +178,7 @@ libraries = {
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
 update_in_editor = true
 
-[node name="anim" parent="AliciaSolid_vrm-052" index="3"]
+[node name="AnimationPlayer" parent="AliciaSolid_vrm-052" index="3"]
 autoplay = "A"
 libraries = {
 "sample": SubResource("AnimationLibrary_5s5s0")

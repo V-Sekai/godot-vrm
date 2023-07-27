@@ -12,7 +12,7 @@ config_version=5
 
 config/name="VRM Project (Godot 4.x)"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
-config/features=PackedStringArray("4.0")
+config/features=PackedStringArray("4.2")
 config/icon="res://icon.png"
 enabled=PackedStringArray("vrm")
 

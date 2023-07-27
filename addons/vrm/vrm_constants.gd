@@ -1,6 +1,6 @@
 extends RefCounted
 
-var vrm_to_human_bone: Dictionary = {
+const vrm_to_human_bone: Dictionary = {
 	"hips": "Hips",
 	"spine": "Spine",
 	"chest": "Chest",
@@ -59,9 +59,12 @@ var vrm_to_human_bone: Dictionary = {
 }
 
 
-func _init(is_vrm_0):
+static func get_vrm_to_human_bone(is_vrm_0) -> Dictionary:
 	if is_vrm_0:
-		vrm_to_human_bone["leftThumbIntermediate"] = "LeftThumbProximal"
-		vrm_to_human_bone["leftThumbProximal"] = "LeftThumbMetacarpal"
-		vrm_to_human_bone["rightThumbIntermediate"] = "RightThumbProximal"
-		vrm_to_human_bone["rightThumbProximal"] = "RightThumbMetacarpal"
+		var vrm0_to_human_bone = vrm_to_human_bone.duplicate()
+		vrm0_to_human_bone["leftThumbIntermediate"] = "LeftThumbProximal"
+		vrm0_to_human_bone["leftThumbProximal"] = "LeftThumbMetacarpal"
+		vrm0_to_human_bone["rightThumbIntermediate"] = "RightThumbProximal"
+		vrm0_to_human_bone["rightThumbProximal"] = "RightThumbMetacarpal"
+		return vrm0_to_human_bone
+	return vrm_to_human_bone
