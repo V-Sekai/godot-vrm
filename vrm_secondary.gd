@@ -54,7 +54,7 @@ func _ready() -> void:
 		return # Not supported.
 
 	var gizmo_spring_bone: bool = false
-	if get_parent().script != null and get_parent().script.resource_path.get_basename() == "vrm_toplevel.gd":
+	if get_parent().script != null and get_parent().script.resource_path.get_file() == "vrm_toplevel.gd":
 		is_child_of_vrm = true
 	if is_child_of_vrm:
 		update_secondary_fixed = get_parent().get("update_secondary_fixed")
