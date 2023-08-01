@@ -28,15 +28,15 @@ const vrm_secondary = preload("./vrm_secondary.gd")
 #const vrm_export_extension = preload("./1.0/vrm_export_extension.gd")
 #var vrm_export_extension_inst = vrm_export_extension.new()
 
-
 const export_as_item: String = "VRM 1.0 Avatar..."
-const export_as_id: int = 0x56524d31 # 'VRM1'
+const export_as_id: int = 0x56524d31  # 'VRM1'
 
 var file_export_lib: EditorFileDialog
 var accept_dialog: AcceptDialog
 
 var selected_nodes: Array[Node]
 var current_export_node: Node
+
 
 func _export_vrm_pressed():
 	var root = get_tree().get_edited_scene_root()
@@ -84,7 +84,8 @@ func _export_vrm_pressed():
 			break
 	_popup_next_node_export(next_filename)
 
-func _popup_next_node_export(next_filename: String=""):
+
+func _popup_next_node_export(next_filename: String = ""):
 	if not selected_nodes.is_empty():
 		current_export_node = selected_nodes[-1]
 		selected_nodes.pop_back()
@@ -93,6 +94,7 @@ func _popup_next_node_export(next_filename: String=""):
 			filename = current_export_node.get_name()
 		file_export_lib.set_current_file(filename + ".vrm")
 		file_export_lib.popup_centered_ratio()
+
 
 func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
 	if node == new_owner:
@@ -108,6 +110,7 @@ func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
 	for i in range(node.get_child_count()):
 		reassign_owner(new_owner, orig_node.get_child(i), node.get_child(i))
 
+
 func remove_internals(node: Node, to_reparent: Dictionary):
 	for chld in node.get_children():
 		if chld.owner == null:
@@ -115,6 +118,7 @@ func remove_internals(node: Node, to_reparent: Dictionary):
 			node.remove_child(chld)
 		else:
 			remove_internals(chld, to_reparent)
+
 
 func _export_vrm_dialog_action(path: String):
 	var root: Node = current_export_node
@@ -167,6 +171,7 @@ func _export_vrm_dialog_action(path: String):
 	if ProjectSettings.localize_path(path) != "":
 		get_editor_interface().get_resource_filesystem().update_file(path)
 		get_editor_interface().get_resource_filesystem().reimport_files(PackedStringArray([path]))
+
 
 func _enter_tree() -> void:
 	accept_dialog = AcceptDialog.new()

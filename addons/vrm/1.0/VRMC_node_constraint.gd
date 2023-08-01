@@ -4,6 +4,7 @@ extends GLTFDocumentExtension
 const bone_node_constraint = preload("../node_constraint/bone_node_constraint.gd")
 const bone_node_constraint_applier = preload("../node_constraint/bone_node_constraint_applier.gd")
 
+
 func _import_preflight(_state: GLTFState, extensions: PackedStringArray) -> Error:
 	if extensions.has("VRMC_node_constraint"):
 		return OK
@@ -14,13 +15,13 @@ func _parse_node_extensions(gltf_state: GLTFState, gltf_node: GLTFNode, node_ext
 	if not node_extensions.has("VRMC_node_constraint"):
 		return OK
 	var constraint_ext: Dictionary = node_extensions["VRMC_node_constraint"]
-	var constraint : bone_node_constraint = bone_node_constraint.from_dictionary(constraint_ext)
+	var constraint: bone_node_constraint = bone_node_constraint.from_dictionary(constraint_ext)
 	gltf_node.set_additional_data(&"BoneNodeConstraint", constraint)
 	return OK
 
 
 func _import_post_parse(gltf_state: GLTFState) -> Error:
-	var applier : bone_node_constraint_applier = bone_node_constraint_applier.new()
+	var applier: bone_node_constraint_applier = bone_node_constraint_applier.new()
 	applier.name = &"BoneNodeConstraintApplier"
 	gltf_state.set_additional_data(&"BoneNodeConstraintApplier", applier)
 	# Add the constraint applier to the real root, next to the AnimationPlayer.
@@ -39,6 +40,7 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 		if err != OK:
 			return err
 	return OK
+
 
 func my_import_node(gltf_state: GLTFState, gltf_node: GLTFNode, json: Dictionary, node: Node) -> Error:
 	var constraint: bone_node_constraint = gltf_node.get_additional_data(&"BoneNodeConstraint")
@@ -87,6 +89,7 @@ func _convert_scene_node(gltf_state: GLTFState, gltf_node: GLTFNode, scene_node:
 	gltf_state.add_used_extension("VRMC_node_constraint", false)
 	for constraint in applier.constraints:
 		constraint.set_node_references_from_paths(applier)
+
 
 func _export_post(gltf_state: GLTFState):
 	var applier: bone_node_constraint_applier = gltf_state.get_additional_data(&"BoneNodeConstraintApplier")

@@ -1,9 +1,11 @@
 extends GLTFDocumentExtension
 
+
 func _import_preflight(state: GLTFState, extensions = PackedStringArray()) -> Error:
 	if extensions.has("VRMC_materials_mtoon"):
 		return OK
 	return ERR_INVALID_DATA
+
 
 func _prepare_gltf_texture(gltf_samplers: Array[GLTFTextureSampler], gltf_textures: Array[GLTFTexture], texdic: Dictionary, tex: Texture2D) -> int:
 	var gltf_sampler: GLTFTextureSampler = GLTFTextureSampler.new()
@@ -24,6 +26,7 @@ func _prepare_gltf_texture(gltf_samplers: Array[GLTFTextureSampler], gltf_textur
 	gltf_textures.push_back(gltf_tex)
 	texdic[texture_idx] = tex
 	return texture_idx
+
 
 func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex: Array[GLTFTexture], texdic: Dictionary, standard_textures: Dictionary, mtoon_material: ShaderMaterial) -> StandardMaterial3D:
 	var shader_name = mtoon_material.shader.resource_path.get_file().get_basename()
@@ -52,7 +55,7 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 		col = Color(col.x, col.y, col.z, col.d)
 	if typeof(col) == TYPE_COLOR:
 		col.a = 1.0
-		standard_mat.emission_enabled =  mtoon_material.get_shader_parameter("_EmissionMap") != null or !col.is_equal_approx(Color.BLACK)
+		standard_mat.emission_enabled = mtoon_material.get_shader_parameter("_EmissionMap") != null or !col.is_equal_approx(Color.BLACK)
 		standard_mat.emission_texture = mtoon_material.get_shader_parameter("_EmissionMap")
 		standard_mat.emission_energy_multiplier = mtoon_material.get_shader_parameter("_EmissionMultiplier")
 		standard_textures[standard_mat.emission_texture] = true
@@ -96,6 +99,7 @@ func _prepare_material_for_export(gltf_samp: Array[GLTFTextureSampler], gltf_tex
 	standard_mat.set_meta("has_zwrite", has_zwrite)
 	standard_mat.set_meta("has_cull_off", has_cull_off)
 	return standard_mat
+
 
 func _export_preflight(state: GLTFState, root: Node) -> Error:
 	var materials: Dictionary = {}
@@ -141,10 +145,11 @@ func _export_preflight(state: GLTFState, root: Node) -> Error:
 	var gltf_images: Array[Texture2D] = state.images
 	for tex in unique_images_to_add:
 		gltf_images.push_back(tex)
-	state.images = gltf_images # Any textures not used by a StandardMaterial3D are our responsibility.
+	state.images = gltf_images  # Any textures not used by a StandardMaterial3D are our responsibility.
 	state.set_meta("texture_dictionary", texdic)
 	state.set_meta("shader_to_standard_material", materials)
 	return OK
+
 
 func _to_gltf_color(c: Variant):
 	if typeof(c) == TYPE_VECTOR4:
@@ -155,9 +160,11 @@ func _to_gltf_color(c: Variant):
 		return [0, 0, 0]
 	return [c.r, c.g, c.b]
 
+
 func _export_mtoon_texture(texture_index, vrm_mat_props, key):
 	if texture_index >= 0:
 		vrm_mat_props[key] = {"index": texture_index}
+
 
 func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionary, texture_to_index: Dictionary):
 	if "extensions" not in mat_props:
@@ -212,6 +219,7 @@ func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionar
 		# render_priority only makes sense for transparent materials.
 		vrm_mat_props["renderQueueOffsetNumbers"] = delta_render_queue
 
+
 func _export_post(state: GLTFState) -> Error:
 	var texdic: Dictionary = state.get_meta("texture_dictionary")
 	var texture_to_gltf_image_idx: Dictionary = {}
@@ -224,7 +232,7 @@ func _export_post(state: GLTFState) -> Error:
 	for i in range(len(gltf_images)):
 		texture_to_gltf_image_idx[gltf_images[i]] = i
 
-	var texture_to_index: Dictionary = {} # Texture to index in the textures array, not images array
+	var texture_to_index: Dictionary = {}  # Texture to index in the textures array, not images array
 	for texture_idx in texdic:
 		texture_to_index[texdic[texture_idx]] = texture_idx
 		gltf_tex[texture_idx].src_image = texture_to_gltf_image_idx[texdic[texture_idx]]
@@ -246,6 +254,7 @@ func _export_post(state: GLTFState) -> Error:
 			print("Material index " + str(i) + " has incorrect type " + str(gltf_materials[i].get_class()))
 
 	return OK
+
 
 func _vrm_get_texture_info(gltf_images: Array, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
 	var texture_info: Dictionary = {}
@@ -272,6 +281,7 @@ func _assign_property(new_mat: ShaderMaterial, property_name: String, property_v
 	if new_mat.next_pass != null:
 		new_mat.next_pass.set_shader_parameter(property_name, property_value)
 
+
 func _assign_texture(new_mat: ShaderMaterial, gltf_images: Array[Texture2D], gltf_tex: Array[GLTFTexture], texture_name: String, texture_info: Dictionary) -> void:
 	# TODO: something with texCoord
 	# TODO: something with extensions[KHR_texture_transform].texCoord
@@ -282,6 +292,7 @@ func _assign_texture(new_mat: ShaderMaterial, gltf_images: Array[Texture2D], glt
 
 	_assign_property(new_mat, texture_name, tex)
 
+
 func _assign_color(new_mat: ShaderMaterial, has_alpha: bool, property_name: String, color_array: Array) -> void:
 	var col: Color
 	if has_alpha:
@@ -291,8 +302,8 @@ func _assign_color(new_mat: ShaderMaterial, has_alpha: bool, property_name: Stri
 
 	_assign_property(new_mat, property_name, col)
 
-func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gltf_tex: Array[GLTFTexture], mat_props: Dictionary, vrm_mat_props: Dictionary) -> Material:
 
+func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gltf_tex: Array[GLTFTexture], mat_props: Dictionary, vrm_mat_props: Dictionary) -> Material:
 	if vrm_mat_props.get("specVersion", "") != "1.0":
 		push_warning("Unsupported VRM MToon specVersion " + str(vrm_mat_props.get("specVersion", "")))
 
@@ -319,7 +330,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 
 	var godot_shader: Shader = ResourceLoader.load(godot_shader_name + ".gdshader")
 
-	var new_mat : ShaderMaterial = ShaderMaterial.new()
+	var new_mat: ShaderMaterial = ShaderMaterial.new()
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
 
@@ -367,13 +378,13 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	_assign_texture(new_mat, gltf_images, gltf_tex, "_UvAnimMaskTexture", vrm_mat_props.get("uvAnimationMaskTexture", {}))
 	_assign_texture(new_mat, gltf_images, gltf_tex, "_OutlineWidthTexture", vrm_mat_props.get("outlineWidthMultiplyTexture", {}))
 
-	_assign_color(new_mat, true, "_Color", mat_props.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1,1,1,1]))
-	_assign_color(new_mat, false, "_ShadeColor", vrm_mat_props.get("shadeColorFactor", [0,0,0]))
-	_assign_color(new_mat, false, "_RimColor", vrm_mat_props.get("parametricRimColorFactor", [0,0,0]))
+	_assign_color(new_mat, true, "_Color", mat_props.get("pbrMetallicRoughness", {}).get("baseColorFactor", [1, 1, 1, 1]))
+	_assign_color(new_mat, false, "_ShadeColor", vrm_mat_props.get("shadeColorFactor", [0, 0, 0]))
+	_assign_color(new_mat, false, "_RimColor", vrm_mat_props.get("parametricRimColorFactor", [0, 0, 0]))
 	# FIXME: _MatcapColor does not exist!!
-	_assign_color(new_mat, false, "_MatcapColor", vrm_mat_props.get("matcapFactor", [1,1,1]))
-	_assign_color(new_mat, false, "_OutlineColor", vrm_mat_props.get("outlineColorFactor", [0,0,0,1]))
-	_assign_color(new_mat, false, "_EmissionColor", mat_props.get("emissiveFactor", [0,0,0]))
+	_assign_color(new_mat, false, "_MatcapColor", vrm_mat_props.get("matcapFactor", [1, 1, 1]))
+	_assign_color(new_mat, false, "_OutlineColor", vrm_mat_props.get("outlineColorFactor", [0, 0, 0, 1]))
+	_assign_color(new_mat, false, "_EmissionColor", mat_props.get("emissiveFactor", [0, 0, 0]))
 
 	_assign_property(new_mat, "_MainTex_ST", texture_repeat)
 
@@ -395,15 +406,15 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	_assign_property(new_mat, "_ShadeToony", vrm_mat_props.get("shadingToonyFactor", 0.9))
 	_assign_property(new_mat, "_ShadeShift", vrm_mat_props.get("shadingShiftFactor", 0.0))
 	_assign_property(new_mat, "_ShadingGradeRate", vrm_mat_props.get("shadingShiftTexture", {}).get("scale", 1.0))
-	_assign_property(new_mat, "_ReceiveShadowRate", 1.0) # 0 disables directional light shadows. no longer supported?
-	_assign_property(new_mat, "_LightColorAttenuation", 0.0) # not useful
+	_assign_property(new_mat, "_ReceiveShadowRate", 1.0)  # 0 disables directional light shadows. no longer supported?
+	_assign_property(new_mat, "_LightColorAttenuation", 0.0)  # not useful
 	_assign_property(new_mat, "_IndirectLightIntensity", 1.0 - vrm_mat_props.get("giEqualizationFactor", 0.9))
-	_assign_property(new_mat, "_OutlineScaledMaxDistance", 99.0) # FIXME: different calulcation
+	_assign_property(new_mat, "_OutlineScaledMaxDistance", 99.0)  # FIXME: different calulcation
 	_assign_property(new_mat, "_RimLightingMix", vrm_mat_props.get("rimLightingMixFactor", 0.0))
 	_assign_property(new_mat, "_RimFresnelPower", vrm_mat_props.get("parametricRimFresnelPowerFactor", 1.0))
 	_assign_property(new_mat, "_RimLift", vrm_mat_props.get("parametricRimLiftFactor", 0.0))
 	_assign_property(new_mat, "_OutlineWidth", vrm_mat_props.get("outlineWidthFactor", 0.0))
-	_assign_property(new_mat, "_OutlineColorMode", 1.0) # MixedLighting always. FixedColor if outlineLightingMixFactor==0
+	_assign_property(new_mat, "_OutlineColorMode", 1.0)  # MixedLighting always. FixedColor if outlineLightingMixFactor==0
 	_assign_property(new_mat, "_OutlineLightingMix", vrm_mat_props.get("outlineLightingMixFactor", 1.0))
 	_assign_property(new_mat, "_UvAnimScrollX", vrm_mat_props.get("uvAnimationScrollXSpeedFactor", 0.0))
 	_assign_property(new_mat, "_UvAnimScrollY", vrm_mat_props.get("uvAnimationScrollYSpeedFactor", 0.0))
@@ -425,7 +436,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 		new_mat.render_priority = 0
 		if outline_mat != null:
 			outline_mat.render_priority = 0
-		
+
 	return new_mat
 
 
@@ -445,7 +456,7 @@ func _import_post(gstate, root):
 		materials_json.push_back(json_material)
 		var extensions: Dictionary = json_material.get("extensions", {})
 		materials_vrm_json.push_back(extensions.get("VRMC_materials_mtoon", {}))
-		
+
 	# Material conversions
 	for i in range(materials.size()):
 		var oldmat: Material = materials[i]

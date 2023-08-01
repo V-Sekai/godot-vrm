@@ -9,6 +9,7 @@ const vrm_spring_bone = preload("../vrm_spring_bone.gd")
 const vrm_collider_group = preload("../vrm_collider_group.gd")
 const vrm_collider = preload("../vrm_collider.gd")
 
+
 func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
 	# There's no working direct way to convert from skeleton_id to node_id.
 	# Bugs:
@@ -21,6 +22,7 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 		if nodes[i].skeleton == skel_id:
 			return gstate.get_scene_node(i)
 	return null
+
 
 func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var nodes = gstate.get_nodes()
@@ -51,15 +53,15 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 					push_error("Unrecognized bone " + str(bone_idx) + " used by springBone")
 				pose_diff = skeleton.get_meta("vrm_pose_diffs")[bone_idx]
 			#print(str(collider.bone) + " diff " + str(pose_diff))
-		
+
 		if collider_gltf.has("name"):
 			collider.resource_name = collider_gltf["name"]
-		
+
 		var collider_shape = collider_gltf["shape"]
 		var is_capsule = false
 		var radius: float
-		var offset_gltf: Array = [0.0,0.0,0.0]
-		var tail_gltf: Array = [0.0,0.0,0.0]
+		var offset_gltf: Array = [0.0, 0.0, 0.0]
+		var tail_gltf: Array = [0.0, 0.0, 0.0]
 		if collider_shape.has("sphere"):
 			radius = collider_shape["sphere"]["radius"]
 			offset_gltf = collider_shape["sphere"]["offset"]
@@ -226,6 +228,7 @@ func _import_post(state: GLTFState, root_node: Node):
 	_parse_secondary_node(secondary_node, vrm_extension, state)
 	return OK
 
+
 func _export_preflight(state: GLTFState, root: Node):
 	if not root.has_node("secondary"):
 		print("No secondary node")
@@ -241,6 +244,7 @@ func _export_preflight(state: GLTFState, root: Node):
 	#secondary_node.set("collider_groups", collider_groups)
 	return OK
 
+
 static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 	var humanoid_skeleton: Skeleton3D
 	if root_node.has_node("%GeneralSkeleton"):
@@ -250,6 +254,7 @@ static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 		if not skels.is_empty():
 			humanoid_skeleton = skels[0]
 	return humanoid_skeleton
+
 
 func _export_post(state: GLTFState):
 	var secondary: vrm_secondary = state.get_additional_data("VRMC_springBone")
@@ -296,16 +301,22 @@ func _export_post(state: GLTFState):
 	for collider in colliders:
 		var shape: Dictionary = {}
 		if collider.is_capsule:
-			shape = {"capsule": {
-				"offset": [collider.offset.x, collider.offset.y, collider.offset.z],
-				"radius": collider.radius,
-				"tail": [collider.tail.x, collider.tail.y, collider.tail.z],
-			}}
+			shape = {
+				"capsule":
+				{
+					"offset": [collider.offset.x, collider.offset.y, collider.offset.z],
+					"radius": collider.radius,
+					"tail": [collider.tail.x, collider.tail.y, collider.tail.z],
+				}
+			}
 		else:
-			shape = {"sphere": {
-				"offset": [collider.offset.x, collider.offset.y, collider.offset.z],
-				"radius": collider.radius,
-			}}
+			shape = {
+				"sphere":
+				{
+					"offset": [collider.offset.x, collider.offset.y, collider.offset.z],
+					"radius": collider.radius,
+				}
+			}
 		var node_idx: int
 		if collider.bone != "":
 			node_idx = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(collider.bone)]
@@ -368,7 +379,7 @@ func _export_post(state: GLTFState):
 			if not is_zero_approx(springbone.gravity_power[i]):
 				joint["gravityPower"] = springbone.gravity_power[i]
 			var grav: Vector3 = springbone.gravity_dir[i]
-			if not grav.is_equal_approx(Vector3(0,-1,0)) and not is_zero_approx(springbone.gravity_power[i]):
+			if not grav.is_equal_approx(Vector3(0, -1, 0)) and not is_zero_approx(springbone.gravity_power[i]):
 				joint["gravityDir"] = [grav[0], grav[1], grav[2]]
 			if not is_equal_approx(springbone.drag_force[i], 0.5):
 				joint["dragForce"] = springbone.drag_force[i]

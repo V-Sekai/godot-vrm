@@ -79,6 +79,7 @@ func adjust_mesh_zforward(mesh: ImporterMesh):
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
 		mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 
+
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
 	var original_bone_names_to_indices = {}
 	var original_indices_to_bone_names = {}
@@ -111,7 +112,7 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
 	while not nodes.is_empty():
-		var mi : ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
+		var mi: ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
 		var skin: Skin = mi.skin
 		if skin:
 			var node = mi.get_node(mi.skeleton_path)
@@ -345,12 +346,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 
 	var maintex_info: Dictionary = _vrm_get_texture_info(gltf_images, vrm_mat_props, "_MainTex")
 
-	if (
-		vrm_shader_name == "VRM/UnlitTransparentZWrite"
-		or vrm_shader_name == "VRM/UnlitTransparent"
-		or vrm_shader_name == "VRM/UnlitTexture"
-		or vrm_shader_name == "VRM/UnlitCutout"
-	):
+	if vrm_shader_name == "VRM/UnlitTransparentZWrite" or vrm_shader_name == "VRM/UnlitTransparent" or vrm_shader_name == "VRM/UnlitTexture" or vrm_shader_name == "VRM/UnlitCutout":
 		if maintex_info["tex"] != null:
 			orig_mat.albedo_texture = maintex_info["tex"]
 			orig_mat.uv1_offset = maintex_info["offset"]
@@ -414,7 +410,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 	if godot_outline_shader_name:
 		godot_shader_outline = ResourceLoader.load(godot_outline_shader_name + ".gdshader")
 
-	var new_mat : ShaderMaterial = ShaderMaterial.new()
+	var new_mat: ShaderMaterial = ShaderMaterial.new()
 	new_mat.resource_name = orig_mat.resource_name
 	new_mat.shader = godot_shader
 	var outline_mat: ShaderMaterial = null
@@ -449,7 +445,7 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array, vrm_mat_props
 			# TODO: Use Color for non-HDR color slots (_Color, _ShadeColor and _OutlineColor?)
 			# Or, use Color for all, and split _EmissionColor into emission color and emission strength.
 			var color_param: Color = Color(param_val[0], param_val[1], param_val[2], param_val[3])
-			if param_name == "_RimColor": # Marked [HDR] in MToon.shader
+			if param_name == "_RimColor":  # Marked [HDR] in MToon.shader
 				color_param = color_param.linear_to_srgb()
 			if param_name == "_EmissionColor":
 				var mult = maxf(color_param.r, maxf(color_param.g, color_param.b))
@@ -588,16 +584,7 @@ class SkelBone:
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
 
 
-func _create_meta(
-	root_node: Node,
-	animplayer: AnimationPlayer,
-	vrm_extension: Dictionary,
-	gstate: GLTFState,
-	skeleton: Skeleton3D,
-	humanBones: BoneMap,
-	human_bone_to_idx: Dictionary,
-	pose_diffs: Array[Basis]
-) -> Resource:
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, skeleton: Skeleton3D, humanBones: BoneMap, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> Resource:
 	var nodes = gstate.get_nodes()
 
 	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
@@ -681,28 +668,27 @@ func _create_meta(
 
 
 const vrm0_to_vrm1_presets: Dictionary = {
-		"joy": "happy",
-		"angry": "angry",
-		"sorrow": "sad",
-		"fun": "relaxed",
-		"a": "aa",
-		"i": "ih",
-		"u": "ou",
-		"e": "ee",
-		"o": "oh",
-		"blink": "blink",
-		"blink_l": "blinkLeft",
-		"blink_r": "blinkRight",
-		"lookup": "lookUp",
-		"lookdown": "lookDown",
-		"lookleft": "lookLeft",
-		"lookright": "lookRight",
-		"neutral": "neutral",
+	"joy": "happy",
+	"angry": "angry",
+	"sorrow": "sad",
+	"fun": "relaxed",
+	"a": "aa",
+	"i": "ih",
+	"u": "ou",
+	"e": "ee",
+	"o": "oh",
+	"blink": "blink",
+	"blink_l": "blinkLeft",
+	"blink_r": "blinkRight",
+	"lookup": "lookUp",
+	"lookdown": "lookDown",
+	"lookleft": "lookLeft",
+	"lookright": "lookRight",
+	"neutral": "neutral",
 }
 
-func _create_animation_player(
-	animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]
-) -> AnimationPlayer:
+
+func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> AnimationPlayer:
 	# Remove all glTF animation players for safety.
 	# VRM does not support animation import in this way.
 	for i in range(gstate.get_animation_players_count(0)):
@@ -821,13 +807,13 @@ func _create_animation_player(
 	var mesh_to_head_hidden_mesh: Dictionary = {}
 	var node_to_head_hidden_node: Dictionary = {}
 
-	var head_relative_bones: Dictionary = {} # To determine which meshes to hide.
+	var head_relative_bones: Dictionary = {}  # To determine which meshes to hide.
 
 	var head_bone_idx = firstperson.get("firstPersonBone", human_bone_to_idx.get("head", -1))
 	if head_bone_idx >= 0:
 		var headNode: GLTFNode = nodes[head_bone_idx]
 		var skel: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton)
-		vrmc_vrm_utils._recurse_bones(head_relative_bones, skel, skel.find_bone(headNode.resource_name)) # FIXME: I forget if this is correct
+		vrmc_vrm_utils._recurse_bones(head_relative_bones, skel, skel.find_bone(headNode.resource_name))  # FIXME: I forget if this is correct
 
 	var mesh_annotations_by_mesh = {}
 	for meshannotation in firstperson.get("meshAnnotations", []):
@@ -855,15 +841,15 @@ func _create_animation_player(
 					if head_hidden_mesh == null:
 						flag = "ThirdPersonOnly"
 					if head_hidden_mesh == mesh:
-						flag = "Both" # Nothing to do: No head verts.
+						flag = "Both"  # Nothing to do: No head verts.
 
-			var layer_mask: int = 6 # "both"
+			var layer_mask: int = 6  # "both"
 			if flag == "ThirdPersonOnly":
 				layer_mask = 4
 			elif flag == "FirstPersonOnly":
 				layer_mask = 2
 
-			if flag == "Auto" and head_hidden_mesh != mesh: # If it is still "auto", we have something to hide.
+			if flag == "Auto" and head_hidden_mesh != mesh:  # If it is still "auto", we have something to hide.
 				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
 				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
 				head_hidden_node.name = node.name + " (Headless)"
@@ -871,7 +857,7 @@ func _create_animation_player(
 				head_hidden_node.mesh = head_hidden_mesh
 				head_hidden_node.skeleton_path = node.skeleton_path
 				head_hidden_node.script = importer_mesh_attributes
-				head_hidden_node.layers = 2 # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.layers = 2  # ImporterMeshInstance3D is missing APIs.
 				head_hidden_node.first_person_flag = "head_removed"
 
 				node.add_sibling(head_hidden_node)
@@ -887,8 +873,7 @@ func _create_animation_player(
 			node.layers = layer_mask
 			node.first_person_flag = flag.substr(0, 1).to_lower() + flag.substr(1)
 
-
-	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI/2, 0, 0))
+	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI / 2, 0, 0))
 	if firstperson.get("lookAtTypeName", "") == "Bone":
 		var horizout = firstperson["lookAtHorizontalOuter"]
 		var horizin = firstperson["lookAtHorizontalInner"]
@@ -984,15 +969,15 @@ func _create_animation_player(
 
 
 func _create_joints_recursive(joint_chains: Array[PackedStringArray], skeleton: Skeleton3D, bone_idx: int, level: int, current_chain: int):
-	if current_chain == -1: # ALWAYS do this?! # and level > 0:
+	if current_chain == -1:  # ALWAYS do this?! # and level > 0:
 		current_chain = len(joint_chains)
 		joint_chains.push_back(PackedStringArray())
 	if current_chain != -1:
 		joint_chains[current_chain].push_back(skeleton.get_bone_name(bone_idx))
 	var bone_children = skeleton.get_bone_children(bone_idx)
 	if bone_children.is_empty():
-		if current_chain != -1: # and len(joint_chains[current_chain]) > 0 is guaranteed true
-			joint_chains[current_chain].push_back("") # Use empty string to denote 7cm tail bone.
+		if current_chain != -1:  # and len(joint_chains[current_chain]) > 0 is guaranteed true
+			joint_chains[current_chain].push_back("")  # Use empty string to denote 7cm tail bone.
 	else:
 		for i in range(len(bone_children)):
 			var child_bone: int = bone_children[i]
@@ -1000,6 +985,7 @@ func _create_joints_recursive(joint_chains: Array[PackedStringArray], skeleton: 
 				_create_joints_recursive(joint_chains, skeleton, child_bone, level + 1, current_chain)
 			else:
 				_create_joints_recursive(joint_chains, skeleton, child_bone, 0, -1)
+
 
 func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState, pose_diffs: Array[Basis], is_vrm_0: bool) -> void:
 	var nodes = gstate.get_nodes()
@@ -1095,7 +1081,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			spring_bone.center_node = center_node
 			spring_bone.collider_groups = spring_collider_groups
 			for bone_name in chain:
-				spring_bone.joint_nodes.push_back(bone_name) # end bone will be named ""
+				spring_bone.joint_nodes.push_back(bone_name)  # end bone will be named ""
 				spring_bone.stiffness_force.push_back(stiffness_force)
 				spring_bone.gravity_power.push_back(gravity_power)
 				spring_bone.gravity_dir.push_back(gravity_dir)
@@ -1178,7 +1164,7 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 		push_error("Failed to find required VRM keys in json")
 		return ERR_INVALID_DATA
 	for node in gltf_nodes:
-		if node.get("name","") == "Root":
+		if node.get("name", "") == "Root":
 			node["name"] = "Root_"
 	return OK
 
@@ -1269,10 +1255,7 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 	root_node.set("vrm_meta", vrm_meta)
 	root_node.set("vrm_secondary", NodePath())
 
-	if (
-		vrm_extension.has("secondaryAnimation")
-		and (vrm_extension["secondaryAnimation"].get("colliderGroups", []).size() > 0 or vrm_extension["secondaryAnimation"].get("boneGroups", []).size() > 0)
-	):
+	if vrm_extension.has("secondaryAnimation") and (vrm_extension["secondaryAnimation"].get("colliderGroups", []).size() > 0 or vrm_extension["secondaryAnimation"].get("boneGroups", []).size() > 0):
 		var secondary_node: Node = root_node.get_node("secondary")
 		if secondary_node == null:
 			secondary_node = Node3D.new()

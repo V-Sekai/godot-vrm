@@ -8,6 +8,7 @@ const importer_mesh_attributes = preload("../importer_mesh_attributes.gd")
 
 var vrm_meta: Resource = null
 
+
 func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton3D, p_bone_map: BoneMap):
 	var original_bone_names_to_indices = {}
 	var original_indices_to_bone_names = {}
@@ -40,7 +41,7 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
 	while not nodes.is_empty():
-		var mi : ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
+		var mi: ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
 		var skin: Skin = mi.skin
 		if skin:
 			var node = mi.get_node(mi.skeleton_path)
@@ -62,6 +63,7 @@ func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: Skeleton
 		var nd = nodes.pop_back()
 		if nd.has_method(&"_notify_skeleton_bones_renamed"):
 			nd.call(&"_notify_skeleton_bones_renamed", p_base_scene, p_skeleton, p_bone_map)
+
 
 func skeleton_rotate(p_base_scene: Node, src_skeleton: Skeleton3D, p_bone_map: BoneMap) -> Array[Basis]:
 	# is_renamed: was skeleton_rename already invoked?
@@ -158,8 +160,6 @@ func apply_rotation(p_base_scene: Node, src_skeleton: Skeleton3D):
 		src_skeleton.set_bone_pose_scale(i, fixed_rest.basis.get_scale())
 
 
-
-
 func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
 	# There's no working direct way to convert from skeleton_id to node_id.
 	# Bugs:
@@ -196,16 +196,7 @@ class SkelBone:
 # "rightLittleProximal","rightLittleIntermediate","rightLittleDistal", "upperChest"]
 
 
-func _create_meta(
-	root_node: Node,
-	animplayer: AnimationPlayer,
-	vrm_extension: Dictionary,
-	gstate: GLTFState,
-	skeleton: Skeleton3D,
-	humanBones: BoneMap,
-	human_bone_to_idx: Dictionary,
-	pose_diffs: Array[Basis]
-) -> Resource:
+func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, skeleton: Skeleton3D, humanBones: BoneMap, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> Resource:
 	var nodes = gstate.get_nodes()
 
 	#var skeletonPath: NodePath = root_node.get_path_to(skeleton)
@@ -249,20 +240,19 @@ func _create_meta(
 	vrm_meta.humanoid_bone_mapping = humanBones
 	return vrm_meta
 
+
 static func _validate_meta(vrm_meta: vrm_meta_class) -> PackedStringArray:
 	if vrm_meta == null:
 		return PackedStringArray(["vrm_meta"])
 	var missing: PackedStringArray = []
-	for prop in ["allowed_user_name","violent_usage","sexual_usage","commercial_usage_type",
-			"political_religious_usage","antisocial_hate_usage",
-			"credit_notation","allow_redistribution", "modification",
-			"title", "author"]:
+	for prop in ["allowed_user_name", "violent_usage", "sexual_usage", "commercial_usage_type", "political_religious_usage", "antisocial_hate_usage", "credit_notation", "allow_redistribution", "modification", "title", "author"]:
 		var val: Variant = vrm_meta.get(prop)
-		print(str(prop)+":"+str(val))
+		print(str(prop) + ":" + str(val))
 		if typeof(val) != TYPE_STRING or val.strip_edges() == "":
 			missing.append(prop)
 	return missing
-	
+
+
 func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: GLTFState):
 	var meta_obj: Dictionary = {}
 	meta_obj["specVersion"] = vrm_meta.spec_version
@@ -291,32 +281,34 @@ func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: G
 	meta_obj["otherLicenseUrl"] = vrm_meta.other_license_url
 	vrm_extension["meta"] = meta_obj
 
-const vrm_animation_to_look_at : Dictionary = {
-		"lookLeft": "rangeMapHorizontalOuter",
-		"lookRight": "rangeMapHorizontalOuter",
-		"lookDown": "rangeMapVerticalDown",
-		"lookUp": "rangeMapVerticalUp",
-	}
-const vrm_animation_presets: Dictionary = {
-		"happy": true,
-		"angry": true,
-		"sad": true,
-		"relaxed": true,
-		"surprised": true,
-		"aa": true,
-		"ih": true,
-		"ou": true,
-		"ee": true,
-		"oh": true,
-		"blink": true,
-		"blinkLeft": true,
-		"blinkRight": true,
-		"lookUp": true,
-		"lookDown": true,
-		"lookLeft": true,
-		"lookRight": true,
-		"neutral": true,
+
+const vrm_animation_to_look_at: Dictionary = {
+	"lookLeft": "rangeMapHorizontalOuter",
+	"lookRight": "rangeMapHorizontalOuter",
+	"lookDown": "rangeMapVerticalDown",
+	"lookUp": "rangeMapVerticalUp",
 }
+const vrm_animation_presets: Dictionary = {
+	"happy": true,
+	"angry": true,
+	"sad": true,
+	"relaxed": true,
+	"surprised": true,
+	"aa": true,
+	"ih": true,
+	"ou": true,
+	"ee": true,
+	"oh": true,
+	"blink": true,
+	"blinkLeft": true,
+	"blinkRight": true,
+	"lookUp": true,
+	"lookDown": true,
+	"lookLeft": true,
+	"lookRight": true,
+	"neutral": true,
+}
+
 
 func _create_animation(default_values: Dictionary, default_blend_shapes: Dictionary, anim_name: String, expression: Dictionary, animplayer: AnimationPlayer, gstate: GLTFState, material_idx_to_mesh_and_surface_idx: Dictionary, mesh_idx_to_meshinstance: Dictionary, node_to_head_hidden_node: Dictionary, look_at: Dictionary):
 	#print("Blend shape group: " + shape["name"])
@@ -455,7 +447,7 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 		anim.track_set_interpolation_type(animtrack, interpolation_type)
 		# FIXME: Godot has weird normal/tangent singularities at weight=1.0 or weight=0.5
 		anim.blend_shape_track_insert_key(animtrack, input_key, 0.99999 * float(bind["weight"]))
-		default_blend_shapes[anim_path] = 0.0 # TODO: Find the default value from gltf??
+		default_blend_shapes[anim_path] = 0.0  # TODO: Find the default value from gltf??
 		#var mesh:ArrayMesh = meshes[bind["mesh"]].mesh
 		#print("Mesh name: " + mesh.resource_name)
 		#print("Bind index: " + str(bind["index"]))
@@ -469,8 +461,9 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 			anim.track_set_interpolation_type(animtrack, interpolation_type)
 			# FIXME: Godot has weird normal/tangent singularities at weight=1.0 or weight=0.5
 			anim.blend_shape_track_insert_key(animtrack, input_key, extra_weight * 0.99999 * float(bind["weight"]) / 100.0)
-			default_blend_shapes[anim_path] = 0.0 # TODO: Find the default value from gltf??
+			default_blend_shapes[anim_path] = 0.0  # TODO: Find the default value from gltf??
 	return anim
+
 
 static func _recurse_bones(bones: Dictionary, skel: Skeleton3D, bone_idx: int):
 	bones[skel.get_bone_name(bone_idx)] = bone_idx
@@ -480,13 +473,13 @@ static func _recurse_bones(bones: Dictionary, skel: Skeleton3D, bone_idx: int):
 
 static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide: Dictionary) -> ImporterMesh:
 	var bind_indices_to_hide: Dictionary = {}
-	
+
 	for i in range(skin.get_bind_count()):
 		var bind_name: StringName = skin.get_bind_name(i)
 		if bind_name != &"":
 			if bone_names_to_hide.has(bind_name):
 				bind_indices_to_hide[i] = true
-		else: # non-named binds???
+		else:  # non-named binds???
 			if bone_names_to_hide.values().count(skin.get_bind_bone(i)) != 0:
 				bind_indices_to_hide[i] = true
 
@@ -532,7 +525,7 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 				if hide_verts[indexarr[i]] == 0 && hide_verts[indexarr[i + 1]] == 0 && hide_verts[indexarr[i + 2]] == 0:
 					cnt += 3
 			if cnt == 0:
-				continue # We skip this primitive entirely.
+				continue  # We skip this primitive entirely.
 			new_indexarr.resize(cnt)
 			cnt = 0
 			for i in range(0, len(indexarr) - 2, 3):
@@ -545,7 +538,7 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 
 		surf_data_by_mesh.push_back({"prim": prim, "arr": arr, "bsarr": bsarr, "lods": lods, "fmt_compress_flags": fmt_compress_flags, "name": name, "mat": mat})
 
-	if len(surf_data_by_mesh) == 0: # all primitives were gobbled up
+	if len(surf_data_by_mesh) == 0:  # all primitives were gobbled up
 		return null
 	if not did_hide_any_surface_verts:
 		return mesh
@@ -568,9 +561,7 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 	return new_mesh
 
 
-func _create_animation_player(
-	animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]
-) -> AnimationPlayer:
+func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> AnimationPlayer:
 	# Remove all glTF animation players for safety.
 	# VRM does not support animation import in this way.
 	for i in range(gstate.get_animation_players_count(0)):
@@ -588,7 +579,7 @@ func _create_animation_player(
 
 	var skeletons: Array = gstate.get_skeletons()
 
-	var head_relative_bones: Dictionary = {} # To determine which meshes to hide.
+	var head_relative_bones: Dictionary = {}  # To determine which meshes to hide.
 
 	var mesh_to_head_hidden_mesh: Dictionary = {}
 	var node_to_head_hidden_node: Dictionary = {}
@@ -618,7 +609,7 @@ func _create_animation_player(
 			head_attach.add_child(head_bone_offset)
 			head_bone_offset.unique_name_in_owner = true
 			head_bone_offset.owner = skel.owner
-			var look_offset = Vector3(0,0,0)
+			var look_offset = Vector3(0, 0, 0)
 			if lookAt.has("offsetFromHeadBone"):
 				var gltf_look_offset = lookAt["offsetFromHeadBone"]
 				look_offset = pose_diffs[skel.find_bone("Head")] * Vector3(gltf_look_offset[0], gltf_look_offset[1], gltf_look_offset[2])
@@ -654,15 +645,15 @@ func _create_animation_player(
 					if head_hidden_mesh == null:
 						flag = "thirdPersonOnly"
 					if head_hidden_mesh == mesh:
-						flag = "both" # Nothing to do: No head verts.
+						flag = "both"  # Nothing to do: No head verts.
 
-			var layer_mask: int = 6 # "both"
+			var layer_mask: int = 6  # "both"
 			if flag == "thirdPersonOnly":
 				layer_mask = 4
 			elif flag == "firstPersonOnly":
 				layer_mask = 2
 
-			if flag == "auto" and head_hidden_mesh != mesh: # If it is still "auto", we have something to hide.
+			if flag == "auto" and head_hidden_mesh != mesh:  # If it is still "auto", we have something to hide.
 				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
 				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
 				head_hidden_node.name = node.name + " (Headless)"
@@ -670,7 +661,7 @@ func _create_animation_player(
 				head_hidden_node.mesh = head_hidden_mesh
 				head_hidden_node.skeleton_path = node.skeleton_path
 				head_hidden_node.script = importer_mesh_attributes
-				head_hidden_node.layers = 2 # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.layers = 2  # ImporterMeshInstance3D is missing APIs.
 				head_hidden_node.first_person_flag = "head_removed"
 				node.add_sibling(head_hidden_node)
 				head_hidden_node.owner = node.owner
@@ -728,7 +719,7 @@ func _create_animation_player(
 		# https://github.com/vrm-c/vrm-specification/tree/master/specification/0.0#blendshape-name-identifier
 		animation_library.add_animation(expression_name, anim)
 
-	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI/2, 0, 0))
+	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI / 2, 0, 0))
 	var leftEyePath: String = ""
 	var rightEyePath: String = ""
 	if lookAt.get("type", "") == "bone" and lefteye >= 0 and righteye >= 0:
@@ -745,7 +736,6 @@ func _create_animation_player(
 		var vertdown = lookAt.get("rangeMapVerticalDown", {})
 		var vertup = lookAt.get("rangeMapVerticalUp", {})
 
-
 		var anim: Animation = null
 		var animtrack: int
 		var input_val: float
@@ -755,14 +745,12 @@ func _create_animation_player(
 		anim.track_set_path(animtrack, leftEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = horizout.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizout.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizout.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 		animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 		anim.track_set_path(animtrack, rightEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = horizin.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizin.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), -horizin.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 
 		anim = Animation.new()
 		animation_library.add_animation("lookRight", anim)
@@ -770,14 +758,12 @@ func _create_animation_player(
 		anim.track_set_path(animtrack, leftEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = horizout.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizout.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizout.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 		animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 		anim.track_set_path(animtrack, rightEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = horizin.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizin.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(0, 0, 1), horizin.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 
 		anim = Animation.new()
 		animation_library.add_animation("lookUp", anim)
@@ -785,14 +771,12 @@ func _create_animation_player(
 		anim.track_set_path(animtrack, leftEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = vertup.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 		animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 		anim.track_set_path(animtrack, rightEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = vertup.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), -vertup.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 
 		anim = Animation.new()
 		animation_library.add_animation("lookDown", anim)
@@ -800,14 +784,12 @@ func _create_animation_player(
 		anim.track_set_path(animtrack, leftEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = vertdown.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 		animtrack = anim.add_track(Animation.TYPE_ROTATION_3D)
 		anim.track_set_path(animtrack, rightEyePath)
 		anim.track_set_interpolation_type(animtrack, Animation.INTERPOLATION_LINEAR)
 		input_val = vertdown.get("inputMaxValue", 90) / 180.0
-		anim.rotation_track_insert_key(animtrack, input_val,
-			eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
+		anim.rotation_track_insert_key(animtrack, input_val, eye_bone_horizontal * (Basis(Vector3(1, 0, 0), vertdown.get("outputScale", 1.0) * input_val * PI / 180.0)).get_rotation_quaternion())
 
 	var reset_anim: Animation = Animation.new()
 	reset_anim.resource_name = "RESET"
@@ -828,12 +810,11 @@ func _create_animation_player(
 		reset_anim.track_set_path(animtrack, rightEyePath)
 		reset_anim.rotation_track_insert_key(animtrack, 0.0, eye_bone_horizontal)
 
-	
-
 	animation_library.add_animation(&"RESET", reset_anim)
 
 	animplayer.add_animation_library("", animation_library)
 	return animplayer
+
 
 func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState):
 	if animplayer.has_animation("lookLeft") and animplayer.has_animation("lookUp") and animplayer.has_animation("lookDown"):
@@ -1005,6 +986,7 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	var expressions: Dictionary = {"preset": presets, "custom": custom}
 	vrm_extension["expressions"] = expressions
 
+
 func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool = false) -> void:
 	if bone < 0:
 		return
@@ -1042,7 +1024,7 @@ func _add_vrm_nodes_to_skin(obj: Dictionary) -> bool:
 	for i in range(len(gltf_nodes)):
 		if gltf_nodes[i]["name"] == "Root":
 			pass
-			
+
 	for human_bone in human_bones:
 		_add_joints_recursive(new_joints_set, obj["nodes"], int(human_bones[human_bone]["node"]), false)
 	_add_joint_set_as_skin(obj, new_joints_set)
@@ -1058,7 +1040,9 @@ func remove_null_owner(node: Node):
 	for child in node.get_children():
 		remove_null_owner(child)
 
+
 const required_bones = ["hips", "spine", "head", "leftUpperLeg", "leftLowerLeg", "leftFoot", "rightUpperLeg", "rightLowerLeg", "rightFoot", "leftUpperArm", "leftLowerArm", "leftHand", "rightUpperArm", "rightLowerArm", "rightHand"]
+
 
 func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 	if gstate.get_meta("vrm", "") != "1.0":
@@ -1069,7 +1053,7 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 
 	# Do not call remove_null_owner on root, since root will not have an owner.
 	for node in root.get_children():
-		remove_null_owner(node) # should be done by builtin exporter.
+		remove_null_owner(node)  # should be done by builtin exporter.
 	var vrm_extension: Dictionary = {}
 	var humanoid_skeleton: Skeleton3D = _get_humanoid_skel(root)
 	var anim_player: AnimationPlayer
@@ -1105,8 +1089,7 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 			if parent > root_bone:
 				parent -= 1
 			if b != root_bone:
-				bone_storage.append([skel.get_bone_name(b), parent, skel.get_bone_rest(b),
-					skel.get_bone_pose_position(b), skel.get_bone_pose_rotation(b), skel.get_bone_pose_scale(b)])
+				bone_storage.append([skel.get_bone_name(b), parent, skel.get_bone_rest(b), skel.get_bone_pose_position(b), skel.get_bone_pose_rotation(b), skel.get_bone_pose_scale(b)])
 		skel.clear_bones()
 		for bone_data in bone_storage:
 			skel.add_bone(bone_data[0])
@@ -1154,6 +1137,7 @@ func _export_preflight(gstate: GLTFState, root: Node) -> Error:
 	#ResourceSaver.save(ps, "res://saved_outgoing_vrm.tscn", ResourceSaver.FLAG_REPLACE_SUBRESOURCE_PATHS)
 	return OK
 
+
 static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 	var humanoid_skeleton: Skeleton3D
 	if root_node.has_node("%GeneralSkeleton"):
@@ -1164,11 +1148,11 @@ static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 			humanoid_skeleton = skels[0]
 	return humanoid_skeleton
 
+
 static func _validate_humanoid(root_node: Node3D) -> Dictionary:
 	var human_to_vrm_bone: Dictionary
 	for vrm_bone in vrm_constants_class.vrm_to_human_bone:
 		human_to_vrm_bone[vrm_constants_class.vrm_to_human_bone[vrm_bone]] = vrm_bone
-
 
 	var humanoid_skeleton: Skeleton3D = _get_humanoid_skel(root_node)
 
@@ -1183,6 +1167,7 @@ static func _validate_humanoid(root_node: Node3D) -> Dictionary:
 			return {}
 
 	return vrm_bone_mapping
+
 
 func _export_post(gstate: GLTFState) -> Error:
 	var json_gltf_nodes: Array = gstate.json["nodes"]
@@ -1204,7 +1189,7 @@ func _export_post(gstate: GLTFState) -> Error:
 		var orig_children: Array = orig_gltf_root_node["children"]
 		#print("Orig root: " + orig_gltf_root_node["name"])
 		#print("First child: " + json["nodes"][orig_children[0]]["name"])
-		orig_gltf_root_node["name"] = "_unused" # Removing nodes in glTF is very difficulty.
+		orig_gltf_root_node["name"] = "_unused"  # Removing nodes in glTF is very difficulty.
 		orig_gltf_root_node.erase("children")
 		gltf_root_nodes.clear()
 		gltf_root_nodes.append_array(orig_children)
@@ -1274,9 +1259,9 @@ func _export_post(gstate: GLTFState) -> Error:
 			var first_person_flag: String = "auto"
 			if node.has_meta("vrm_first_person_flag"):
 				first_person_flag = node.get_meta("vrm_first_person_flag")
-			elif node.skin != null and node.skin.has_meta("vrm_first_person_flag"): # HACK (ImporterMesh api limit)
+			elif node.skin != null and node.skin.has_meta("vrm_first_person_flag"):  # HACK (ImporterMesh api limit)
 				first_person_flag = node.skin.get_meta("vrm_first_person_flag")
-			var mesh_annotation = {"node": node_idx, "type": first_person_flag }
+			var mesh_annotation = {"node": node_idx, "type": first_person_flag}
 			mesh_annotations.append(mesh_annotation)
 
 	first_person["meshAnnotations"] = mesh_annotations
@@ -1294,6 +1279,7 @@ func _export_post(gstate: GLTFState) -> Error:
 
 	return OK
 
+
 func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = PackedStringArray()) -> Error:
 	if not extensions.has("VRMC_vrm"):
 		return ERR_INVALID_DATA
@@ -1305,11 +1291,11 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 	for node in gltf_nodes:
 		if node.has("extensions") and node["extensions"].is_empty():
 			node.erase("extensions")
-		if node.get("name","") == "Root":
+		if node.get("name", "") == "Root":
 			node["name"] = "Root_"
-		if node.get("name","") == "AnimationPlayer":
+		if node.get("name", "") == "AnimationPlayer":
 			node["name"] = "AnimationPlayer_"
-		if node.get("name","") == "BoneNodeConstraintApplier":
+		if node.get("name", "") == "BoneNodeConstraintApplier":
 			node["name"] = "BoneNodeConstraintApplier_"
 	return OK
 
