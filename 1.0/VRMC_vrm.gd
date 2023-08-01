@@ -199,12 +199,6 @@ class SkelBone:
 func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, skeleton: Skeleton3D, humanBones: BoneMap, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> Resource:
 	var nodes = gstate.get_nodes()
 
-	#var skeletonPath: NodePath = root_node.get_path_to(skeleton)
-	#root_node.set("vrm_skeleton", skeletonPath)
-
-	#var animPath: NodePath = root_node.get_path_to(animplayer)
-	#root_node.set("vrm_animplayer", animPath)
-
 	vrm_meta = vrm_meta_class.new()
 
 	vrm_meta.resource_name = "CLICK TO SEE METADATA"
@@ -1370,6 +1364,5 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 
 	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, skeleton, humanBones, human_bone_to_idx, pose_diffs)
 	root_node.set("vrm_meta", vrm_meta)
-	root_node.set("vrm_secondary", NodePath())
 
 	return OK
