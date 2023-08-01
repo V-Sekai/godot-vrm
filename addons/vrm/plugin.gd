@@ -199,7 +199,7 @@ func _enter_tree() -> void:
 	GLTFDocument.register_gltf_document_extension(VRMC_materials_hdr_emissiveMultiplier_inst)
 	GLTFDocument.register_gltf_document_extension(VRMC_materials_mtoon_inst)
 	#GLTFDocument.register_gltf_document_extension(VRMC_vrm_animation_inst)
-	import_plugin = preload("res://addons/vrm/import_vrm.gd").new()
+	import_plugin = preload("./import_vrm.gd").new()
 	add_scene_format_importer_plugin(import_plugin)
 
 
