@@ -179,7 +179,7 @@ func _enter_tree() -> void:
 
 	file_export_lib = EditorFileDialog.new()
 	# get_gui_base().
-	add_child(file_export_lib)
+	get_editor_interface().get_base_control().add_child(file_export_lib)
 	file_export_lib.file_selected.connect(_export_vrm_dialog_action)
 	file_export_lib.set_title("Export VRM File")
 	file_export_lib.set_file_mode(EditorFileDialog.FILE_MODE_SAVE_FILE)
