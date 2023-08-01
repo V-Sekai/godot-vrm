@@ -587,12 +587,6 @@ class SkelBone:
 func _create_meta(root_node: Node, animplayer: AnimationPlayer, vrm_extension: Dictionary, gstate: GLTFState, skeleton: Skeleton3D, humanBones: BoneMap, human_bone_to_idx: Dictionary, pose_diffs: Array[Basis]) -> Resource:
 	var nodes = gstate.get_nodes()
 
-	var skeletonPath: NodePath = root_node.get_path_to(skeleton)
-	root_node.set("vrm_skeleton", skeletonPath)
-
-	var animPath: NodePath = root_node.get_path_to(animplayer)
-	root_node.set("vrm_animplayer", animPath)
-
 	var firstperson = vrm_extension.get("firstPerson", null)
 	var eyeOffset: Vector3
 
@@ -1253,7 +1247,6 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 
 	var vrm_meta: Resource = _create_meta(root_node, animplayer, vrm_extension, gstate, skeleton, humanBones, human_bone_to_idx, pose_diffs)
 	root_node.set("vrm_meta", vrm_meta)
-	root_node.set("vrm_secondary", NodePath())
 
 	if vrm_extension.has("secondaryAnimation") and (vrm_extension["secondaryAnimation"].get("colliderGroups", []).size() > 0 or vrm_extension["secondaryAnimation"].get("boneGroups", []).size() > 0):
 		var secondary_node: Node = root_node.get_node("secondary")
@@ -1262,9 +1255,6 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 			root_node.add_child(secondary_node, true)
 			secondary_node.set_owner(root_node)
 			secondary_node.set_name("secondary")
-
-		var secondary_path: NodePath = root_node.get_path_to(secondary_node)
-		root_node.set("vrm_secondary", secondary_path)
 
 		_parse_secondary_node(secondary_node, vrm_extension, gstate, pose_diffs, is_vrm_0)
 	return OK
