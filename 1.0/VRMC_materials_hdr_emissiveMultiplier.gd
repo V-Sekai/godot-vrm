@@ -1,9 +1,11 @@
 extends GLTFDocumentExtension
 
+
 func _import_preflight(state: GLTFState, extensions = PackedStringArray()) -> Error:
 	if extensions.has("VRMC_materials_hdr_emissiveMultiplier") or extensions.has("KHR_materials_emissive_strength"):
 		return OK
 	return ERR_INVALID_DATA
+
 
 # Called when the node enters the scene tree for the first time.
 func _import_post(state, root):
@@ -20,10 +22,12 @@ func _import_post(state, root):
 			elif vrmc_emissive.has("emissiveMultiplier"):
 				material.emission_energy_multiplier = vrmc_emissive["emissiveMultiplier"]
 
+
 func _export(state: GLTFState, extensions = PackedStringArray()) -> Error:
 	if extensions.has("VRMC_materials_hdr_emissiveMultiplier") or extensions.has("KHR_materials_emissive_strength"):
 		return OK
 	return ERR_INVALID_DATA
+
 
 # Called when the node enters the scene tree for the first time.
 func _export_post(state: GLTFState):

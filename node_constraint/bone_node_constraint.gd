@@ -4,7 +4,6 @@
 class_name BoneNodeConstraint
 extends Resource
 
-
 enum ConstraintType {
 	NONE = 0,
 	AIM = 1,
@@ -88,7 +87,7 @@ func evaluate_roll() -> void:
 	var source_axis: Vector3 = source_quat.get_axis()
 	var source_angle: float = source_quat.get_angle()
 	# Calculate what we need to apply to the target.
-	var axis_index: int = aim_or_roll_axis - 1 # Vector3.Axis
+	var axis_index: int = aim_or_roll_axis - 1  # Vector3.Axis
 	var axis_value: float = source_axis[axis_index]
 	var rotation_quat := Quaternion.IDENTITY
 	if not is_zero_approx(axis_value):
@@ -106,7 +105,7 @@ func evaluate_rotation() -> void:
 	_set_weighted_posed_target_rotation(source_quat)
 
 
-static func from_dictionary(dict: Dictionary): # -> BoneNodeConstraint:
+static func from_dictionary(dict: Dictionary):  # -> BoneNodeConstraint:
 	var ret := new()
 	if not dict.has("constraint"):
 		return ret
@@ -146,9 +145,7 @@ func to_dictionary() -> Dictionary:
 		type_key = "roll"
 	elif constraint_type == ConstraintType.ROTATION:
 		type_key = "rotation"
-	var parameters: Dictionary = {
-		"source": source_node_index
-	}
+	var parameters: Dictionary = {"source": source_node_index}
 	if constraint_type == ConstraintType.AIM:
 		parameters["aimAxis"] = _to_dictionary_get_string_from_aim_axis()
 	elif constraint_type == ConstraintType.ROLL:
@@ -157,10 +154,7 @@ func to_dictionary() -> Dictionary:
 		parameters["weight"] = weight
 	var constraint: Dictionary = {}
 	constraint[type_key] = parameters
-	return {
-		"specVersion": "1.0",
-		"constraint": constraint
-	}
+	return {"specVersion": "1.0", "constraint": constraint}
 
 
 func _get_posed_source_transform() -> Transform3D:

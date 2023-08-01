@@ -7,10 +7,10 @@ extends Node
 
 const bone_node_constraint = preload("./bone_node_constraint.gd")
 
-
 @export var constraints: Array[bone_node_constraint] = []
 #@export_node_path("Skeleton3D") var skeleton_node_path: NodePath = ^"%GeneralSkeleton"
 #var skeleton: Skeleton3D
+
 
 func _ready() -> void:
 	#skeleton = get_node(skeleton_node_path)

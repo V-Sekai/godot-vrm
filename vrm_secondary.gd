@@ -47,11 +47,12 @@ var is_child_of_vrm: bool = false
 #const springbone_runtime = preload("./runtime/springbone_runtime.gd")
 #var spring_logic: Array[springbone_runtime]
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	skel = get_node(skeleton)
 	if skel == null:
-		return # Not supported.
+		return  # Not supported.
 
 	var gizmo_spring_bone: bool = false
 	if get_parent().script != null and get_parent().script.resource_path.get_file() == "vrm_toplevel.gd":
@@ -91,7 +92,7 @@ func _ready() -> void:
 			center_transforms_inv.push_back(Transform3D.IDENTITY)
 		var center_idx: int = center_to_index[center_key]
 
-	update_centers(skel.global_transform) # .affine_inverse())
+	update_centers(skel.global_transform)
 
 	for spring_bone in spring_bones:
 		var center_key: Variant = spring_bone.center_bone
@@ -180,7 +181,7 @@ func tick_spring_bones(delta: float) -> void:
 
 	if skel == null:
 		return
-	var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
+	var skel_transform: Transform3D = skel.global_transform
 
 	update_centers(skel_transform)
 
@@ -204,7 +205,7 @@ func _process(delta: float) -> void:
 		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
 				if skel != null:
-					var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
+					var skel_transform: Transform3D = skel.global_transform
 					update_centers(skel_transform)
 					for collider_i in range(len(colliders_internal)):
 						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
@@ -218,7 +219,7 @@ func _physics_process(delta: float) -> void:
 		elif Engine.is_editor_hint():
 			if secondary_gizmo != null:
 				if skel != null:
-					var skel_transform: Transform3D = skel.global_transform # .affine_inverse()
+					var skel_transform: Transform3D = skel.global_transform
 					update_centers(skel_transform)
 					for collider_i in range(len(colliders_internal)):
 						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
@@ -255,7 +256,7 @@ class SecondaryGizmo:
 		set_material_override(m)
 		var i: int = 0
 		var s_sk: Skeleton3D = secondary_node.skel
-		var s_sk_transform_inv: Transform3D = Transform3D.IDENTITY # secondary_node.skel.global_transform.affine_inverse()
+		var s_sk_transform_inv: Transform3D = Transform3D.IDENTITY
 		# Spring bones
 		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for spring_bone in secondary_node.spring_bones_internal:
@@ -279,10 +280,10 @@ class SecondaryGizmo:
 		var skel_inv: Transform3D = secondary_node.skel.global_transform.affine_inverse()
 		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for collider in secondary_node.colliders_internal:
-			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.colliders_centers[i]] # * skel_inv
+			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.colliders_centers[i]]
 			#var c_tr = Transform3D.IDENTITY
 			#for collider in collider_group.sphere_colliders:
-			#var c_ps: Vector3 = center_transform * collider.position  # VRMTopLevel.VRMUtil.coordinate_u2g(collider.normal)
+			#var c_ps: Vector3 = center_transform * collider.position
 			collider.draw_debug(mesh, center_transform_inv)
 			#draw_sphere(c_tr.basis, c_tr * c_ps, collider.radius, collider.gizmo_color)
 			i += 1

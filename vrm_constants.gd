@@ -55,7 +55,7 @@ const vrm_to_human_bone: Dictionary = {
 	"rightUpperLeg": "RightUpperLeg",
 	"rightLowerLeg": "RightLowerLeg",
 	"rightFoot": "RightFoot",
-	"rightToes": "RightToes"
+	"rightToes": "RightToes",
 }
 
 

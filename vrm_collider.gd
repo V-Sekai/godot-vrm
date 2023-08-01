@@ -10,7 +10,7 @@ extends Resource
 @export var bone: String
 
 @export var offset: Vector3
-@export var tail: Vector3 # if is_capsule
+@export var tail: Vector3  # if is_capsule
 @export var radius: float
 
 @export var is_capsule: bool = false
@@ -18,7 +18,6 @@ extends Resource
 # (Array, Plane)
 # Only use in editor
 @export var gizmo_color: Color = Color.MAGENTA
-
 
 
 func create_runtime(secondary_node: Node3D, skeleton: Skeleton3D) -> VrmRuntimeCollider:
@@ -44,7 +43,6 @@ func create_runtime(secondary_node: Node3D, skeleton: Skeleton3D) -> VrmRuntimeC
 #		bone_idx = ready_parent.find_bone(bone)
 #	setup()
 
-
 #func _process():
 #	for collider in colliders:
 #		collider.update(parent, skel)
@@ -67,10 +65,10 @@ class VrmRuntimeCollider:
 	func update(skel_global_xform_inv: Transform3D, center_transform: Transform3D, skel: Skeleton3D):
 		if bone_idx != -1:
 			position = center_transform * (skel.get_bone_global_pose(bone_idx) * offset)
-		else: # if node != null:
+		else:  # if node != null:
 			position = center_transform * skel_global_xform_inv * node.global_transform * offset
 
-	func collision(bone_position: Vector3, bone_radius: float, bone_length: float, out: Vector3, position_offset: Vector3=Vector3.ZERO) -> Vector3:
+	func collision(bone_position: Vector3, bone_radius: float, bone_length: float, out: Vector3, position_offset: Vector3 = Vector3.ZERO) -> Vector3:
 		var this_position = self.position + position_offset
 		var r = bone_radius + self.radius
 		if r <= 0:
@@ -86,7 +84,10 @@ class VrmRuntimeCollider:
 			# out = out + 1.0 * (pos_from_collider - bone_position).normalized() * bone_length
 		return out
 
-class SphereCollider extends VrmRuntimeCollider:
+
+class SphereCollider:
+	extends VrmRuntimeCollider
+
 	func _init(bone_idx: int, node: Node3D, collider_offset: Vector3, collider_radius: float):
 		super(bone_idx, node, collider_offset, collider_radius)
 
@@ -111,7 +112,9 @@ class SphereCollider extends VrmRuntimeCollider:
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * Vector3.FORWARD * self.radius).rotated(bas * Vector3.UP, sppi * (i % step))))
 
-class CapsuleCollider extends VrmRuntimeCollider:
+
+class CapsuleCollider:
+	extends VrmRuntimeCollider
 	var tail_offset: Vector3
 	var tail_position: Vector3
 
@@ -123,13 +126,13 @@ class CapsuleCollider extends VrmRuntimeCollider:
 		if bone_idx != -1:
 			position = center_transform * (skel.get_bone_global_pose(bone_idx) * offset)
 			tail_position = center_transform * (skel.get_bone_global_pose(bone_idx) * tail_offset)
-		else: # if node != null
+		else:  # if node != null
 			position = center_transform * skel_global_xform_inv * node.global_transform * offset
 			tail_position = center_transform * skel_global_xform_inv * node.global_transform * tail_offset
 
-	func collision(bone_position: Vector3, bone_radius: float, bone_length: float, out: Vector3, position_offset: Vector3=Vector3.ZERO) -> Vector3:
-		var P: Vector3 = tail_position - position;
-		var Q: Vector3 = bone_position - position - position_offset;
+	func collision(bone_position: Vector3, bone_radius: float, bone_length: float, out: Vector3, position_offset: Vector3 = Vector3.ZERO) -> Vector3:
+		var P: Vector3 = tail_position - position
+		var Q: Vector3 = bone_position - position - position_offset
 		var dot = P.dot(Q)
 		if dot <= 0:
 			return super.collision(bone_position, bone_radius, bone_length, out, position_offset)
@@ -149,8 +152,8 @@ class CapsuleCollider extends VrmRuntimeCollider:
 
 		var up_axis: Vector3 = (tail - position).normalized()
 		if up_axis.is_equal_approx(Vector3.ZERO):
-			up_axis = Vector3(0,1,0)
-		var right_axis: Vector3 #= up_axis.cross(Vector3.RIGHT).normalized()
+			up_axis = Vector3(0, 1, 0)
+		var right_axis: Vector3  #= up_axis.cross(Vector3.RIGHT).normalized()
 		if abs(up_axis.dot(Vector3.RIGHT)) < 0.8:
 			right_axis = up_axis.cross(Vector3.RIGHT).normalized()
 		elif abs(up_axis.dot(Vector3.FORWARD)) < 0.8:
@@ -161,14 +164,14 @@ class CapsuleCollider extends VrmRuntimeCollider:
 		right_axis = forward_axis.cross(up_axis).normalized()
 		for i in range(1, step + 1):
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex((center if i - 1 < step/2 else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * ((i - 1) % step))))
+			mesh.surface_add_vertex((center if i - 1 < step / 2 else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI / 2 + sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex((center if i < step/2 or i == step else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI/2 + sppi * (i % step))))
+			mesh.surface_add_vertex((center if i < step / 2 or i == step else tail) + ((bas * up_axis * self.radius).rotated(bas * right_axis, PI / 2 + sppi * (i % step))))
 		for i in range(1, step + 1):
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex((center if i - 1 < step/2 else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * ((i - 1) % step))))
+			mesh.surface_add_vertex((center if i - 1 < step / 2 else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI / 2 + sppi * ((i - 1) % step))))
 			mesh.surface_set_color(self.gizmo_color)
-			mesh.surface_add_vertex((center if i < step/2 or i == step else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI/2 + sppi * (i % step))))
+			mesh.surface_add_vertex((center if i < step / 2 or i == step else tail) + ((bas * right_axis * self.radius).rotated(bas * forward_axis, PI / 2 + sppi * (i % step))))
 		for i in range(1, step + 1):
 			mesh.surface_set_color(self.gizmo_color)
 			mesh.surface_add_vertex(center + ((bas * forward_axis * self.radius).rotated(bas * up_axis, sppi * ((i - 1) % step))))

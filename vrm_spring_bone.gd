@@ -46,6 +46,7 @@ var gravity_multiplier: float = 1.0
 var gravity_rotation: Quaternion = Quaternion.IDENTITY
 var add_force: Vector3 = Vector3.ZERO
 
+
 func setup(center_transform_inv: Transform3D, force: bool = false) -> void:
 	if len(joint_nodes) < 2:
 		if force and not has_warned:
