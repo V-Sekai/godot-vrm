@@ -316,6 +316,81 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 	return null
 
 
+func _first_person_head_hiding(vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary):
+	var nodes = gstate.get_nodes()
+	var skeletons = gstate.get_skeletons()
+	var firstperson = vrm_extension.get("firstPerson", null)
+
+	var mesh_to_head_hidden_mesh: Dictionary = {}
+	var node_to_head_hidden_node: Dictionary = {}
+
+	var head_relative_bones: Dictionary = {}  # To determine which meshes to hide.
+
+	var head_bone_idx = firstperson.get("firstPersonBone", human_bone_to_idx.get("head", -1))
+	if head_bone_idx >= 0:
+		var headNode: GLTFNode = nodes[head_bone_idx]
+		var skel: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton)
+		vrm_utils._recurse_bones(head_relative_bones, skel, skel.find_bone(headNode.resource_name))  # FIXME: I forget if this is correct
+
+	var mesh_annotations_by_mesh = {}
+	for meshannotation in firstperson.get("meshAnnotations", []):
+		mesh_annotations_by_mesh[int(meshannotation["mesh"])] = meshannotation
+
+	for node_idx in range(len(nodes)):
+		var gltf_node: GLTFNode = nodes[node_idx]
+		var node: Node = gstate.get_scene_node(node_idx)
+		if node is ImporterMeshInstance3D:
+			var meshannotation = mesh_annotations_by_mesh.get(gltf_node.mesh, {})
+
+			var flag: String = meshannotation.get("firstPersonFlag", "Auto")
+
+			# Non-skinned meshes: use flag.
+			var mesh: ImporterMesh = node.mesh
+			var head_hidden_mesh: ImporterMesh = mesh
+			if flag == "Auto":
+				if node.skin == null:
+					var parent_node = node.get_parent()
+					if parent_node is BoneAttachment3D:
+						if head_relative_bones.has(parent_node.bone_name):
+							flag = "ThirdPersonOnly"
+				else:
+					head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones)
+					if head_hidden_mesh == null:
+						flag = "ThirdPersonOnly"
+					if head_hidden_mesh == mesh:
+						flag = "Both"  # Nothing to do: No head verts.
+
+			var layer_mask: int = 6  # "both"
+			if flag == "ThirdPersonOnly":
+				layer_mask = 4
+			elif flag == "FirstPersonOnly":
+				layer_mask = 2
+
+			if flag == "Auto" and head_hidden_mesh != mesh:  # If it is still "auto", we have something to hide.
+				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
+				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
+				head_hidden_node.name = node.name + " (Headless)"
+				head_hidden_node.skin = node.skin
+				head_hidden_node.mesh = head_hidden_mesh
+				head_hidden_node.skeleton_path = node.skeleton_path
+				head_hidden_node.script = importer_mesh_attributes
+				head_hidden_node.layers = 2  # ImporterMeshInstance3D is missing APIs.
+				head_hidden_node.first_person_flag = "head_removed"
+
+				node.add_sibling(head_hidden_node)
+				head_hidden_node.owner = node.owner
+				var gltf_mesh: GLTFMesh = GLTFMesh.new()
+				gltf_mesh.mesh = head_hidden_mesh
+				# FIXME: do we need to assign gltf_mesh.instance_materials?
+				gstate.meshes.append(gltf_mesh)
+				node_to_head_hidden_node[node] = head_hidden_node
+				layer_mask = 4
+
+			node.script = importer_mesh_attributes
+			node.layers = layer_mask
+			node.first_person_flag = flag.substr(0, 1).to_lower() + flag.substr(1)
+
+
 # https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/schema/vrm.humanoid.bone.schema.json
 # vrm_extension["humanoid"]["bone"]:
 #"enum": ["hips","leftUpperLeg","rightUpperLeg","leftLowerLeg","rightLowerLeg","leftFoot","rightFoot",
@@ -546,75 +621,6 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 				push_warning("Unrecognized preset name " + str(shape))
 
 	var skeletons: Array[GLTFSkeleton] = gstate.get_skeletons()
-
-	var mesh_to_head_hidden_mesh: Dictionary = {}
-	var node_to_head_hidden_node: Dictionary = {}
-
-	var head_relative_bones: Dictionary = {}  # To determine which meshes to hide.
-
-	var head_bone_idx = firstperson.get("firstPersonBone", human_bone_to_idx.get("head", -1))
-	if head_bone_idx >= 0:
-		var headNode: GLTFNode = nodes[head_bone_idx]
-		var skel: Skeleton3D = _get_skel_godot_node(gstate, nodes, skeletons, headNode.skeleton)
-		vrm_utils._recurse_bones(head_relative_bones, skel, skel.find_bone(headNode.resource_name))  # FIXME: I forget if this is correct
-
-	var mesh_annotations_by_mesh = {}
-	for meshannotation in firstperson.get("meshAnnotations", []):
-		mesh_annotations_by_mesh[int(meshannotation["mesh"])] = meshannotation
-
-	for node_idx in range(len(nodes)):
-		var gltf_node: GLTFNode = nodes[node_idx]
-		var node: Node = gstate.get_scene_node(node_idx)
-		if node is ImporterMeshInstance3D:
-			var meshannotation = mesh_annotations_by_mesh.get(gltf_node.mesh, {})
-
-			var flag: String = meshannotation.get("firstPersonFlag", "Auto")
-
-			# Non-skinned meshes: use flag.
-			var mesh: ImporterMesh = node.mesh
-			var head_hidden_mesh: ImporterMesh = mesh
-			if flag == "Auto":
-				if node.skin == null:
-					var parent_node = node.get_parent()
-					if parent_node is BoneAttachment3D:
-						if head_relative_bones.has(parent_node.bone_name):
-							flag = "ThirdPersonOnly"
-				else:
-					head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones)
-					if head_hidden_mesh == null:
-						flag = "ThirdPersonOnly"
-					if head_hidden_mesh == mesh:
-						flag = "Both"  # Nothing to do: No head verts.
-
-			var layer_mask: int = 6  # "both"
-			if flag == "ThirdPersonOnly":
-				layer_mask = 4
-			elif flag == "FirstPersonOnly":
-				layer_mask = 2
-
-			if flag == "Auto" and head_hidden_mesh != mesh:  # If it is still "auto", we have something to hide.
-				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
-				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
-				head_hidden_node.name = node.name + " (Headless)"
-				head_hidden_node.skin = node.skin
-				head_hidden_node.mesh = head_hidden_mesh
-				head_hidden_node.skeleton_path = node.skeleton_path
-				head_hidden_node.script = importer_mesh_attributes
-				head_hidden_node.layers = 2  # ImporterMeshInstance3D is missing APIs.
-				head_hidden_node.first_person_flag = "head_removed"
-
-				node.add_sibling(head_hidden_node)
-				head_hidden_node.owner = node.owner
-				var gltf_mesh: GLTFMesh = GLTFMesh.new()
-				gltf_mesh.mesh = head_hidden_mesh
-				# FIXME: do we need to assign gltf_mesh.instance_materials?
-				gstate.meshes.append(gltf_mesh)
-				node_to_head_hidden_node[node] = head_hidden_node
-				layer_mask = 4
-
-			node.script = importer_mesh_attributes
-			node.layers = layer_mask
-			node.first_person_flag = flag.substr(0, 1).to_lower() + flag.substr(1)
 
 	var eye_bone_horizontal: Quaternion = Quaternion.from_euler(Vector3(PI / 2, 0, 0))
 	if firstperson.get("lookAtTypeName", "") == "Bone":
@@ -948,9 +954,7 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 
 	if is_vrm_0:
 		# VRM 0.0 has models facing backwards due to a spec error (flipped z instead of x)
-		print("Pre-rotate")
 		vrm_utils.rotate_scene_180(root_node)
-		print("Post-rotate")
 
 	var do_retarget = true
 
@@ -965,6 +969,7 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 	skeleton.set_meta("vrm_pose_diffs", pose_diffs)
 
 	_update_materials(vrm_extension, gstate)
+	_first_person_head_hiding(vrm_extension, gstate, human_bone_to_idx)
 
 	var animplayer: AnimationPlayer
 	if root_node.has_node("AnimationPlayer"):

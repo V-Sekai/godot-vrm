@@ -77,7 +77,8 @@ static func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_se
 	p_node.transform = ROTATE_180_TRANSFORM * p_node.transform * ROTATE_180_TRANSFORM
 	if p_node is ImporterMeshInstance3D:
 		mesh_set[p_node.mesh] = true
-		skin_set[p_node.skin] = true
+		if p_node.skin != null:
+			skin_set[p_node.skin] = true
 	for child in p_node.get_children():
 		rotate_scene_180_inner(child, mesh_set, skin_set)
 
