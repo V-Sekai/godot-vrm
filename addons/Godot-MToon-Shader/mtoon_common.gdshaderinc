@@ -163,9 +163,17 @@ vec3 calculateAddLighting(vec2 mainUv, float dotNL, float dotNV, float shadowAtt
 //#ifdef _ALPHABLEND_ON
 //	lighting *= step(0, dotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
 //#endif
+
+	float lightAtten = shadowAttenuation;
+	// Godot specific code to deal with clustering artifacts: We balance out the light attenuation to make it appear toony so we can hard-cut it when ATTENUATION == 0
+	float maxIntensityThreshold = mix(1, _ShadeShift, _ShadeToony);
+	float minIntensityThreshold = _ShadeShift;
+	lightAtten = clamp((shadowAttenuation - minIntensityThreshold) / max(EPS_COL, (maxIntensityThreshold - minIntensityThreshold)),0.0,1.0);
+	// End Godot Specific code
+
 	lighting *= 0.5; // darken if additional light.
 	lighting *= min(0.0, dotNL) + 1.0; // darken dotNL < 0 area by using float lambert
-	lighting *= shadowAttenuation; // darken if receiving shadow
+	lighting *= lightAtten; // darken if receiving shadow
 	col *= lighting;
 
 	// parametric rim lighting
@@ -347,9 +355,8 @@ void light() {
 	vec3 addLightIntensity = vec3(0.0);
 	vec3 diffuse_output = vec3(0.0);
 
-	if (isDirectional) {
+	if (LIGHT_IS_DIRECTIONAL) {
 		//UNITY_LIGHT_ATTENUATION(shadowAttenuation, i, posWorld.xyz);
-		// FIXME: Removed duplicate SHADOW_ATTENUATION* multiplier.
 		float lightAttenuation = mix(1.0, length(vec3(ATTENUATION))/length(vec3(1.0)), _ReceiveShadowRate * texture(_ReceiveShadowTexture, mainUv).r);
 
 		vec3 col;
@@ -357,7 +364,7 @@ void light() {
 		lighting = calculateLighting(mainUv, addDotNL, lightAttenuation, shade, lit, LIGHT_COLOR, col, lightIntensity);
 
 		// base light does not darken.
-		diffuse_output += col * lighting + indirectLighting * lit.rgb;
+		diffuse_output = col * lighting + indirectLighting * lit.rgb;
 
 		//col = min(col, lit.rgb); // comment out if you want to PBR absolutely.
 
@@ -374,8 +381,9 @@ void light() {
 		vec3 addLighting = calculateLighting(mainUv, addDotNL, 1.0, vec4(0.0), lit, LIGHT_COLOR, addCol, addTmp);
 		vec3 specLight;
 		// addLighting *= step(0, addDotNL); // darken if transparent. Because Unity's transparent material can't receive shadowAttenuation.
-		diffuse_output = calculateAddLighting(mainUv, addDotNL, dot(viewNormal, VIEW), length(vec3(ATTENUATION))/length(vec3(1.0)), addLighting, addCol, specLight);
-		SPECULAR_LIGHT += specLight;
+		float attenuation_multiplier = pow(length(vec3(ATTENUATION))/length(vec3(1.0)), 0.1); // Godot specific code to prevent clustering artifacts.
+		diffuse_output = attenuation_multiplier * calculateAddLighting(mainUv, addDotNL, dot(viewNormal, VIEW), length(vec3(ATTENUATION))/length(vec3(1.0)), addLighting, addCol, specLight);
+		SPECULAR_LIGHT += attenuation_multiplier * specLight;
 	}
 	if (_DebugMode >= 1.0) {
 		if (_DebugMode == 2.0) { //MTOON_DEBUG_LITSHADERATE
