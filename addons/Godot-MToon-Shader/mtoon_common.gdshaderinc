@@ -99,18 +99,18 @@ void vertex() {
 			vec3 worldNormalLength = vec3(1.0/length(mat3(transpose(MODEL_MATRIX)) * NORMAL));
 			vec3 outlineOffset = 0.01 * _OutlineWidth * outlineTex * worldNormalLength * NORMAL;
 			VERTEX += outlineOffset;
-			VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 		} else { // #elif defined(MTOON_OUTLINE_WIDTH_SCREEN)
 			// 1. Create the clip-space position
 			// 2. Get the normal direction, normalized, in clip space.
 			// 3. Get the aspect ratio of the currently rendering camera.
 			// 4. Scale the normals by the distance to the camera
 			// 5. Add the normals to the clip-space XY position scaled by the width.
-			VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 			vec4 clipPos = PROJECTION_MATRIX * vec4(VERTEX, 1.0);
 			vec4 nearUpperRight = (INV_PROJECTION_MATRIX * vec4(1, 1, 0, 1));
 			float aspect = abs(nearUpperRight.y / nearUpperRight.x);
-			vec3 viewNormal = mat3(VIEW_MATRIX) * mat3(MODEL_MATRIX) * NORMAL.xyz;
+			vec3 viewNormal = mat3(MODELVIEW_MATRIX) * NORMAL.xyz;
 			vec3 clipNormal = mat3(PROJECTION_MATRIX) * viewNormal.xyz;
 			vec2 projectedNormal = normalize(clipNormal.xy);
 			projectedNormal *= min(clipPos.w, _OutlineScaledMaxDistance);
@@ -119,7 +119,7 @@ void vertex() {
 			VERTEX = (INV_PROJECTION_MATRIX * clipPos).xyz;
 		}
 	} else {
-		VERTEX = (VIEW_MATRIX * MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+		VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	}
 
 
