@@ -173,7 +173,11 @@ static func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: S
 				skellen = skin.get_bind_count()
 				for i in range(skellen):
 					# Bone name from skin (un-remapped bone name)
-					var bind_bone_name = skin.get_bind_name(i)
+					var bind_bone_name: StringName = skin.get_bind_name(i)
+					if bind_bone_name.is_empty():
+						#bind_bone_name = node.get_bone_name(skin.get_bind_bone(i))
+						if skin.get_bind_bone(i) != -1:
+							break # Not using named binds: no need to rename skin.
 					var bone_name_from_skel: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
 					if not bone_name_from_skel.is_empty():
 						skin.set_bind_name(i, bone_name_from_skel)
@@ -273,6 +277,8 @@ static func apply_mesh_rotation(p_base_scene: Node, src_skeleton: Skeleton3D, ol
 				var skellen = skin.get_bind_count()
 				for i in range(skellen):
 					var bn: StringName = skin.get_bind_name(i)
+					if bn == &"":
+						bn = node.get_bone_name(skin.get_bind_bone(i))
 					var bone_idx: int = src_skeleton.find_bone(bn)
 					if bone_idx >= 0:
 						var adjust_transform: Transform3D = src_skeleton.get_bone_global_rest(bone_idx).affine_inverse() * old_skeleton_global_rest[bone_idx]
