@@ -34,7 +34,7 @@ func _load_model(path: String) -> Node3D:
 	gltf.register_gltf_document_extension(vrm_extension, true)
 	
 	var state: GLTFState = GLTFState.new()
-	state.handle_binary_image = GLTFState.HANDLE_BINARY_EMBED_AS_BASISU
+	# state.handle_binary_image = GLTFState.HANDLE_BINARY_EMBED_AS_BASISU
 	var err = gltf.append_from_file(path, state)
 	if err != OK:
 		gltf.unregister_gltf_document_extension(vrm_extension)
