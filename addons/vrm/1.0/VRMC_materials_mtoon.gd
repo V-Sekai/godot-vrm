@@ -217,7 +217,7 @@ func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionar
 		else:
 			delta_render_queue = clampi(delta_render_queue, -9, 0)
 		# render_priority only makes sense for transparent materials.
-		vrm_mat_props["renderQueueOffsetNumbers"] = delta_render_queue
+		vrm_mat_props["renderQueueOffsetNumber"] = delta_render_queue
 
 
 func _export_post(state: GLTFState) -> Error:
@@ -421,11 +421,11 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	_assign_property(new_mat, "_UvAnimRotation", vrm_mat_props.get("uvAnimationRotationSpeedFactor", 0.0))
 
 	if alpha_mode == "BLEND":
-		var delta_render_queue = vrm_mat_props.get("renderQueueOffsetNumbers", 0)
+		var delta_render_queue = vrm_mat_props.get("renderQueueOffsetNumber", 0)
 		if vrm_mat_props.get("transparentWithZWrite", false) == true:
-			# renderQueueOffsetNumbers range for this case is 0 to +9
+			# renderQueueOffsetNumber range for this case is 0 to +9
 			# must be rendered before transparentWithZWrite==false
-			# transparentWithZWrite==false has renderQueueOffsetNumbers between -9 and 0
+			# transparentWithZWrite==false has renderQueueOffsetNumber between -9 and 0
 			# so we need these to be below that.
 			delta_render_queue -= 19
 		# render_priority only makes sense for transparent materials.
