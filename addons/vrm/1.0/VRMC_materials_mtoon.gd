@@ -161,6 +161,14 @@ func _to_gltf_color(c: Variant):
 	return [c.r, c.g, c.b]
 
 
+func _cm_to_m(m: float) -> float:
+	return m / 100.0
+
+
+func _m_to_cm(cm: float) -> float:
+	return cm * 100.0
+
+
 func _export_mtoon_texture(texture_index, vrm_mat_props, key):
 	if texture_index >= 0:
 		vrm_mat_props[key] = {"index": texture_index}
@@ -176,8 +184,11 @@ func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionar
 	vrm_mat_props["specVersion"] = "1.0"
 	if standard.get_meta("has_zwrite"):
 		vrm_mat_props["transparentWithZWrite"] = true
+
+	var outline_width: float = new_mat.get_shader_parameter("_OutlineWidth")
 	if new_mat.get_shader_parameter("_OutlineWidthMode") == 1:
 		vrm_mat_props["outlineWidthMode"] = "worldCoordinates"
+		outline_width = _cm_to_m(outline_width)
 	if new_mat.get_shader_parameter("_OutlineWidthMode") == 2:
 		vrm_mat_props["outlineWidthMode"] = "screenCoordinates"
 	if standard.get_meta("has_cull_off"):
@@ -202,7 +213,7 @@ func _export_mtoon_properties(standard: StandardMaterial3D, mat_props: Dictionar
 	vrm_mat_props["rimLightingMixFactor"] = new_mat.get_shader_parameter("_RimLightingMix")
 	vrm_mat_props["parametricRimFresnelPowerFactor"] = new_mat.get_shader_parameter("_RimFresnelPower")
 	vrm_mat_props["parametricRimLiftFactor"] = new_mat.get_shader_parameter("_RimLift")
-	vrm_mat_props["outlineWidthFactor"] = new_mat.get_shader_parameter("_OutlineWidth")
+	vrm_mat_props["outlineWidthFactor"] = outline_width
 	vrm_mat_props["outlineLightingMixFactor"] = new_mat.get_shader_parameter("_OutlineLightingMix")
 	vrm_mat_props["uvAnimationScrollXSpeedFactor"] = new_mat.get_shader_parameter("_UvAnimScrollX")
 	vrm_mat_props["uvAnimationScrollYSpeedFactor"] = new_mat.get_shader_parameter("_UvAnimScrollY")
@@ -389,11 +400,16 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	_assign_property(new_mat, "_MainTex_ST", texture_repeat)
 
 	var outline_width_idx: float = 0
+	var outline_width: float = vrm_mat_props.get("outlineWidthFactor", 0.0)
+
 	if outline_width_mode == "worldCoordinates":
 		outline_width_idx = 1
-	if outline_width_mode == "screenCoordinates":
+		outline_width = _m_to_cm(outline_width)
+	elif outline_width_mode == "screenCoordinates":
 		outline_width_idx = 2
+
 	_assign_property(new_mat, "_OutlineWidthMode", outline_width_idx)
+	_assign_property(new_mat, "_OutlineWidth", outline_width)
 
 	#"_ReceiveShadowRate": ["Shadow Receive", "Texture (R) * Rate. White is Default. Black attenuates shadows."],
 	#"_LightColorAttenuation": ["Light Color Atten", "Light Color Attenuation"],
@@ -413,7 +429,6 @@ func _process_vrm_material(orig_mat: Material, gltf_images: Array[Texture2D], gl
 	_assign_property(new_mat, "_RimLightingMix", vrm_mat_props.get("rimLightingMixFactor", 0.0))
 	_assign_property(new_mat, "_RimFresnelPower", vrm_mat_props.get("parametricRimFresnelPowerFactor", 1.0))
 	_assign_property(new_mat, "_RimLift", vrm_mat_props.get("parametricRimLiftFactor", 0.0))
-	_assign_property(new_mat, "_OutlineWidth", vrm_mat_props.get("outlineWidthFactor", 0.0))
 	_assign_property(new_mat, "_OutlineColorMode", 1.0)  # MixedLighting always. FixedColor if outlineLightingMixFactor==0
 	_assign_property(new_mat, "_OutlineLightingMix", vrm_mat_props.get("outlineLightingMixFactor", 1.0))
 	_assign_property(new_mat, "_UvAnimScrollX", vrm_mat_props.get("uvAnimationScrollXSpeedFactor", 0.0))
