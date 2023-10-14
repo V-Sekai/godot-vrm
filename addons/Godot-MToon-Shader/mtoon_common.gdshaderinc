@@ -263,7 +263,16 @@ void fragment() {
 	float LIGHT_COME_FROM_UP_RATIO = mix(0.8, 1.0, sin(_IndirectLightIntensity));
 	fragment_albedo_output = max(lit.rgb, vec3(0.0001));
 
-	rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), _RimFresnelPower) * _RimColor.rgb * texture(_RimTexture, mainUv).rgb;
+	rim = pow(clamp(1.0 - dot(viewNormal, viewView) + _RimLift, 0.0, 1.0), max(_RimFresnelPower, 0.001)) * _RimColor.rgb;
+
+	// additive matcap
+	vec3 viewCameraUp = vec3(0.0,1.0,0.0);//normalize(INV_VIEW_MATRIX[1].xyz); // FIXME!!
+	vec3 viewViewUp = normalize(viewCameraUp - viewView * dot(viewView, viewCameraUp));
+	vec3 viewViewRight = normalize(cross(viewView, viewViewUp));
+	vec2 matcapUv = vec2(-dot(viewViewRight, viewNormal), dot(viewViewUp, viewNormal)) * 0.5 + 0.5;
+	vec3 matcapLighting = _MatcapColor.rgb * texture(_SphereAdd, matcapUv).rgb;
+
+	rim = (rim + matcapLighting) * texture(_RimTexture, mainUv).rgb;
 
 	emission += mix(rim * (1.0 - _RimLightingMix), vec3(0, 0, 0), isOutline);
 	fragment_albedo_output += mix(rim * _RimLightingMix, vec3(0, 0, 0), isOutline);
@@ -272,14 +281,6 @@ void fragment() {
 
 	// Emission
 	emission = mix(emission, vec3(0, 0, 0), isOutline);
-
-	// additive matcap
-	vec3 viewCameraUp = vec3(0.0,1.0,0.0);//normalize(INV_VIEW_MATRIX[1].xyz); // FIXME!!
-	vec3 viewViewUp = normalize(viewCameraUp - viewView * dot(viewView, viewCameraUp));
-	vec3 viewViewRight = normalize(cross(viewView, viewViewUp));
-	vec2 matcapUv = vec2(-dot(viewViewRight, viewNormal), dot(viewViewUp, viewNormal)) * 0.5 + 0.5;
-	vec3 matcapLighting = _MatcapColor.rgb * texture(_SphereAdd, matcapUv).rgb;
-	emission += mix(matcapLighting, vec3(0, 0, 0), isOutline);
 
 	// outline
 	if (isOutline == 1.0) {
