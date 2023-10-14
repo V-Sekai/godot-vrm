@@ -95,11 +95,11 @@ void vertex() {
 
 	if (isOutline == 1.0) {
 		float outlineTex = textureLod(_OutlineWidthTexture, UV, 0).r;
+		vec3 worldNormalLength = vec3(1.0/length(mat3(transpose(MODEL_MATRIX)) * NORMAL));
+		vec3 outlineOffset = 0.01 * _OutlineWidth * outlineTex * worldNormalLength * NORMAL;
+		vec3 conventional_outlined_vertex = (MODELVIEW_MATRIX * vec4(VERTEX + outlineOffset, 1.0)).xyz;
 		if (_OutlineWidthMode < 1.5) {
-			vec3 worldNormalLength = vec3(1.0/length(mat3(transpose(MODEL_MATRIX)) * NORMAL));
-			vec3 outlineOffset = 0.01 * _OutlineWidth * outlineTex * worldNormalLength * NORMAL;
-			VERTEX += outlineOffset;
-			VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+			VERTEX = conventional_outlined_vertex;
 		} else { // #elif defined(MTOON_OUTLINE_WIDTH_SCREEN)
 			// 1. Create the clip-space position
 			// 2. Get the normal direction, normalized, in clip space.
@@ -116,7 +116,7 @@ void vertex() {
 			projectedNormal *= min(clipPos.w, _OutlineScaledMaxDistance);
 			projectedNormal.x *= aspect;
 			clipPos.xy += 0.01 * _OutlineWidth * outlineTex * projectedNormal.xy * clamp(1.0 - abs(normalize(viewNormal).z), 0.0, 1.0); // ignore offset when normal toward camera
-			VERTEX = (INV_PROJECTION_MATRIX * clipPos).xyz;
+			VERTEX = vec3((INV_PROJECTION_MATRIX * clipPos).xy, conventional_outlined_vertex.z);
 		}
 	} else {
 		VERTEX = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
