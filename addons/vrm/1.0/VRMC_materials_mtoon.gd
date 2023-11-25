@@ -267,7 +267,7 @@ func _export_post(state: GLTFState) -> Error:
 	return OK
 
 
-func _vrm_get_texture_info(gstate : GLTFState, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
+func _vrm_get_texture_info(gstate: GLTFState, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
 	var gltf_images: Array = gstate.get_images()
 	var gltf_textures: Array = gstate.get_textures()
 	var texture_info: Dictionary = {}
@@ -284,6 +284,7 @@ func _vrm_get_texture_info(gstate : GLTFState, vrm_mat_props: Dictionary, unity_
 		texture_info["offset"] = Vector3(offsetScale[0], offsetScale[1], 0.0)
 		texture_info["scale"] = Vector3(offsetScale[2], offsetScale[3], 1.0)
 	return texture_info
+
 
 func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float:
 	return vrm_mat_props["floatProperties"].get(key, def)
