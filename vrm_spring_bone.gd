@@ -87,6 +87,9 @@ func ready(ready_skel: Skeleton3D, colliders_ref: Array[vrm_collider.VrmRuntimeC
 	setup(center_transform_inv)
 	colliders = colliders_ref.duplicate(false)
 
+func pre_update():
+	for i in range(len(verlets)):
+		verlets[i].pre_update(skel)
 
 func update(delta: float, center_transform: Transform3D, center_transform_inv: Transform3D) -> void:
 	if verlets.is_empty():
