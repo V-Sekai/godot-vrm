@@ -185,6 +185,9 @@ func tick_spring_bones(delta: float) -> void:
 
 	update_centers(skel_transform)
 
+	for spring_i in range(len(spring_bones_internal)):
+		spring_bones_internal[spring_i].pre_update()
+	
 	for collider_i in range(len(colliders_internal)):
 		colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
 	for spring_i in range(len(spring_bones_internal)):
