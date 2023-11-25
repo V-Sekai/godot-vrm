@@ -177,7 +177,7 @@ static func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: S
 					if bind_bone_name.is_empty():
 						#bind_bone_name = node.get_bone_name(skin.get_bind_bone(i))
 						if skin.get_bind_bone(i) != -1:
-							break # Not using named binds: no need to rename skin.
+							break  # Not using named binds: no need to rename skin.
 					var bone_name_from_skel: StringName = p_bone_map.find_profile_bone_name(bind_bone_name)
 					if not bone_name_from_skel.is_empty():
 						skin.set_bind_name(i, bone_name_from_skel)
@@ -294,10 +294,10 @@ static func apply_mesh_rotation(p_base_scene: Node, src_skeleton: Skeleton3D, ol
 		var bone_idx: int = attachment.bone_idx
 		if bone_idx == -1:
 			bone_idx = src_skeleton.find_bone(attachment.bone_name)
-		var adjust_transform: Transform3D = src_skeleton.get_bone_global_rest(bone_idx).affine_inverse() * old_skeleton_global_rest[bone_idx];
-		adjust_transform = adjust_transform.scaled(global_transform_scale_local);
+		var adjust_transform: Transform3D = src_skeleton.get_bone_global_rest(bone_idx).affine_inverse() * old_skeleton_global_rest[bone_idx]
+		adjust_transform = adjust_transform.scaled(global_transform_scale_local)
 
-		var child_nodes: Array[Node] = attachment.get_children();
+		var child_nodes: Array[Node] = attachment.get_children()
 		while not child_nodes.is_empty():
 			var child: Node3D = child_nodes.pop_back() as Node3D
 			if child == null:

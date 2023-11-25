@@ -14,7 +14,6 @@ const vrm_utils = preload("./vrm_utils.gd")
 
 var vrm_meta: Resource = null
 
-
 enum DebugMode {
 	None = 0,
 	Normal = 1,
@@ -69,7 +68,7 @@ func _process_khr_material(orig_mat: StandardMaterial3D, gltf_mat_props: Diction
 	return orig_mat
 
 
-func _vrm_get_texture_info(gstate : GLTFState, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
+func _vrm_get_texture_info(gstate: GLTFState, vrm_mat_props: Dictionary, unity_tex_name: String) -> Dictionary:
 	var gltf_images: Array = gstate.get_images()
 	var gltf_textures: Array = gstate.get_textures()
 	var texture_info: Dictionary = {}
@@ -92,8 +91,7 @@ func _vrm_get_float(vrm_mat_props: Dictionary, key: String, def: float) -> float
 	return vrm_mat_props["floatProperties"].get(key, def)
 
 
-func _process_vrm_material(orig_mat: Material, gstate : GLTFState, vrm_mat_props: Dictionary) -> Material:
-
+func _process_vrm_material(orig_mat: Material, gstate: GLTFState, vrm_mat_props: Dictionary) -> Material:
 	var gltf_images: Array = gstate.get_images()
 	var gltf_textures: Array = gstate.get_textures()
 

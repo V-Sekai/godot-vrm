@@ -67,8 +67,6 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 	var tmp_prev_tail: Vector3 = prev_tail
 	var global_pose_tr: Transform3D = get_global_pose_cached()
 	var local_pose_rotation: Quaternion = get_local_pose_rotation_cached()
-	#var global_pose_tr: Transform3D = get_global_pose(skel)
-	#var local_pose_rotation: Quaternion = get_local_pose_rotation(skel)
 
 	var tmp_external: Vector3 = center_transform * external
 
