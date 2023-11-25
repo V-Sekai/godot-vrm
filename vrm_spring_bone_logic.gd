@@ -14,6 +14,7 @@ var current_tail: Vector3
 var prev_tail: Vector3
 
 var initial_transform: Transform3D
+var global_pose: Transform3D
 
 
 static func from_to_rotation_safe(from: Vector3, to: Vector3) -> Quaternion:
@@ -34,6 +35,14 @@ func get_local_pose_rotation(skel: Skeleton3D) -> Quaternion:
 	return get_global_pose(skel).basis.get_rotation_quaternion()
 
 
+func get_global_pose_cached() -> Transform3D:
+	return global_pose
+
+
+func get_local_pose_rotation_cached() -> Quaternion:
+	return global_pose.basis.get_rotation_quaternion()
+
+
 func reset(skel: Skeleton3D) -> void:
 	skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0, true)
 
@@ -49,15 +58,20 @@ func _init(skel: Skeleton3D, idx: int, center_transform_inv: Transform3D, local_
 	length = local_child_position.length()
 
 
+func pre_update(skel: Skeleton3D) -> void:
+	global_pose = get_global_pose(skel)
+
+
 func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_inv: Transform3D, stiffness_force: float, drag_force: float, external: Vector3, colliders: Array[vrm_collider.VrmRuntimeCollider]) -> void:
 	var tmp_current_tail: Vector3 = current_tail
 	var tmp_prev_tail: Vector3 = prev_tail
-	var global_pose_tr: Transform3D = get_global_pose(skel)
+	var global_pose_tr: Transform3D = get_global_pose_cached()
+	var local_pose_rotation: Quaternion = get_local_pose_rotation_cached()
 
 	var tmp_external: Vector3 = center_transform * external
 
 	# Integration of velocity verlet
-	var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + center_transform.basis.get_rotation_quaternion() * (get_local_pose_rotation(skel) * bone_axis * stiffness_force + external)
+	var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + center_transform.basis.get_rotation_quaternion() * (local_pose_rotation * bone_axis * stiffness_force + external)
 
 	# Limiting bone length
 	var origin: Vector3 = center_transform * global_pose_tr.origin
@@ -77,9 +91,9 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 	current_tail = next_tail  # center_transform_inv * next_tail
 
 	# Apply rotation
-	var ft = from_to_rotation_safe(get_local_pose_rotation(skel) * (bone_axis), center_transform_inv.basis * (next_tail - origin))
+	var ft = from_to_rotation_safe(local_pose_rotation * (bone_axis), center_transform_inv.basis * (next_tail - origin))
 	if typeof(ft) != TYPE_NIL:
 		# ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
-		var qt: Quaternion = ft * get_local_pose_rotation(skel)
+		var qt: Quaternion = ft * local_pose_rotation
 		global_pose_tr.basis = Basis(qt)
 		skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)
