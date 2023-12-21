@@ -35,7 +35,11 @@ func _load_model(path: String) -> Node3D:
 	
 	var state: GLTFState = GLTFState.new()
 	# state.handle_binary_image = GLTFState.HANDLE_BINARY_EMBED_AS_BASISU
-	var err = gltf.append_from_file(path, state)
+
+	# Ensure Tangents is required for meshes with blend shapes as of Godot 4.2.
+	# EditorSceneFormatImporter.IMPORT_GENERATE_TANGENT_ARRAYS = 8
+	# EditorSceneFormatImporter may not be available in release builds, so hardcode 8 for flags
+	var err = gltf.append_from_file(path, state, 8)
 	if err != OK:
 		gltf.unregister_gltf_document_extension(vrm_extension)
 		return null
