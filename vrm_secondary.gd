@@ -90,7 +90,6 @@ func _ready() -> void:
 				center_nodes.push_back(get_node(spring_bone.center_node))
 			center_transforms.push_back(Transform3D.IDENTITY)
 			center_transforms_inv.push_back(Transform3D.IDENTITY)
-		var center_idx: int = center_to_index[center_key]
 
 	update_centers(skel.global_transform)
 
@@ -243,7 +242,7 @@ class SecondaryGizmo:
 		m.vertex_color_use_as_albedo = true
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-	func draw_in_editor(do_draw_spring_bones: bool = false) -> void:
+	func draw_in_editor(_do_draw_spring_bones: bool = false) -> void:
 		mesh.clear_surfaces()
 		if secondary_node.is_child_of_vrm && secondary_node.get_parent().gizmo_spring_bone:
 			draw_spring_bones(secondary_node.get_parent().gizmo_spring_bone_color)
@@ -259,7 +258,6 @@ class SecondaryGizmo:
 		set_material_override(m)
 		var i: int = 0
 		var s_sk: Skeleton3D = secondary_node.skel
-		var s_sk_transform_inv: Transform3D = Transform3D.IDENTITY
 		# Spring bones
 		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for spring_bone in secondary_node.spring_bones_internal:
@@ -280,15 +278,10 @@ class SecondaryGizmo:
 	func draw_collider_groups() -> void:
 		set_material_override(m)
 		var i: int = 0
-		var skel_inv: Transform3D = secondary_node.skel.global_transform.affine_inverse()
 		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		for collider in secondary_node.colliders_internal:
 			var center_transform_inv: Transform3D = secondary_node.center_transforms_inv[secondary_node.colliders_centers[i]]
-			#var c_tr = Transform3D.IDENTITY
-			#for collider in collider_group.sphere_colliders:
-			#var c_ps: Vector3 = center_transform * collider.position
 			collider.draw_debug(mesh, center_transform_inv)
-			#draw_sphere(c_tr.basis, c_tr * c_ps, collider.radius, collider.gizmo_color)
 			i += 1
 		mesh.surface_end()
 
