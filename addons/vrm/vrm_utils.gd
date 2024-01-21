@@ -4,13 +4,10 @@ const ROTATE_180_BASIS = Basis(Vector3(-1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0
 const ROTATE_180_TRANSFORM = Transform3D(ROTATE_180_BASIS, Vector3.ZERO)
 
 
-static func adjust_mesh_zforward(mesh: ImporterMesh):
+static func adjust_mesh_zforward(mesh: ImporterMesh, blendshapes: Array):
 	# MESH and SKIN data divide, to compensate for object position multiplying.
 	var surf_count: int = mesh.get_surface_count()
 	var surf_data_by_mesh = [].duplicate()
-	var blendshapes = []
-	for bsidx in mesh.get_blend_shape_count():
-		blendshapes.append(mesh.get_blend_shape_name(bsidx))
 	for surf_idx in range(surf_count):
 		var prim: int = mesh.get_surface_primitive_type(surf_idx)
 		var fmt_compress_flags: int = mesh.get_surface_format(surf_idx)
@@ -53,6 +50,9 @@ static func adjust_mesh_zforward(mesh: ImporterMesh):
 
 		surf_data_by_mesh.push_back({"prim": prim, "arr": arr, "bsarr": bsarr, "lods": lods, "fmt_compress_flags": fmt_compress_flags, "name": name, "mat": mat})
 	mesh.clear()
+	if blendshapes.is_empty():
+		for bsidx in mesh.get_blend_shape_count():
+			blendshapes.append(mesh.get_blend_shape_name(bsidx))
 	for blend_name in blendshapes:
 		mesh.add_blend_shape(blend_name)
 	for surf_idx in range(surf_count):
@@ -83,12 +83,17 @@ static func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_se
 		rotate_scene_180_inner(child, mesh_set, skin_set)
 
 
-static func rotate_scene_180(p_scene: Node3D):
+static func rotate_scene_180(p_scene: Node3D, blend_shape_names: Dictionary):
 	var mesh_set: Dictionary = {}
 	var skin_set: Dictionary = {}
 	rotate_scene_180_inner(p_scene, mesh_set, skin_set)
+	var mesh_index: int = 0
 	for mesh in mesh_set:
-		adjust_mesh_zforward(mesh)
+		if mesh_index in blend_shape_names.keys():
+			adjust_mesh_zforward(mesh, blend_shape_names[mesh_index])
+		else:
+			adjust_mesh_zforward(mesh, [])
+		mesh_index += 1
 	for skin in skin_set:
 		for b in range(skin.get_bind_count()):
 			skin.set_bind_pose(b, ROTATE_180_TRANSFORM * skin.get_bind_pose(b) * ROTATE_180_TRANSFORM)
@@ -336,7 +341,7 @@ static func _recurse_bones(bones: Dictionary, skel: Skeleton3D, bone_idx: int):
 		_recurse_bones(bones, skel, child)
 
 
-static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide: Dictionary) -> ImporterMesh:
+static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_to_hide: Dictionary, blendshapes: Array) -> ImporterMesh:
 	var bind_indices_to_hide: Dictionary = {}
 
 	for i in range(skin.get_bind_count()):
@@ -351,9 +356,6 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 	# MESH and SKIN data divide, to compensate for object position multiplying.
 	var surf_count: int = mesh.get_surface_count()
 	var surf_data_by_mesh = [].duplicate()
-	var blendshapes = []
-	for bsidx in mesh.get_blend_shape_count():
-		blendshapes.append(mesh.get_blend_shape_name(bsidx))
 	var did_hide_any_surface_verts: bool = false
 	for surf_idx in range(surf_count):
 		var prim: int = mesh.get_surface_primitive_type(surf_idx)
@@ -413,6 +415,9 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 	new_mesh.set_blend_shape_mode(mesh.get_blend_shape_mode())
 	new_mesh.set_lightmap_size_hint(mesh.get_lightmap_size_hint())
 	new_mesh.resource_name = mesh.resource_name + "_HeadHidden"
+	if blendshapes.is_empty():
+		for bsidx in mesh.get_blend_shape_count():
+			blendshapes.append(mesh.get_blend_shape_name(bsidx))
 	for blend_name in blendshapes:
 		new_mesh.add_blend_shape(blend_name)
 	for surf_idx in range(len(surf_data_by_mesh)):
@@ -425,3 +430,14 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
 		new_mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 	return new_mesh
+
+static func _extract_blendshape_names(gltf_json: Dictionary) -> Dictionary:
+	# Extracts the blendshape targetNames from the GLTF json
+	# Returns Dictionary with blendshape names of meshes with targetNames sorted by the mesh id
+	var blend_shape_names: Dictionary = {}
+	for node_json in gltf_json["nodes"]:
+		if node_json.has("mesh"):
+			if gltf_json["meshes"][node_json["mesh"]]["primitives"][0].has("extras"):
+				if gltf_json["meshes"][node_json["mesh"]]["primitives"][0]["extras"].has("targetNames"):
+					blend_shape_names[int(node_json["mesh"])] = gltf_json["meshes"][node_json["mesh"]]["primitives"][0]["extras"]["targetNames"]
+	return blend_shape_names
