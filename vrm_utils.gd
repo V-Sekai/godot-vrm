@@ -431,6 +431,7 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 		new_mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 	return new_mesh
 
+
 static func _extract_blendshape_names(gltf_json: Dictionary) -> Dictionary:
 	# Extracts the blendshape targetNames from the GLTF json
 	# Returns Dictionary with blendshape names of meshes with targetNames sorted by the mesh id
