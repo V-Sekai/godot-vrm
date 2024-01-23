@@ -359,7 +359,11 @@ func _first_person_head_hiding(vrm_extension: Dictionary, gstate: GLTFState, hum
 						if head_relative_bones.has(parent_node.bone_name):
 							flag = "ThirdPersonOnly"
 				else:
-					head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones)
+					var blend_shape_names: Dictionary = vrm_utils._extract_blendshape_names(gstate.json)
+					if node_idx in blend_shape_names.keys():
+						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, blend_shape_names[node_idx])
+					else:
+						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, [])
 					if head_hidden_mesh == null:
 						flag = "ThirdPersonOnly"
 					if head_hidden_mesh == mesh:
@@ -959,7 +963,8 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 
 	if is_vrm_0:
 		# VRM 0.0 has models facing backwards due to a spec error (flipped z instead of x)
-		vrm_utils.rotate_scene_180(root_node)
+		var blend_shape_names: Dictionary = vrm_utils._extract_blendshape_names(gltf_json)
+		vrm_utils.rotate_scene_180(root_node, blend_shape_names)
 
 	var do_retarget = true
 
