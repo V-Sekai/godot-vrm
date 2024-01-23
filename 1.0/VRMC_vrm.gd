@@ -384,7 +384,11 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 						if head_relative_bones.has(parent_node.bone_name):
 							flag = "thirdPersonOnly"
 				else:
-					head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones)
+					var blend_shape_names: Dictionary = vrm_utils._extract_blendshape_names(gstate.json)
+					if node_idx in blend_shape_names.keys():
+						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, blend_shape_names[node_idx])
+					else:
+						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, [])
 					if head_hidden_mesh == null:
 						flag = "thirdPersonOnly"
 					if head_hidden_mesh == mesh:
