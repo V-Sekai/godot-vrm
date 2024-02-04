@@ -290,7 +290,8 @@ func _export_post(state: GLTFState):
 	for skely in state.skeletons:
 		skel_to_godot_bone_to_gltf_node_map[skely.get_godot_skeleton()] = skely.get_godot_bone_node()
 	var godot_node_to_idx: Dictionary = {}
-	for i in range(len(json["nodes"])):
+	var json_nodes: Array = json["nodes"]
+	for i in range(len(json_nodes)):
 		godot_node_to_idx[state.get_scene_node(i)] = i
 	godot_node_to_idx[secondary.get_parent()] = godot_node_to_idx[secondary]
 
@@ -357,18 +358,21 @@ func _export_post(state: GLTFState):
 				push_warning("Missing collider_group_indices in vrm export.")
 		spring["colliderGroups"] = spring_groups
 		var joints: Array = []
-		var prev_node: int = 0
+		var prev_node_index: int = 0
 		for i in range(len(springbone.joint_nodes)):
 			var joint: Dictionary = {}
 			if springbone.joint_nodes[i] == "":
-				var node_idx = len(json["nodes"])
+				var node_idx = len(json_nodes)
 				var delta: Vector3 = skel.get_bone_rest(skel.find_bone(springbone.joint_nodes[i - 1])).origin
 				var pos: Vector3 = delta.normalized() * 0.07
-				json["nodes"].append({"name": json["nodes"][prev_node]["name"] + "_end", "translation": [pos[0], pos[1], pos[2]]})
-				prev_node = node_idx
+				var prev_node_dict: Dictionary = json_nodes[prev_node_index]
+				json_nodes.append({"name": prev_node_dict["name"] + "_end", "translation": [pos[0], pos[1], pos[2]]})
+				var prev_node_children: Array = prev_node_dict.get_or_add("children", [])
+				prev_node_children.append(node_idx)
+				prev_node_index = node_idx
 			else:
-				prev_node = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
-			joint["node"] = prev_node
+				prev_node_index = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
+			joint["node"] = prev_node_index
 			if not is_zero_approx(springbone.hit_radius[i]):
 				joint["hitRadius"] = springbone.hit_radius[i]
 			if not is_equal_approx(springbone.stiffness_force[i], 1.0):
