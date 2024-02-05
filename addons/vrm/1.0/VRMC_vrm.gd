@@ -615,11 +615,12 @@ func _export_animations(root_node: Node, skel: Skeleton3D, animplayer: Animation
 	var custom: Dictionary = {}
 	var mat_lookup: Dictionary = {}
 	var gltf_materials: Array[Material] = gstate.materials
-	var shader_to_standard_material: Dictionary = gstate.get_meta("shader_to_standard_material")
-	for i in range(len(gltf_materials)):
-		if shader_to_standard_material.has(gltf_materials[i]):
-			mat_lookup[shader_to_standard_material[gltf_materials[i]]] = i
-		mat_lookup[gltf_materials[i]] = i
+	var shader_to_standard_material = gstate.get_meta("shader_to_standard_material")
+	if typeof(shader_to_standard_material) == TYPE_DICTIONARY:
+		for i in range(len(gltf_materials)):
+			if shader_to_standard_material.has(gltf_materials[i]):
+				mat_lookup[shader_to_standard_material[gltf_materials[i]]] = i
+			mat_lookup[gltf_materials[i]] = i
 	var mesh_bs_lookup: Dictionary = {}
 	var gltf_meshes: Array[GLTFMesh] = gstate.meshes
 	for i in range(len(gltf_meshes)):
@@ -931,7 +932,7 @@ func _export_post(gstate: GLTFState) -> Error:
 
 	# HACK: Avoid extra root node to make sure export/import is idempotent.
 	var gltf_root_nodes: Array = json["scenes"][0]["nodes"]
-	if len(gltf_root_nodes) == 1:
+	if len(gltf_root_nodes) == 1 and json.get("extensionsUsed", []).count("GODOT_single_root") == 0:
 		var orig_gltf_root_node: Dictionary = json["nodes"][gltf_root_nodes[0]]
 		var orig_children: Array = orig_gltf_root_node["children"]
 		#print("Orig root: " + orig_gltf_root_node["name"])
