@@ -27,7 +27,11 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
-	var skeleton: Skeleton3D = secondary_node.get_parent().get_node("%GeneralSkeleton")
+	var skeleton: Skeleton3D = null
+	if secondary_node.owner == null:
+		skeleton = secondary_node.get_parent().get_node("%GeneralSkeleton")
+	else:
+		skeleton = secondary_node.owner.get_node("%GeneralSkeleton")
 
 	var colliders: Array[vrm_collider]
 	var collider_groups: Array[vrm_collider_group]
@@ -36,7 +40,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		var gltfnode: GLTFNode = nodes[int(collider_gltf["node"])]
 		var collider = vrm_collider.new()
 		var pose_diff: Basis = Basis()
-		if gltfnode.skeleton == -1:
+		if gltfnode.skeleton == -1 or skeleton == null:
 			var found_node: Node = gstate.get_scene_node(int(collider_gltf["node"]))
 			collider.node_path = secondary_node.get_path_to(found_node)
 			collider.bone = ""
@@ -86,7 +90,8 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		collider_group.colliders.clear()
 
 		for collider_node in cgroup["colliders"]:
-			collider_group.colliders.append(colliders[collider_node])
+			if collider_node < len(colliders):
+				collider_group.colliders.append(colliders[int(collider_node)])
 		collider_groups.append(collider_group)
 
 	var spring_bones: Array[vrm_spring_bone]
@@ -94,7 +99,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		if sbone.get("joints", []).size() == 0:
 			continue
 		var first_joint: Dictionary = sbone["joints"][0]
-		var first_bone_node: int = first_joint["node"]
+		var first_bone_node: int = int(first_joint["node"])
 		var gltfnode: GLTFNode = nodes[int(first_bone_node)]
 		if skeleton != _get_skel_godot_node(gstate, nodes, skeletons, gltfnode.skeleton):
 			push_error("VRM1: spring joint points to differnt skeleton")
@@ -111,7 +116,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 
 			var bone_node: int = sjoint["node"]
 			var bone_name: String = nodes[int(bone_node)].resource_name
-			if skeleton.find_bone(bone_name) == -1:
+			if skeleton == null or skeleton.find_bone(bone_name) == -1:
 				# Note that we make an assumption that a given SpringBone object is
 				# only part of a single Skeleton*. This error might print if a given
 				# SpringBone references bones from multiple Skeleton's.
@@ -135,7 +140,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		if center_node_idx != -1:
 			var center_gltfnode: GLTFNode = nodes[int(center_node_idx)]
 			var bone_name: String = center_gltfnode.resource_name
-			if center_gltfnode.skeleton == gltfnode.skeleton and skeleton.find_bone(bone_name) != -1:
+			if skeleton != null and center_gltfnode.skeleton == gltfnode.skeleton and skeleton.find_bone(bone_name) != -1:
 				spring_bone.center_bone = bone_name
 				spring_bone.center_node = NodePath()
 			else:
@@ -317,10 +322,13 @@ func _export_post(state: GLTFState):
 			}
 		var node_idx: int
 		if collider.bone != "":
-			node_idx = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(collider.bone)]
+			node_idx = skel_to_godot_bone_to_gltf_node_map.get(skel, {}).get(skel.find_bone(collider.bone), -1)
 		else:
 			# FIXME: This case should perhaps no longer be supported.
-			node_idx = godot_node_to_idx[secondary.get_node(collider.node_path)]
+			node_idx = godot_node_to_idx.get(secondary.get_node(collider.node_path), -1)
+		if node_idx == -1:
+			push_warning("Unable to find spring bone collider node " + str(collider.node_path) + "/" + str(collider.bone))
+			continue
 		json_colliders.push_back({"node": node_idx, "shape": shape})
 	sbone_extension["colliders"] = json_colliders
 
@@ -371,7 +379,9 @@ func _export_post(state: GLTFState):
 				prev_node_children.append(node_idx)
 				prev_node_index = node_idx
 			else:
-				prev_node_index = skel_to_godot_bone_to_gltf_node_map[skel][skel.find_bone(springbone.joint_nodes[i])]
+				prev_node_index = skel_to_godot_bone_to_gltf_node_map.get(skel, {}).get(skel.find_bone(springbone.joint_nodes[i]), -1)
+			if prev_node_index == -1:
+				continue
 			joint["node"] = prev_node_index
 			if not is_zero_approx(springbone.hit_radius[i]):
 				joint["hitRadius"] = springbone.hit_radius[i]
@@ -385,6 +395,9 @@ func _export_post(state: GLTFState):
 			if not is_equal_approx(springbone.drag_force[i], 0.5):
 				joint["dragForce"] = springbone.drag_force[i]
 			joints.push_back(joint)
+		if len(joints) < 2:
+			push_warning("Unable to resolve vrm springbone joints " + ','.join(springbone.joint_nodes))
+			continue
 		spring["joints"] = joints
 		json_springs.push_back(spring)
 	sbone_extension["springs"] = json_springs

@@ -67,7 +67,7 @@ func evaluate_aim() -> void:
 		return
 	var source_global_transform: Transform3D = _get_source_global_transform()
 	var target_rest_transform: Transform3D = _get_target_global_rest()
-	var rest_dir: Vector3 = _aim_get_rest_direction(target_rest_transform.basis)
+	var rest_dir: Vector3 = target_rest_transform.basis * Vector3(0,1,0) # _aim_get_rest_direction(target_rest_transform.basis)
 	var aim_dir: Vector3 = target_rest_transform.origin.direction_to(source_global_transform.origin)
 	if rest_dir.is_zero_approx() or aim_dir.is_zero_approx():
 		return

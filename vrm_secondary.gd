@@ -62,13 +62,9 @@ func _ready() -> void:
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 		disable_colliders = get_parent().get("disable_colliders")
 
-#	if secondary_gizmo != null:
-#		secondary_gizmo.get_parent().remove_child(secondary_gizmo)
-#		secondary_gizmo.queue_free()
-#		secondary_gizmo = null
 	if secondary_gizmo == null and (Engine.is_editor_hint() or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
-		skel.add_child(secondary_gizmo, true)
+		skel.add_child(secondary_gizmo, true, Node.INTERNAL_MODE_BACK)
 	colliders_internal.clear()
 	spring_bones_internal.clear()
 	var center_to_collider_to_internal: Dictionary = {}

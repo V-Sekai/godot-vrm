@@ -151,6 +151,7 @@ func _export_vrm_dialog_action(path: String):
 		secondary.script = vrm_secondary
 
 	var gltf_doc = GLTFDocument.new()
+	gltf_doc.set(&"root_node_mode", GLTFDocument.ROOT_NODE_MODE_KEEP_ROOT)
 	var gltf_state = GLTFState.new()
 	gltf_state.set_meta("vrm", "1.0")
 	var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
@@ -175,7 +176,8 @@ func _export_vrm_dialog_action(path: String):
 
 func _enter_tree() -> void:
 	accept_dialog = AcceptDialog.new()
-	accept_dialog.set_unparent_when_invisible(true)
+	if accept_dialog.has_method(&"set_unparent_when_invisible"):
+		accept_dialog.set_unparent_when_invisible(true)
 
 	file_export_lib = EditorFileDialog.new()
 	# get_gui_base().
