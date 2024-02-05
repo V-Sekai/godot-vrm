@@ -68,8 +68,6 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 	var global_pose_tr: Transform3D = get_global_pose_cached()
 	var local_pose_rotation: Quaternion = get_local_pose_rotation_cached()
 
-	var tmp_external: Vector3 = center_transform * external
-
 	# Integration of velocity verlet
 	var next_tail: Vector3 = tmp_current_tail + (tmp_current_tail - tmp_prev_tail) * (1.0 - drag_force) + center_transform.basis.get_rotation_quaternion() * (local_pose_rotation * bone_axis * stiffness_force + external)
 
@@ -81,10 +79,7 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 
 	# Collision movement
 	for collider in colliders:
-		var oldt: Vector3 = next_tail
 		next_tail = collider.collision(origin, radius, length, next_tail)
-		#if not oldt.is_equal_approx(next_tail):
-		#	print("Tail " + str(oldt) + " pushed to " + str(next_tail))
 
 	# Recording current tails for next process
 	prev_tail = current_tail  # center_transform_inv * current_tail

@@ -10,7 +10,7 @@ const vrm_collider_group = preload("../vrm_collider_group.gd")
 const vrm_collider = preload("../vrm_collider.gd")
 
 
-func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
+func _get_skel_godot_node(gstate: GLTFState, nodes: Array, _skeletons: Array, skel_id: int) -> Node:
 	# There's no working direct way to convert from skeleton_id to node_id.
 	# Bugs:
 	# GLTFNode.parent is -1 if skeleton bone.
@@ -33,8 +33,8 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	else:
 		skeleton = secondary_node.owner.get_node("%GeneralSkeleton")
 
-	var colliders: Array[vrm_collider]
-	var collider_groups: Array[vrm_collider_group]
+	var colliders: Array[vrm_collider] = []
+	var collider_groups: Array[vrm_collider_group] = []
 
 	for collider_gltf in vrm_extension.get("colliders", []):
 		var gltfnode: GLTFNode = nodes[int(collider_gltf["node"])]
@@ -94,7 +94,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				collider_group.colliders.append(colliders[int(collider_node)])
 		collider_groups.append(collider_group)
 
-	var spring_bones: Array[vrm_spring_bone]
+	var spring_bones: Array[vrm_spring_bone] = []
 	for sbone in vrm_extension.get("springs", []):
 		if sbone.get("joints", []).size() == 0:
 			continue
@@ -289,9 +289,8 @@ func _export_post(state: GLTFState):
 	if not json.has("extensions"):
 		json["extensions"] = {}
 	json["extensions"]["VRMC_springBone"] = sbone_extension
-	var humanoid_skeleton: Skeleton3D = _get_humanoid_skel(secondary.get_parent())
 
-	var skel_to_godot_bone_to_gltf_node_map: Dictionary
+	var skel_to_godot_bone_to_gltf_node_map: Dictionary = {}
 	for skely in state.skeletons:
 		skel_to_godot_bone_to_gltf_node_map[skely.get_godot_skeleton()] = skely.get_godot_bone_node()
 	var godot_node_to_idx: Dictionary = {}
