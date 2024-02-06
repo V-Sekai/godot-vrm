@@ -840,11 +840,11 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			spring_bone.collider_groups = spring_collider_groups
 			for bone_name in chain:
 				spring_bone.joint_nodes.push_back(bone_name)  # end bone will be named ""
-				spring_bone.stiffness_force.push_back(stiffness_force)
-				spring_bone.gravity_power.push_back(gravity_power)
-				spring_bone.gravity_dir.push_back(gravity_dir)
-				spring_bone.drag_force.push_back(drag_force)
-				spring_bone.hit_radius.push_back(hit_radius)
+			spring_bone.stiffness_scale = stiffness_force
+			spring_bone.gravity_scale = gravity_power
+			spring_bone.gravity_dir_default = gravity_dir
+			spring_bone.drag_force_scale = drag_force
+			spring_bone.hit_radius_scale = hit_radius
 
 			if not comment.is_empty():
 				spring_bone.resource_name = comment.split("\n")[0]
@@ -856,7 +856,6 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	secondary_node.set_script(vrm_secondary)
 	secondary_node.set("skeleton", skeleton_path)
 	secondary_node.set("spring_bones", spring_bones)
-	secondary_node.set("collider_groups", collider_groups)
 
 
 func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool = false) -> void:

@@ -24,6 +24,15 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, _skeletons: Array, sk
 	return null
 
 
+func _adjust_magnitude(pfa: PackedFloat64Array, scale: float):
+	if len(pfa) > 0:
+		if pfa.count(pfa[0]) == len(pfa):
+			pfa.clear()
+		if not is_zero_approx(scale):
+			for i in range(len(pfa)):
+				pfa[i] = pfa[i] / scale
+
+
 func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gstate: GLTFState) -> void:
 	var nodes = gstate.get_nodes()
 	var skeletons = gstate.get_skeletons()
@@ -106,13 +115,21 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 
 		var spring_bone: vrm_spring_bone = vrm_spring_bone.new()
 		spring_bone.comment = sbone.get("name", "")
+		spring_bone.hit_radius_scale = 0
+		spring_bone.stiffness_scale = 0
+		spring_bone.gravity_scale = 0
+		spring_bone.drag_force_scale = 0
 		for sjoint in sbone["joints"]:
 			spring_bone.hit_radius.append(float(sbone.get("hitRadius", 0.0)))
+			spring_bone.hit_radius_scale = max(spring_bone.hit_radius_scale, spring_bone.hit_radius[-1])
 			spring_bone.stiffness_force.append(float(sbone.get("stiffiness", 1.0)))
+			spring_bone.stiffness_scale = max(spring_bone.stiffness_scale, spring_bone.stiffness_force[-1])
 			spring_bone.gravity_power.append(float(sbone.get("gravityPower", 0.0)))
+			spring_bone.gravity_scale = max(spring_bone.gravity_scale, spring_bone.gravity_power[-1])
 			var gravity_dir = sbone.get("gravityDir", [0.0, -1.0, 0.0])
 			spring_bone.gravity_dir.append(Vector3(gravity_dir[0], gravity_dir[1], gravity_dir[2]))
 			spring_bone.drag_force.append(float(sbone.get("dragForce", 0.5)))
+			spring_bone.drag_force_scale = max(spring_bone.drag_force_scale, spring_bone.drag_force[-1])
 
 			var bone_node: int = sjoint["node"]
 			var bone_name: String = nodes[int(bone_node)].resource_name
@@ -123,6 +140,16 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				printerr("Failed to find node " + str(bone_node) + " in skel " + str(skeleton))
 			else:
 				spring_bone.joint_nodes.append(bone_name)
+
+		_adjust_magnitude(spring_bone.hit_radius, spring_bone.hit_radius_scale)
+		_adjust_magnitude(spring_bone.stiffness_force, spring_bone.stiffness_scale)
+		_adjust_magnitude(spring_bone.gravity_power, spring_bone.gravity_scale)
+		_adjust_magnitude(spring_bone.drag_force, spring_bone.drag_force_scale)
+
+		if len(spring_bone.gravity_dir) > 0:
+			spring_bone.gravity_dir_default = spring_bone.gravity_dir[0]
+			if spring_bone.gravity_dir.count(spring_bone.gravity_dir_default) == len(spring_bone.gravity_dir):
+				spring_bone.gravity_dir.clear()
 
 		if not spring_bone.comment.is_empty():
 			spring_bone.resource_name = spring_bone.comment.split("\n")[0]
@@ -155,7 +182,6 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 	secondary_node.set_script(vrm_secondary)
 	secondary_node.set("skeleton", secondary_node.get_path_to(skeleton))
 	secondary_node.set("spring_bones", spring_bones)
-	secondary_node.set("collider_groups", collider_groups)
 
 
 func _add_joints_recursive(new_joints_set: Dictionary, gltf_nodes: Array, bone: int, include_child_meshes: bool = false) -> void:
@@ -260,19 +286,13 @@ static func _get_humanoid_skel(root_node: Node3D) -> Skeleton3D:
 
 func _export_post(state: GLTFState):
 	var secondary: vrm_secondary = state.get_additional_data("VRMC_springBone")
-	var collider_groups: Array[vrm_collider_group] = secondary.collider_groups.duplicate()
+	var collider_groups: Array[vrm_collider_group]
 	var spring_bones: Array[vrm_spring_bone] = secondary.spring_bones
 	var skel: Skeleton3D = secondary.get_node(secondary.skeleton)
 
 	var unique_collider_groups: Dictionary = {}
 	var unique_colliders: Dictionary = {}
 	var colliders: Array[vrm_collider] = []
-	for current_group in collider_groups:
-		unique_collider_groups[current_group] = true
-		for collider in current_group.colliders:
-			if collider not in unique_colliders:
-				unique_colliders[collider] = len(colliders)
-				colliders.push_back(collider)
 	for current_spring in spring_bones:
 		for collider_group in current_spring.collider_groups:
 			if unique_collider_groups.has(collider_group):
@@ -382,17 +402,28 @@ func _export_post(state: GLTFState):
 			if prev_node_index == -1:
 				continue
 			joint["node"] = prev_node_index
-			if not is_zero_approx(springbone.hit_radius[i]):
-				joint["hitRadius"] = springbone.hit_radius[i]
-			if not is_equal_approx(springbone.stiffness_force[i], 1.0):
-				joint["stiffness"] = springbone.stiffness_force[i]
-			if not is_zero_approx(springbone.gravity_power[i]):
-				joint["gravityPower"] = springbone.gravity_power[i]
-			var grav: Vector3 = springbone.gravity_dir[i]
-			if not grav.is_equal_approx(Vector3(0, -1, 0)) and not is_zero_approx(springbone.gravity_power[i]):
-				joint["gravityDir"] = [grav[0], grav[1], grav[2]]
-			if not is_equal_approx(springbone.drag_force[i], 0.5):
-				joint["dragForce"] = springbone.drag_force[i]
+
+			var gravity_dir: Vector3 = (springbone.gravity_dir[i] if i < len(springbone.gravity_dir) else springbone.gravity_dir_default)
+
+			var pfa: PackedFloat64Array = springbone.gravity_power
+			var gravity_power: float = (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1]) * springbone.gravity_scale
+			pfa = springbone.stiffness_force
+			var stiffness: float = springbone.stiffness_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1])
+			pfa = springbone.drag_force
+			var drag_force: float = springbone.drag_force_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1])
+			pfa = springbone.hit_radius
+			var hit_radius = springbone.hit_radius_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1])
+
+			if not is_zero_approx(hit_radius):
+				joint["hitRadius"] = hit_radius
+			if not is_equal_approx(stiffness, 1.0):
+				joint["stiffness"] = stiffness
+			if not is_zero_approx(gravity_power):
+				joint["gravityPower"] = gravity_power
+			if not gravity_dir.is_equal_approx(Vector3(0, -1, 0)) and not is_zero_approx(gravity_power):
+				joint["gravityDir"] = [gravity_dir[0], gravity_dir[1], gravity_dir[2]]
+			if not is_equal_approx(drag_force, 0.5):
+				joint["dragForce"] = drag_force
 			joints.push_back(joint)
 		if len(joints) < 2:
 			push_warning("Unable to resolve vrm springbone joints " + ','.join(springbone.joint_nodes))

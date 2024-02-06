@@ -97,7 +97,7 @@ func _popup_next_node_export(next_filename: String = ""):
 
 
 func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
-	if node == new_owner:
+	if node == new_owner or orig_node == null:
 		pass
 	elif orig_node.owner == null:
 		node.get_parent().remove_child(node)

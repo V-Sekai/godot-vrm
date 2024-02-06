@@ -4,20 +4,41 @@ extends Resource
 
 # Bone name references are only valid within the given Skeleton.
 # If the node was not a skeleton, bone is "" and contains a path to the node.
-@export var node_path: NodePath
+@export var node_path: NodePath:
+	set(value):
+		node_path = value
+		recreate_collider.emit()
 
 # The bone within the skeleton with the collider, or "" if not a bone.
-@export var bone: String
+@export var bone: String:
+	set(value):
+		bone = value
+		emit_changed()
 
-@export var offset: Vector3
-@export var tail: Vector3  # if is_capsule
-@export var radius: float
+@export var offset: Vector3:
+	set(value):
+		offset = value
+		emit_changed()
+@export var tail: Vector3:  # if is_capsule
+	set(value):
+		tail = value
+		emit_changed()
+@export var radius: float:
+	set(value):
+		radius = value
+		emit_changed()
 
-@export var is_capsule: bool = false
+@export var is_capsule: bool = false:
+	set(value):
+		if value != is_capsule:
+			is_capsule = value
+			recreate_collider.emit()
 
 # (Array, Plane)
 # Only use in editor
 @export var gizmo_color: Color = Color.MAGENTA
+
+signal recreate_collider
 
 
 func create_runtime(secondary_node: Node3D, skeleton: Skeleton3D) -> VrmRuntimeCollider:
@@ -31,9 +52,9 @@ func create_runtime(secondary_node: Node3D, skeleton: Skeleton3D) -> VrmRuntimeC
 		push_warning("spring collider: Unable to locate bone " + str(bone) + " or node " + str(node_path))
 		node = secondary_node
 	if is_capsule:
-		return CapsuleCollider.new(bone_idx, node, offset, tail, radius)
+		return CapsuleCollider.new(self, bone_idx, node)
 	else:
-		return SphereCollider.new(bone_idx, node, offset, radius)
+		return SphereCollider.new(self, bone_idx, node)
 
 
 #func _ready(ready_parent: Node3D, ready_skel: Object):
@@ -49,6 +70,8 @@ func create_runtime(secondary_node: Node3D, skeleton: Skeleton3D) -> VrmRuntimeC
 
 
 class VrmRuntimeCollider:
+	var collider: VRMCollider
+
 	var bone_idx: int
 	var node: Node3D
 	var offset: Vector3
@@ -56,13 +79,21 @@ class VrmRuntimeCollider:
 	var position: Vector3
 	var gizmo_color: Color
 
-	func _init(p_bone_idx: int, p_node: Node3D, p_collider_offset: Vector3 = Vector3.ZERO, p_collider_radius: float = 0.1):
-		self.bone_idx = p_bone_idx
-		self.node = p_node
-		offset = p_collider_offset
-		radius = p_collider_radius
+	func _init(p_collider: VRMCollider, p_bone_idx: int, p_node: Node3D):
+		bone_idx = bone_idx
+		node = p_node
+		collider = p_collider
+		collider.changed.connect(init)
+		init()
+
+	func init():
+		bone_idx = -1
+		offset = collider.offset
+		radius = collider.radius
 
 	func update(skel_global_xform_inv: Transform3D, center_transform: Transform3D, skel: Skeleton3D):
+		if node == null and bone_idx == -1:
+			bone_idx = skel.find_bone(collider.bone)
 		if bone_idx != -1:
 			position = center_transform * (skel.get_bone_global_pose(bone_idx) * offset)
 		else:  # if node != null:
@@ -87,9 +118,6 @@ class VrmRuntimeCollider:
 
 class SphereCollider:
 	extends VrmRuntimeCollider
-
-	func _init(p_bone_idx: int, p_node: Node3D, p_collider_offset: Vector3, p_collider_radius: float):
-		super(p_bone_idx, p_node, p_collider_offset, p_collider_radius)
 
 	func draw_debug(p_mesh: ImmediateMesh, p_center_transform_inv: Transform3D) -> void:
 		var step: int = 15
@@ -118,11 +146,13 @@ class CapsuleCollider:
 	var tail_offset: Vector3
 	var tail_position: Vector3
 
-	func _init(p_bone_idx: int, p_node: Node3D, p_collider_offset: Vector3, p_collider_tail: Vector3, p_collider_radius: float):
-		super(p_bone_idx, p_node, p_collider_offset, p_collider_radius)
-		tail_offset = p_collider_tail
+	func init():
+		super.init()
+		tail_offset = collider.tail
 
 	func update(p_skel_global_xform_inv: Transform3D, p_center_transform: Transform3D, p_skel: Skeleton3D):
+		if node == null and bone_idx == -1:
+			bone_idx = p_skel.find_bone(collider.bone)
 		if bone_idx != -1:
 			position = p_center_transform * (p_skel.get_bone_global_pose(bone_idx) * offset)
 			tail_position = p_center_transform * (p_skel.get_bone_global_pose(bone_idx) * tail_offset)

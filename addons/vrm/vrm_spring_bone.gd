@@ -12,6 +12,19 @@ const vrm_collider = preload("./vrm_collider.gd")
 # bone name of the root bone of the swaying object, within skeleton.
 @export var joint_nodes: PackedStringArray
 
+@export_range(0, 1, 0.001, "or_greater") var stiffness_scale: float = 1.0
+
+@export var gravity_scale: float = 1.0
+
+@export var gravity_dir_default: Vector3 = Vector3(0, -1, 0)
+
+@export_range(0, 1, 0.001, "or_greater") var drag_force_scale: float = 1.0
+
+@export_range(0, 1, 0.001, "or_greater") var hit_radius_scale: float = 1.0
+
+# Reference to the vrm_collidergroup for collisions with swaying objects.
+@export var collider_groups: Array[vrm_collider_group]
+
 # The resilience of the swaying object (the power of returning to the initial pose).
 @export var stiffness_force: PackedFloat64Array
 # The strength of gravity.
@@ -31,83 +44,113 @@ const vrm_collider = preload("./vrm_collider.gd")
 @export var center_bone: String = ""
 @export var center_node: NodePath = NodePath()
 
-# Reference to the vrm_collidergroup for collisions with swaying objects.
-@export var collider_groups: Array[vrm_collider_group]
+class SpringBoneRuntimeState:
+	extends RefCounted
 
-# Props
-var verlets: Array[VRMSpringBoneLogic]
-var colliders: Array[vrm_collider.VrmRuntimeCollider]
-var center = null
-var skel: Skeleton3D = null
+	# Props
+	var springbone: VRMSpringBone
+	var verlets: Array[VRMSpringBoneLogic]
+	var colliders: Array[vrm_collider.VrmRuntimeCollider]
+	var skel: Skeleton3D = null
 
-var has_warned: bool = false
-var disable_colliders: bool = false
-var gravity_multiplier: float = 1.0
-var gravity_rotation: Quaternion = Quaternion.IDENTITY
-var add_force: Vector3 = Vector3.ZERO
+	var has_warned: bool = false
+	var disable_colliders: bool = false
+	var gravity_multiplier: float = 1.0
+	var gravity_rotation: Quaternion = Quaternion.IDENTITY
+	var add_force: Vector3 = Vector3.ZERO
 
+	var joint_nodes: PackedStringArray
+	var cached_center_bone: String
+	var cached_center_node: NodePath
+	var cached_collider_groups: Array[vrm_collider_group]
 
-func setup(center_transform_inv: Transform3D, force: bool = false) -> void:
-	if len(joint_nodes) < 2:
-		if force and not has_warned:
-			has_warned = true
-			push_warning(str(resource_name) + ": Springbone chain has insufficient joints.")
-		return
-	if not self.joint_nodes.is_empty() && skel != null:
-		if force || verlets.is_empty():
-			if not verlets.is_empty():
-				for verlet in verlets:
-					verlet.reset(skel)
-			verlets.clear()
-			for id in range(len(joint_nodes) - 1):
-				var verlet: VRMSpringBoneLogic = create_vertlet(id, center_transform_inv)
-				verlets.append(verlet)
+	func _init(this_springbone: VRMSpringBone, skel: Skeleton3D):
+		springbone = this_springbone
+		joint_nodes = springbone.joint_nodes.duplicate()
+		cached_center_bone = springbone.center_bone
+		cached_center_node = springbone.center_node
+		cached_collider_groups = springbone.collider_groups
 
 
-func create_vertlet(id: int, center_tr_inv: Transform3D) -> VRMSpringBoneLogic:
-	var verlet: VRMSpringBoneLogic
-	if id < len(joint_nodes) - 1:
-		var bone_idx: int = skel.find_bone(joint_nodes[id])
-		var pos: Vector3
-		if joint_nodes[id + 1].is_empty():
-			var delta: Vector3 = skel.get_bone_rest(bone_idx).origin
-			pos = delta.normalized() * 0.07
-		else:
-			var first_child: int = skel.find_bone(joint_nodes[id + 1])
-			var local_position: Vector3 = skel.get_bone_rest(first_child).origin
-			var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
-			pos = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
-		verlet = VRMSpringBoneLogic.new(skel, bone_idx, center_tr_inv, pos, skel.get_bone_global_pose_no_override(id))
-	return verlet
+	func setup(center_transform_inv: Transform3D, force: bool = false):
+		#if len(joint_nodes) < 2:
+			#if force and not has_warned:
+				#has_warned = true
+				#push_warning(str(resource_name) + ": Springbone chain has insufficient joints.")
+			#return
+		if not joint_nodes.is_empty() && skel != null:
+			if force || verlets.is_empty():
+				if not verlets.is_empty():
+					for verlet in verlets:
+						verlet.reset(skel)
+				verlets.clear()
+				for id in range(len(joint_nodes) - 1):
+					var verlet: VRMSpringBoneLogic = create_vertlet(id, center_transform_inv)
+					verlets.append(verlet)
 
 
-func ready(ready_skel: Skeleton3D, colliders_ref: Array[vrm_collider.VrmRuntimeCollider], center_transform_inv: Transform3D) -> void:
-	if ready_skel != null:
-		self.skel = ready_skel
-	setup(center_transform_inv)
-	colliders = colliders_ref.duplicate(false)
+	func create_vertlet(id: int, center_tr_inv: Transform3D) -> VRMSpringBoneLogic:
+		var verlet: VRMSpringBoneLogic
+		if id < len(joint_nodes) - 1:
+			var bone_idx: int = skel.find_bone(joint_nodes[id])
+			var pos: Vector3
+			if joint_nodes[id + 1].is_empty():
+				var delta: Vector3 = skel.get_bone_rest(bone_idx).origin
+				pos = delta.normalized() * 0.07
+			else:
+				var first_child: int = skel.find_bone(joint_nodes[id + 1])
+				var local_position: Vector3 = skel.get_bone_rest(first_child).origin
+				var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
+				pos = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
+			verlet = VRMSpringBoneLogic.new(skel, bone_idx, center_tr_inv, pos, skel.get_bone_global_pose_no_override(id))
+		return verlet
 
 
-func pre_update():
-	for i in range(len(verlets)):
-		verlets[i].pre_update(skel)
-
-
-func update(delta: float, center_transform: Transform3D, center_transform_inv: Transform3D) -> void:
-	if verlets.is_empty():
-		if joint_nodes.is_empty():
-			return
+	func ready(ready_skel: Skeleton3D, colliders_ref: Array[vrm_collider.VrmRuntimeCollider], center_transform_inv: Transform3D) -> void:
+		if ready_skel != null:
+			skel = ready_skel
 		setup(center_transform_inv)
+		colliders = colliders_ref.duplicate(false)
 
-	var tmp_colliders: Array[vrm_collider.VrmRuntimeCollider]
-	if not disable_colliders:
-		tmp_colliders = colliders
 
-	for i in range(len(verlets)):
-		var stiffness: float = stiffness_force[i] * delta
-		var external: Vector3 = gravity_dir[i] * (gravity_power[i] * delta) * gravity_multiplier
-		if !gravity_rotation.is_equal_approx(Quaternion.IDENTITY):
-			external = gravity_rotation * external
-		external += add_force * delta
-		verlets[i].radius = hit_radius[i]
-		verlets[i].update(skel, center_transform, center_transform_inv, stiffness, drag_force[i], external, tmp_colliders)
+	func pre_update() -> bool: # Returns true if the springbone system must be fully reinitialized.
+		if (springbone.center_bone != cached_center_bone or
+			springbone.center_node != cached_center_node or
+			springbone.joint_nodes != joint_nodes or
+			springbone.collider_groups != cached_collider_groups):
+			return true
+		for i in range(len(verlets)):
+			verlets[i].pre_update(skel)
+		return false
+
+
+	func update(delta: float, center_transform: Transform3D, center_transform_inv: Transform3D) -> void:
+		if verlets.is_empty() or len(verlets) != len(springbone.joint_nodes):
+			if joint_nodes.is_empty():
+				return
+			setup(center_transform_inv)
+
+		var tmp_colliders: Array[vrm_collider.VrmRuntimeCollider]
+		if not disable_colliders:
+			tmp_colliders = colliders
+
+		for i in range(len(verlets)):
+			var pfa: PackedFloat64Array = springbone.gravity_power
+			var external: Vector3 = (springbone.gravity_dir[i] if i < len(springbone.gravity_dir) else springbone.gravity_dir_default)
+			external = external * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1]) * delta * springbone.gravity_scale
+			if !gravity_rotation.is_equal_approx(Quaternion.IDENTITY):
+				external = gravity_rotation * external
+			external += add_force * delta
+
+			pfa = springbone.stiffness_force
+			var stiffness: float = springbone.stiffness_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1]) * delta
+			pfa = springbone.drag_force
+			var drag_force: float = springbone.drag_force_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1])
+			pfa = springbone.hit_radius
+			verlets[i].radius = springbone.hit_radius_scale * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1])
+
+			verlets[i].update(skel, center_transform, center_transform_inv, stiffness, drag_force, external, tmp_colliders)
+
+
+func create_runtime(skel: Skeleton3D) -> SpringBoneRuntimeState:
+	return SpringBoneRuntimeState.new(self, skel)
