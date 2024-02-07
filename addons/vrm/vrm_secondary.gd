@@ -55,7 +55,7 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 		update_in_editor = value
 		if is_child_of_vrm:
 			get_parent().update_in_editor = value
-		if Engine.is_editor_hint():
+		if Engine.is_editor_hint() and is_inside_tree():
 			if value:
 				_ready()
 			else:
@@ -76,7 +76,8 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 @export_node_path("Skeleton3D") var skeleton: NodePath:
 	set(value):
 		skeleton = value
-		_ready()
+		if is_inside_tree():
+			_ready()
 @export var spring_bones: Array[spring_bone_class]:
 	set(value):
 		spring_bones = value
