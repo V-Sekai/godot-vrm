@@ -120,15 +120,15 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		spring_bone.gravity_scale = 0
 		spring_bone.drag_force_scale = 0
 		for sjoint in sbone["joints"]:
-			spring_bone.hit_radius.append(float(sbone.get("hitRadius", 0.0)))
+			spring_bone.hit_radius.append(float(sjoint.get("hitRadius", 0.0)))
 			spring_bone.hit_radius_scale = max(spring_bone.hit_radius_scale, spring_bone.hit_radius[-1])
-			spring_bone.stiffness_force.append(float(sbone.get("stiffiness", 1.0)))
+			spring_bone.stiffness_force.append(float(sjoint.get("stiffiness", 1.0)))
 			spring_bone.stiffness_scale = max(spring_bone.stiffness_scale, spring_bone.stiffness_force[-1])
-			spring_bone.gravity_power.append(float(sbone.get("gravityPower", 0.0)))
+			spring_bone.gravity_power.append(float(sjoint.get("gravityPower", 0.0)))
 			spring_bone.gravity_scale = max(spring_bone.gravity_scale, spring_bone.gravity_power[-1])
-			var gravity_dir = sbone.get("gravityDir", [0.0, -1.0, 0.0])
+			var gravity_dir = sjoint.get("gravityDir", [0.0, -1.0, 0.0])
 			spring_bone.gravity_dir.append(Vector3(gravity_dir[0], gravity_dir[1], gravity_dir[2]))
-			spring_bone.drag_force.append(float(sbone.get("dragForce", 0.5)))
+			spring_bone.drag_force.append(float(sjoint.get("dragForce", 0.5)))
 			spring_bone.drag_force_scale = max(spring_bone.drag_force_scale, spring_bone.drag_force[-1])
 
 			var bone_node: int = sjoint["node"]
