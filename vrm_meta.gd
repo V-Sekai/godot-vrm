@@ -20,6 +20,8 @@ extends Resource
 @export var author: String:
 	get:
 		return ",".join(authors)
+	set(value):
+		authors = PackedStringArray() if value.is_empty() else value.split(",")
 
 # Contact Information of VRM model author
 @export var contact_information: String
@@ -29,6 +31,8 @@ extends Resource
 @export var reference_information: String:
 	get:
 		return ",".join(references)
+	set(value):
+		references = PackedStringArray() if value.is_empty() else value.split(",")
 
 @export_subgroup("Permission")
 

@@ -78,6 +78,7 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 		skeleton = value
 		if is_inside_tree():
 			_ready()
+
 @export var spring_bones: Array[spring_bone_class]:
 	set(value):
 		spring_bones = value
@@ -152,6 +153,8 @@ func _ready() -> void:
 	var center_to_collider_to_internal: Dictionary = {}
 	var center_to_index: Dictionary = {}
 	for spring_bone in spring_bones:
+		if not spring_bone:
+			spring_bone = spring_bone_class.new()
 		var center_key: Variant = spring_bone.center_bone
 		if spring_bone.center_bone == "":
 			center_key = spring_bone.center_node
@@ -176,6 +179,8 @@ func _ready() -> void:
 	var seen_collider_groups: Dictionary
 	var seen_colliders: Dictionary
 	for spring_bone in spring_bones:
+		if not spring_bone:
+			spring_bone = spring_bone_class.new()
 		var center_key: Variant = spring_bone.center_bone
 		if spring_bone.center_bone == "":
 			center_key = spring_bone.center_node
@@ -272,6 +277,12 @@ func tick_spring_bones(delta: float) -> void:
 	update_centers(skel_transform)
 
 	var needs_reintialize: bool = false
+	# our setter syncs it the other direction.
+	if is_child_of_vrm:
+		var parent: Node = get_parent()
+		if spring_bones != parent.spring_bones:
+			spring_bones = parent.spring_bones
+			needs_reintialize = true
 	for spring_i in range(len(spring_bones_internal)):
 		needs_reintialize = spring_bones_internal[spring_i].pre_update() or needs_reintialize
 
@@ -365,7 +376,7 @@ class SecondaryGizmo:
 				var s_tr: Transform3D = Transform3D.IDENTITY
 				if v.bone_idx != -1:
 					s_tr = s_sk.get_bone_global_pose(v.bone_idx)
-				draw_sphere(center_transform_inv.basis * s_tr.basis, center_transform_inv * v.current_tail, v.radius, color)
+				draw_sphere((center_transform_inv.basis * s_tr.basis).orthonormalized(), center_transform_inv * v.current_tail, v.radius, color)
 			i += 1
 		mesh.surface_end()
 
