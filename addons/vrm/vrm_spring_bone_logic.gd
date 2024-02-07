@@ -90,5 +90,5 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 	if typeof(ft) != TYPE_NIL:
 		# ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
 		var qt: Quaternion = ft * local_pose_rotation
-		global_pose_tr.basis = Basis(qt)
+		global_pose_tr.basis = Basis(qt).scaled(global_pose_tr.basis.get_scale()) # Scaling here avoids the most egregious artifacts in a scaled character, but this math is not correct. Use scale 1,1,1
 		skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)
