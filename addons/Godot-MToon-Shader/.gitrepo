@@ -6,7 +6,7 @@
 [subrepo]
 	remote = https://github.com/V-Sekai/Godot-MToon-Shader
 	branch = main
-	commit = 4bb8799e47b6ea0af0ba7f3ee1b3aa83f0c1c963
-	parent = 7df299007ff8441c346fc6b6c7a1b9b2de669a86
+	commit = 0e690ac185380c4776d62cbc85adc7d128ad98d9
+	parent = 59688166f741bab99fe8d1ac4079e3a7337d7ca3
 	method = merge
 	cmdver = 0.4.6
