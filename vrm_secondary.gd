@@ -75,6 +75,8 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 @export_category("Spring bones")
 @export_node_path("Skeleton3D") var skeleton: NodePath:
 	set(value):
+		if skel is Skeleton3D and skel != null:
+			skel.clear_bones_global_pose_override()
 		skeleton = value
 		if is_inside_tree():
 			_ready()
@@ -288,6 +290,7 @@ func tick_spring_bones(delta: float) -> void:
 
 	if needs_reintialize or colliders_changed or spring_bones_cached != spring_bones:
 		colliders_changed = false
+		skel.clear_bones_global_pose_override()
 		_ready()
 		for spring_i in range(len(spring_bones_internal)):
 			spring_bones_internal[spring_i].pre_update()
