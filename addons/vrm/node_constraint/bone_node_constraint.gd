@@ -66,9 +66,10 @@ func evaluate_aim() -> void:
 	if source_node == null or target_node == null:
 		return
 	var source_global_transform: Transform3D = _get_source_global_transform()
+	var target_global_transform: Transform3D = _get_target_global_transform()
 	var target_rest_transform: Transform3D = _get_target_global_rest()
-	var rest_dir: Vector3 = target_rest_transform.basis * Vector3(0,1,0) # _aim_get_rest_direction(target_rest_transform.basis)
-	var aim_dir: Vector3 = target_rest_transform.origin.direction_to(source_global_transform.origin)
+	var rest_dir: Vector3 = _aim_get_rest_direction(target_rest_transform.basis)
+	var aim_dir: Vector3 = target_global_transform.origin.direction_to(source_global_transform.origin)
 	if rest_dir.is_zero_approx() or aim_dir.is_zero_approx():
 		return
 	var arc := Quaternion(rest_dir, aim_dir)
@@ -170,6 +171,13 @@ func _get_source_global_transform() -> Transform3D:
 		return source_node.global_transform
 	var skeleton: Skeleton3D = source_node as Skeleton3D
 	return skeleton.get_bone_global_pose(source_bone_index)
+
+
+func _get_target_global_transform() -> Transform3D:
+	if target_bone_index == -1:
+		return target_node.global_transform
+	var skeleton: Skeleton3D = target_node as Skeleton3D
+	return skeleton.get_bone_global_pose(target_bone_index)
 
 
 func _get_target_global_rest() -> Transform3D:
