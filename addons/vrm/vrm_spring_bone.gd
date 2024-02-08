@@ -9,22 +9,25 @@ const vrm_collider = preload("./vrm_collider.gd")
 # Annotation comment
 @export var comment: String
 
+@export_group("Bone List (End bone may be left blank)")
 # bone name of the root bone of the swaying object, within skeleton.
 @export var joint_nodes: PackedStringArray
 
-@export_range(0, 1, 0.001, "or_greater") var stiffness_scale: float = 1.0
+@export_group("Spring Settings")
+@export_range(0, 10, 0.001, "or_greater") var stiffness_scale: float = 1.0
 
-@export var gravity_scale: float = 1.0
-
-@export var gravity_dir_default: Vector3 = Vector3(0, -1, 0)
-
-@export_range(0, 1, 0.001, "or_greater") var drag_force_scale: float = 1.0
+@export_range(0, 3, 0.001, "or_greater") var drag_force_scale: float = 1.0
 
 @export_range(0, 1, 0.001, "or_greater") var hit_radius_scale: float = 1.0
+
+@export_range(-10, 10, 0.001, "or_lesser", "or_greater") var gravity_scale: float = 1.0
+
+@export var gravity_dir_default: Vector3 = Vector3(0, -1, 0)
 
 # Reference to the vrm_collidergroup for collisions with swaying objects.
 @export var collider_groups: Array[vrm_collider_group]
 
+@export_group("Per-Joint Bone Settings (Optional)")
 # The resilience of the swaying object (the power of returning to the initial pose).
 @export var stiffness_force: PackedFloat64Array
 # The strength of gravity.
@@ -37,6 +40,7 @@ const vrm_collider = preload("./vrm_collider.gd")
 # The radius of the sphere used for the collision detection with colliders.
 @export var hit_radius: PackedFloat64Array
 
+@export_group("Frame of Reference Node")
 # The reference point of a swaying object can be set at any location except the origin.
 # When implementing UI moving with warp, the parent node to move with warp can be
 # specified if you don't want to make the object swaying with warp movement.",
@@ -114,6 +118,15 @@ class SpringBoneRuntimeState:
 
 
 	func pre_update() -> bool: # Returns true if the springbone system must be fully reinitialized.
+		if Engine.is_editor_hint():
+			if len(springbone.joint_nodes) == len(joint_nodes) + 1 and len(springbone.joint_nodes) >= 2 and not springbone.joint_nodes[-2].is_empty() and springbone.joint_nodes[-1].is_empty():
+				if springbone.resource_name.is_empty() and not springbone.joint_nodes[0].is_empty():
+					springbone.resource_name = springbone.joint_nodes[0]
+				var par_bone := skel.find_bone(springbone.joint_nodes[-2])
+				if par_bone != -1:
+					var child_bones := skel.get_bone_children(par_bone)
+					if not child_bones.is_empty():
+						springbone.joint_nodes[-1] = skel.get_bone_name(child_bones[0])
 		if (springbone.center_bone != cached_center_bone or
 			springbone.center_node != cached_center_node or
 			springbone.joint_nodes != joint_nodes or
