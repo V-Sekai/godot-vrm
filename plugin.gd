@@ -151,7 +151,7 @@ func _export_vrm_dialog_action(path: String):
 		secondary.script = vrm_secondary
 
 	var gltf_doc = GLTFDocument.new()
-	gltf_doc.set(&"root_node_mode", GLTFDocument.ROOT_NODE_MODE_KEEP_ROOT)
+	gltf_doc.set(&"root_node_mode", 1) # GLTFDocument.ROOT_NODE_MODE_KEEP_ROOT
 	var gltf_state = GLTFState.new()
 	gltf_state.set_meta("vrm", "1.0")
 	var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS

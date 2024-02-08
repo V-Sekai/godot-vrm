@@ -394,7 +394,9 @@ func _export_post(state: GLTFState):
 				var pos: Vector3 = delta.normalized() * 0.07
 				var prev_node_dict: Dictionary = json_nodes[prev_node_index]
 				json_nodes.append({"name": prev_node_dict["name"] + "_end", "translation": [pos[0], pos[1], pos[2]]})
-				var prev_node_children: Array = prev_node_dict.get_or_add("children", [])
+				if not prev_node_dict.has("children"):
+					prev_node_dict["children"] = []
+				var prev_node_children: Array = prev_node_dict["children"]
 				prev_node_children.append(node_idx)
 				prev_node_index = node_idx
 			else:
