@@ -140,6 +140,8 @@ class SpringBoneRuntimeState:
 			external = external * (1.0 if pfa.is_empty() else pfa[i] if i < len(pfa) else pfa[-1]) * delta * springbone.gravity_scale
 			if !gravity_rotation.is_equal_approx(Quaternion.IDENTITY):
 				external = gravity_rotation * external
+			if !center_transform.basis.is_equal_approx(Basis.IDENTITY):
+				external = center_transform.basis.get_rotation_quaternion().inverse() * external
 			external += add_force * delta
 
 			pfa = springbone.stiffness_force
