@@ -106,7 +106,7 @@ class SpringBoneRuntimeState:
 				var local_position: Vector3 = skel.get_bone_rest(first_child).origin
 				var sca: Vector3 = skel.get_bone_rest(first_child).basis.get_scale()
 				pos = Vector3(local_position.x * sca.x, local_position.y * sca.y, local_position.z * sca.z)
-			verlet = VRMSpringBoneLogic.new(skel, bone_idx, center_tr_inv, pos, skel.get_bone_global_pose_no_override(id))
+			verlet = VRMSpringBoneLogic.new(skel, bone_idx, center_tr_inv, pos, skel.get_bone_pose(bone_idx))
 		return verlet
 
 

@@ -28,7 +28,7 @@ static func from_to_rotation_safe(from: Vector3, to: Vector3) -> Quaternion:
 
 
 func get_global_pose(skel: Skeleton3D) -> Transform3D:
-	return skel.get_bone_global_pose(parent_idx) * skel.get_bone_pose(bone_idx)
+	return skel.get_bone_global_pose(parent_idx) * skel.get_bone_rest(bone_idx)
 
 
 func get_local_pose_rotation(skel: Skeleton3D) -> Quaternion:
@@ -44,7 +44,7 @@ func get_local_pose_rotation_cached() -> Quaternion:
 
 
 func reset(skel: Skeleton3D) -> void:
-	skel.set_bone_global_pose_override(bone_idx, initial_transform, 1.0, true)
+	skel.set_bone_pose(bone_idx, initial_transform)
 
 
 func _init(skel: Skeleton3D, idx: int, center_transform_inv: Transform3D, local_child_position: Vector3, default_pose: Transform3D) -> void:
@@ -91,4 +91,7 @@ func update(skel: Skeleton3D, center_transform: Transform3D, center_transform_in
 		# ft = skel.global_transform.basis.get_rotation_quaternion().inverse() * ft
 		var qt: Quaternion = ft * local_pose_rotation
 		global_pose_tr.basis = Basis(qt).scaled(global_pose_tr.basis.get_scale()) # Scaling here avoids the most egregious artifacts in a scaled character, but this math is not correct. Use scale 1,1,1
-		skel.set_bone_global_pose_override(bone_idx, global_pose_tr, 1.0, true)
+		if parent_idx >= 0:
+			global_pose_tr = skel.get_bone_global_pose(parent_idx).inverse() * global_pose_tr
+
+	skel.set_bone_pose(bone_idx, global_pose_tr)
