@@ -132,8 +132,9 @@ class SpringBoneRuntimeState:
 			springbone.joint_nodes != joint_nodes or
 			springbone.collider_groups != cached_collider_groups):
 			return true
-		for i in range(len(verlets)):
-			verlets[i].pre_update(skel)
+		if not ClassDB.class_exists(&"SkeletonModifier3D"):
+			for i in range(len(verlets)):
+				verlets[i].pre_update(skel)
 		return false
 
 

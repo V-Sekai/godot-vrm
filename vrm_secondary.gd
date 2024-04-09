@@ -88,6 +88,7 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 			get_parent().spring_bones = value
 
 var skel: Skeleton3D
+var internal_modifier_node: SkeletonIK3D
 
 # Props
 
@@ -129,6 +130,16 @@ func _ready() -> void:
 	skel = get_node(skeleton)
 	if skel == null:
 		return  # Not supported.
+
+	if ClassDB.class_exists(&"SkeletonModifier3D"):
+		if internal_modifier_node != null:
+			if internal_modifier_node.get_parent() != null:
+				internal_modifier_node.get_parent().remove_child(internal_modifier_node)
+			internal_modifier_node.queue_free()
+		internal_modifier_node = SkeletonIK3D.new()
+		internal_modifier_node.name = "VRM_internal_skeleton_modifier"
+		skel.add_child(internal_modifier_node, false, Node.INTERNAL_MODE_BACK)
+		internal_modifier_node.connect(&"modification_processed", self._on_secondary_process_modification_processed)
 
 	spring_bones_cached = spring_bones
 	var gizmo_spring_bone: bool = false
@@ -307,8 +318,15 @@ func tick_spring_bones(delta: float) -> void:
 			secondary_gizmo.draw_in_game()
 
 
+func _process(delta: float):
+	if not ClassDB.class_exists(&"SkeletonModifier3D"):
+		do_process(delta)
+
+func _on_secondary_process_modification_processed() -> void:
+	do_process(get_process_delta_time())
+
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
+func do_process(delta: float) -> void:
 	if not update_secondary_fixed:
 		if not Engine.is_editor_hint() or check_for_editor_update():
 			tick_spring_bones(delta)
