@@ -193,6 +193,11 @@ func _process_vrm_material(orig_mat: Material, gstate: GLTFState, vrm_mat_props:
 			if outline_mat != null:
 				outline_mat.set_shader_parameter(param_name, tex_info["tex"])
 
+			if param_name == "_SphereAdd":
+				new_mat.set_shader_parameter("_MatcapColor", Vector4(1.0, 1.0, 1.0, 1.0))
+				if outline_mat != null:
+					outline_mat.set_shader_parameter("_MatcapColor", Vector4(1.0, 1.0, 1.0, 1.0))
+
 	for param_name in vrm_mat_props["floatProperties"]:
 		new_mat.set_shader_parameter(param_name, vrm_mat_props["floatProperties"][param_name])
 		if outline_mat != null:
