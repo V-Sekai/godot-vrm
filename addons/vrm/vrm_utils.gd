@@ -169,11 +169,13 @@ static func skeleton_rename(gstate: GLTFState, p_base_scene: Node, p_skeleton: S
 			gnode.resource_name = bn
 
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
+	nodes += p_base_scene.find_children("*", "MeshInstance3D")
 	while not nodes.is_empty():
-		var mi: ImporterMeshInstance3D = nodes.pop_back() as ImporterMeshInstance3D
+		var mi = nodes.pop_back()
 		var skin: Skin = mi.skin
 		if skin:
-			var node = mi.get_node(mi.skeleton_path)
+			var skeleton_path = mi.skeleton_path if mi is ImporterMeshInstance3D else mi.skeleton
+			var node = mi.get_node(skeleton_path)
 			if node and node is Skeleton3D and node == p_skeleton:
 				skellen = skin.get_bind_count()
 				for i in range(skellen):
@@ -268,13 +270,15 @@ static func apply_mesh_rotation(p_base_scene: Node, src_skeleton: Skeleton3D, ol
 	# Fix skin.
 	var scale_xform: Transform3D = Transform3D(Basis.from_scale(global_transform_scale_local), Vector3.ZERO)
 	var nodes: Array[Node] = p_base_scene.find_children("*", "ImporterMeshInstance3D")
+	nodes += p_base_scene.find_children("*", "MeshInstance3D")
 	var mutated_skins: Dictionary
 	while not nodes.is_empty():
 		var this_node = nodes.pop_back()
-		if this_node is ImporterMeshInstance3D:
+		if this_node is ImporterMeshInstance3D or this_node is MeshInstance3D:
 			var mi = this_node
 			var skin: Skin = mi.skin
-			var node = mi.get_node_or_null(mi.skeleton_path)
+			var skeleton_path = mi.skeleton_path if mi is ImporterMeshInstance3D else mi.skeleton
+			var node = mi.get_node_or_null(skeleton_path)
 			if skin and node and node is Skeleton3D and node == src_skeleton:
 				if mutated_skins.has(skin):
 					continue
