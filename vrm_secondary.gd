@@ -88,7 +88,7 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 			get_parent().spring_bones = value
 
 var skel: Skeleton3D
-var internal_modifier_node: SkeletonIK3D
+var internal_modifier_node: Node3D
 
 # Props
 
@@ -136,7 +136,7 @@ func _ready() -> void:
 			if internal_modifier_node.get_parent() != null:
 				internal_modifier_node.get_parent().remove_child(internal_modifier_node)
 			internal_modifier_node.queue_free()
-		internal_modifier_node = SkeletonIK3D.new()
+		internal_modifier_node = ClassDB.instantiate("SkeletonModifier3D")
 		internal_modifier_node.name = "VRM_internal_skeleton_modifier"
 		skel.add_child(internal_modifier_node, false, Node.INTERNAL_MODE_BACK)
 		internal_modifier_node.connect(&"modification_processed", self._on_secondary_process_modification_processed)
