@@ -563,26 +563,34 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
 			var surface_idx = mesh_and_surface_idx[1]
 
-			var mat: Material = node.get_surface_material(surface_idx)
-			var paramprop = "shader_parameter/" + matbind["parameterName"]
+			var mat: Material = node.mesh.get_surface_material(surface_idx)
+			var paramprop = "shader_parameter/" + matbind["propertyName"]
 			var origvalue = null
 			var tv = matbind["targetValue"]
 			var newvalue = tv[0]
 
 			if mat is ShaderMaterial:
 				var smat: ShaderMaterial = mat
-				var param = smat.get_shader_parameter(matbind["parameterName"])
+				var param = smat.get_shader_parameter(matbind["propertyName"])
 				if param is Color:
 					origvalue = param
-					newvalue = Color(tv[0], tv[1], tv[2], tv[3])
-				elif matbind["parameterName"] == "_MainTex" or matbind["parameterName"] == "_MainTex_ST":
+					if len(tv) >= 4:
+						newvalue = Color(tv[0], tv[1], tv[2], tv[3])
+					else:
+						printerr("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
+						newvalue = origvalue # Filler value for consistency.
+				elif matbind["propertyName"] == "_MainTex" or matbind["propertyName"] == "_MainTex_ST":
 					origvalue = param
-					newvalue = (Vector4(tv[2], tv[3], tv[0], tv[1]) if matbind["parameterName"] == "_MainTex" else Vector4(tv[0], tv[1], tv[2], tv[3]))
+					if len(tv) >= 4:
+						newvalue = (Vector4(tv[2], tv[3], tv[0], tv[1]) if matbind["propertyName"] == "_MainTex" else Vector4(tv[0], tv[1], tv[2], tv[3]))
+					else:
+						printerr("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
+						newvalue = origvalue # Filler value for consistency.
 				elif param is float:
 					origvalue = param
 					newvalue = tv[0]
 				else:
-					printerr("Unknown type for parameter " + matbind["parameterName"] + " surface " + node.name + "/" + str(surface_idx))
+					printerr("Unknown type for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
 
 			if origvalue != null:
 				var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
