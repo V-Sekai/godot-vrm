@@ -784,7 +784,9 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 			collider.bone = bone
 			collider.resource_name = new_resource_name
 			var offset_obj = collider_info.get("offset", {"x": 0.0, "y": 0.0, "z": 0.0})
-			var local_pos: Vector3 = pose_diff * offset_flip * Vector3(offset_obj["x"], offset_obj["y"], offset_obj["z"])
+			var offset_vec = offset_flip * Vector3(offset_obj["x"], offset_obj["y"], offset_obj["z"])
+			# beware that quat * vec * vec multiplication is not associative
+			var local_pos: Vector3 = pose_diff * offset_vec
 			var radius: float = collider_info.get("radius", 0.0)
 			collider.is_capsule = false
 			collider.offset = local_pos
