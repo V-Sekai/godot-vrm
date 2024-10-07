@@ -1046,6 +1046,14 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 	return OK
 
 
+func _import_post_parse(state: GLTFState) -> Error:
+	var nodes := state.get_nodes()
+	for n in nodes:
+		if typeof(n.get_additional_data(&"GODOT_rest_transform")) == TYPE_NIL:
+			n.set_additional_data(&"GODOT_rest_transform", n.get_xform())
+	return OK
+
+
 func _import_post(gstate: GLTFState, node: Node) -> Error:
 	var root_node: Node = node
 
