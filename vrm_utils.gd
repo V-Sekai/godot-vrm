@@ -49,10 +49,10 @@ static func adjust_mesh_zforward(mesh: ImporterMesh, blendshapes: Array):
 			bsarr[bsidx].resize(ArrayMesh.ARRAY_MAX)
 
 		surf_data_by_mesh.push_back({"prim": prim, "arr": arr, "bsarr": bsarr, "lods": lods, "fmt_compress_flags": fmt_compress_flags, "name": name, "mat": mat})
-	mesh.clear()
 	if blendshapes.is_empty():
 		for bsidx in mesh.get_blend_shape_count():
 			blendshapes.append(mesh.get_blend_shape_name(bsidx))
+	mesh.clear()
 	for blend_name in blendshapes:
 		mesh.add_blend_shape(blend_name)
 	for surf_idx in range(surf_count):
