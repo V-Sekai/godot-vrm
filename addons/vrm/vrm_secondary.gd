@@ -235,24 +235,8 @@ func check_for_editor_update() -> bool:
 		return false
 	if is_child_of_vrm:
 		var parent: Node = get_parent()
-		if parent.springbone_gravity_rotation != springbone_gravity_rotation or parent.springbone_gravity_multiplier != springbone_gravity_multiplier or parent.springbone_add_force != springbone_add_force:
-			springbone_add_force = parent.springbone_add_force
-			springbone_gravity_rotation = parent.springbone_gravity_rotation
-			springbone_gravity_multiplier = parent.springbone_gravity_multiplier
-			modify_gravity = true
-		if parent.disable_colliders != disable_colliders:
-			disable_colliders = parent.disable_colliders
-			for sb in spring_bones_internal:
-				sb.disable_colliders = disable_colliders
-		override_springbone_center = parent.override_springbone_center
-		default_springbone_center = parent.default_springbone_center
 		if parent.update_in_editor != update_in_editor:
 			update_in_editor = parent.update_in_editor
-	if modify_gravity:
-		for sb in spring_bones_internal:
-			sb.add_force = springbone_add_force
-			sb.gravity_rotation = springbone_gravity_rotation
-			sb.gravity_multiplier = springbone_gravity_multiplier
 	return update_in_editor
 
 
@@ -293,9 +277,27 @@ func tick_spring_bones(delta: float) -> void:
 	# our setter syncs it the other direction.
 	if is_child_of_vrm:
 		var parent: Node = get_parent()
+	var parent: Node = get_parent()
+	if is_child_of_vrm:
+		if parent.springbone_gravity_rotation != springbone_gravity_rotation or parent.springbone_gravity_multiplier != springbone_gravity_multiplier or parent.springbone_add_force != springbone_add_force:
+			springbone_add_force = parent.springbone_add_force
+			springbone_gravity_rotation = parent.springbone_gravity_rotation
+			springbone_gravity_multiplier = parent.springbone_gravity_multiplier
+			modify_gravity = true
+		if parent.disable_colliders != disable_colliders:
+			disable_colliders = parent.disable_colliders
+			for sb in spring_bones_internal:
+				sb.disable_colliders = disable_colliders
+		override_springbone_center = parent.override_springbone_center
+		default_springbone_center = parent.default_springbone_center
 		if spring_bones != parent.spring_bones:
 			spring_bones = parent.spring_bones
 			needs_reintialize = true
+	if modify_gravity:
+		for sb in spring_bones_internal:
+			sb.add_force = springbone_add_force
+			sb.gravity_rotation = springbone_gravity_rotation
+			sb.gravity_multiplier = springbone_gravity_multiplier
 	for spring_i in range(len(spring_bones_internal)):
 		needs_reintialize = spring_bones_internal[spring_i].pre_update() or needs_reintialize
 
@@ -381,6 +383,8 @@ class SecondaryGizmo:
 			draw_collider_groups()
 
 	func draw_spring_bones(color: Color) -> void:
+		if secondary_node.spring_bones_internal.is_empty():
+			return
 		set_material_override(m)
 		var i: int = 0
 		var s_sk: Skeleton3D = secondary_node.skel
@@ -402,6 +406,8 @@ class SecondaryGizmo:
 		mesh.surface_end()
 
 	func draw_collider_groups() -> void:
+		if secondary_node.colliders_internal.is_empty():
+			return
 		set_material_override(m)
 		var i: int = 0
 		mesh.surface_begin(Mesh.PRIMITIVE_LINES)
