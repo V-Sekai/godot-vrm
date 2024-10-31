@@ -1,25 +1,28 @@
 @tool
 extends EditorPlugin
 
-var import_plugin
+var import_plugin: EditorSceneFormatImporter
 
 const VRMC_node_constraint = preload("./1.0/VRMC_node_constraint.gd")
-var VRMC_node_constraint_inst = VRMC_node_constraint.new()
+var VRMC_node_constraint_inst := VRMC_node_constraint.new()
 
 const VRMC_springBone = preload("./1.0/VRMC_springBone.gd")
-var VRMC_springBone_inst = VRMC_springBone.new()
+var VRMC_springBone_inst := VRMC_springBone.new()
 
 const VRMC_materials_mtoon = preload("./1.0/VRMC_materials_mtoon.gd")
-var VRMC_materials_mtoon_inst = VRMC_materials_mtoon.new()
+var VRMC_materials_mtoon_inst := VRMC_materials_mtoon.new()
 
 const VRMC_materials_hdr_emissiveMultiplier = preload("./1.0/VRMC_materials_hdr_emissiveMultiplier.gd")
-var VRMC_materials_hdr_emissiveMultiplier_inst = VRMC_materials_hdr_emissiveMultiplier.new()
+var VRMC_materials_hdr_emissiveMultiplier_inst := VRMC_materials_hdr_emissiveMultiplier.new()
 
 const VRMC_vrm = preload("./1.0/VRMC_vrm.gd")
-var VRMC_vrm_inst = VRMC_vrm.new()
+var VRMC_vrm_inst := VRMC_vrm.new()
 
 const VRMC_vrm_animation = preload("./1.0/VRMC_vrm_animation.gd")
-var VRMC_vrm_animation_inst = VRMC_vrm_animation.new()
+var VRMC_vrm_animation_inst := VRMC_vrm_animation.new()
+
+const vrm_options_post_import_plugin = preload("./vrm_options_post_import_plugin.gd")
+var vrm_options_post_import_plugin_inst := vrm_options_post_import_plugin.new()
 
 const vrm_meta_class = preload("./vrm_meta.gd")
 const vrm_top_level = preload("./vrm_toplevel.gd")
@@ -146,15 +149,15 @@ func _export_vrm_dialog_action(path: String):
 		secondary.owner = root
 		root.add_child(secondary)
 	else:
-		secondary = root.get_node("secondary")
+		secondary = root.get_node("secondary") as Node3D
 	if secondary.script == null:
 		secondary.script = vrm_secondary
 
-	var gltf_doc = GLTFDocument.new()
+	var gltf_doc := GLTFDocument.new()
 	gltf_doc.set(&"root_node_mode", 1) # GLTFDocument.ROOT_NODE_MODE_KEEP_ROOT
-	var gltf_state = GLTFState.new()
+	var gltf_state := GLTFState.new()
 	gltf_state.set_meta("vrm", "1.0")
-	var flags = EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
+	var flags := EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
 	print("Do append_from_scene")
 	if gltf_doc.append_from_scene(root, gltf_state, flags) != OK:
 		push_error("VRM scene save error!")
@@ -198,6 +201,7 @@ func _enter_tree() -> void:
 	export_as_menu.add_item(export_as_item, export_as_id, KEY_V)
 	export_as_menu.set_item_metadata(export_as_menu.item_count - 1, _export_vrm_pressed)
 
+	add_scene_post_import_plugin(vrm_options_post_import_plugin_inst)
 	# NOTE: Be sure to also register at runtime if you want runtime import.
 	# This editor plugin script won't run outside of the editor.
 	GLTFDocument.register_gltf_document_extension(VRMC_vrm_inst)
@@ -225,4 +229,5 @@ func _exit_tree() -> void:
 	GLTFDocument.unregister_gltf_document_extension(VRMC_materials_hdr_emissiveMultiplier_inst)
 	#GLTFDocument.unregister_gltf_document_extension(VRMC_vrm_animation_inst)
 	remove_scene_format_importer_plugin(import_plugin)
+	remove_scene_post_import_plugin(vrm_options_post_import_plugin_inst)
 	import_plugin = null

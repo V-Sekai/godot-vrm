@@ -327,13 +327,11 @@ func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, ske
 
 
 func _first_person_head_hiding(vrm_extension: Dictionary, gstate: GLTFState, human_bone_to_idx: Dictionary):
-	var nodes = gstate.get_nodes()
-	var skeletons = gstate.get_skeletons()
 	var firstperson = vrm_extension.get("firstPerson", null)
 
-	var mesh_to_head_hidden_mesh: Dictionary = {}
+	var nodes := gstate.get_nodes()
+	var skeletons := gstate.get_skeletons()
 	var node_to_head_hidden_node: Dictionary = {}
-
 	var head_relative_bones: Dictionary = {}  # To determine which meshes to hide.
 
 	var head_bone_idx = firstperson.get("firstPersonBone", human_bone_to_idx.get("head", -1))
@@ -344,65 +342,14 @@ func _first_person_head_hiding(vrm_extension: Dictionary, gstate: GLTFState, hum
 
 	var mesh_annotations_by_mesh = {}
 	for meshannotation in firstperson.get("meshAnnotations", []):
-		mesh_annotations_by_mesh[int(meshannotation["mesh"])] = meshannotation
-
+		var s: String = meshannotation.get("firstPersonFlag", "Auto")
+		mesh_annotations_by_mesh[int(meshannotation["mesh"])] = s.substr(0, 1).to_lower() + s.substr(1)
+	var mesh_annotations_by_node = {}
 	for node_idx in range(len(nodes)):
-		var gltf_node: GLTFNode = nodes[node_idx]
-		var node: Node = gstate.get_scene_node(node_idx)
-		if node is ImporterMeshInstance3D:
-			var meshannotation = mesh_annotations_by_mesh.get(gltf_node.mesh, {})
+		if nodes[node_idx].mesh != -1 and mesh_annotations_by_mesh.has(nodes[node_idx].mesh):
+			mesh_annotations_by_node[node_idx] = mesh_annotations_by_mesh[nodes[node_idx].mesh]
 
-			var flag: String = meshannotation.get("firstPersonFlag", "Auto")
-
-			# Non-skinned meshes: use flag.
-			var mesh: ImporterMesh = node.mesh
-			var head_hidden_mesh: ImporterMesh = mesh
-			if flag == "Auto":
-				if node.skin == null:
-					var parent_node = node.get_parent()
-					if parent_node is BoneAttachment3D:
-						if head_relative_bones.has(parent_node.bone_name):
-							flag = "ThirdPersonOnly"
-				else:
-					var blend_shape_names: Dictionary = vrm_utils._extract_blendshape_names(gstate.json)
-					if node_idx in blend_shape_names.keys():
-						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, blend_shape_names[node_idx])
-					else:
-						head_hidden_mesh = vrm_utils._generate_hide_bone_mesh(mesh, node.skin, head_relative_bones, [])
-					if head_hidden_mesh == null:
-						flag = "ThirdPersonOnly"
-					if head_hidden_mesh == mesh:
-						flag = "Both"  # Nothing to do: No head verts.
-
-			var layer_mask: int = 6  # "both"
-			if flag == "ThirdPersonOnly":
-				layer_mask = 4
-			elif flag == "FirstPersonOnly":
-				layer_mask = 2
-
-			if flag == "Auto" and head_hidden_mesh != mesh:  # If it is still "auto", we have something to hide.
-				mesh_to_head_hidden_mesh[mesh] = head_hidden_mesh
-				var head_hidden_node: ImporterMeshInstance3D = ImporterMeshInstance3D.new()
-				head_hidden_node.name = node.name + " (Headless)"
-				head_hidden_node.skin = node.skin
-				head_hidden_node.mesh = head_hidden_mesh
-				head_hidden_node.skeleton_path = node.skeleton_path
-				head_hidden_node.script = importer_mesh_attributes
-				head_hidden_node.layers = 2  # ImporterMeshInstance3D is missing APIs.
-				head_hidden_node.first_person_flag = "head_removed"
-
-				node.add_sibling(head_hidden_node)
-				head_hidden_node.owner = node.owner
-				var gltf_mesh: GLTFMesh = GLTFMesh.new()
-				gltf_mesh.mesh = head_hidden_mesh
-				# FIXME: do we need to assign gltf_mesh.instance_materials?
-				gstate.meshes.append(gltf_mesh)
-				node_to_head_hidden_node[node] = head_hidden_node
-				layer_mask = 4
-
-			node.script = importer_mesh_attributes
-			node.layers = layer_mask
-			node.first_person_flag = flag.substr(0, 1).to_lower() + flag.substr(1)
+	vrm_utils.perform_head_hiding(gstate, mesh_annotations_by_node, head_relative_bones, node_to_head_hidden_node)
 
 
 # https://github.com/vrm-c/vrm-specification/blob/master/specification/0.0/schema/vrm.humanoid.bone.schema.json
@@ -606,7 +553,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[int(bind["mesh"])]
 			var nodeMesh: ImporterMesh = node.mesh
 
-			if bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
+			if nodeMesh == null || bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
 				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
 				continue
 			var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
@@ -930,6 +877,9 @@ func _import_preflight(gstate: GLTFState, extensions: PackedStringArray = Packed
 	if extensions.has("VRMC_vrm"):
 		# VRM 1.0 file. Do not parse as a VRM 0.0.
 		return ERR_INVALID_DATA
+	if typeof(gstate.get_additional_data(&"vrm/already_processed")) != TYPE_NIL:
+		return ERR_SKIP
+	gstate.set_additional_data(&"vrm/already_processed", true)
 	var gltf_json_parsed: Dictionary = gstate.json
 	var gltf_nodes = gltf_json_parsed["nodes"]
 	if not _add_vrm_nodes_to_skin(gltf_json_parsed):
