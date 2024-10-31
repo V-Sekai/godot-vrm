@@ -322,38 +322,38 @@ func tick_spring_bones(delta: float) -> void:
 
 func _process(delta: float):
 	if not ClassDB.class_exists(&"SkeletonModifier3D"):
-		do_process(delta)
-
-func _on_secondary_process_modification_processed() -> void:
-	do_process(get_process_delta_time())
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func do_process(delta: float) -> void:
-	if not update_secondary_fixed:
-		if not Engine.is_editor_hint() or check_for_editor_update():
-			tick_spring_bones(delta)
-		elif Engine.is_editor_hint():
-			if secondary_gizmo != null:
-				if skel != null:
-					var skel_transform: Transform3D = skel.global_transform
-					update_centers(skel_transform)
-					for collider_i in range(len(colliders_internal)):
-						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
-					secondary_gizmo.draw_in_editor()
+		if not update_secondary_fixed:
+			do_process(delta)
 
 
 func _physics_process(delta: float) -> void:
-	if update_secondary_fixed:
-		if not Engine.is_editor_hint() or check_for_editor_update():
-			tick_spring_bones(delta)
-		elif Engine.is_editor_hint():
-			if secondary_gizmo != null:
-				if skel != null:
-					var skel_transform: Transform3D = skel.global_transform
-					update_centers(skel_transform)
-					for collider_i in range(len(colliders_internal)):
-						colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
-					secondary_gizmo.draw_in_editor()
+	if not ClassDB.class_exists(&"SkeletonModifier3D"):
+		if update_secondary_fixed:
+			do_process(delta)
+
+
+func _on_secondary_process_modification_processed() -> void:
+	var delta: float
+	# MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS = 0
+	if skel.modifier_callback_mode_process == 0:
+		delta = get_physics_process_delta_time()
+	else:
+		delta = get_process_delta_time()
+	do_process(delta)
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func do_process(delta: float) -> void:
+	if not Engine.is_editor_hint() or check_for_editor_update():
+		tick_spring_bones(delta)
+	elif Engine.is_editor_hint():
+		if secondary_gizmo != null:
+			if skel != null:
+				var skel_transform: Transform3D = skel.global_transform
+				update_centers(skel_transform)
+				for collider_i in range(len(colliders_internal)):
+					colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
+				secondary_gizmo.draw_in_editor()
 
 
 class SecondaryGizmo:
