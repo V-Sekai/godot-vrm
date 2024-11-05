@@ -276,7 +276,7 @@ func _create_animation(default_values: Dictionary, default_blend_shapes: Diction
 		var node: ImporterMeshInstance3D = node_maybe as ImporterMeshInstance3D
 		var nodeMesh: ImporterMesh = node.mesh
 
-		if bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
+		if nodeMesh == null || bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
 			printerr("Invalid blend shape index in bind " + str(expression) + " for mesh " + str(node.name))
 			continue
 		var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
@@ -737,6 +737,7 @@ const required_bones = ["hips", "spine", "head", "leftUpperLeg", "leftLowerLeg",
 
 
 func _export_preflight(gstate: GLTFState, root: Node) -> Error:
+	return ERR_SKIP
 	if gstate.get_meta("vrm", "") != "1.0":
 		return ERR_INVALID_DATA
 	if root.script != vrm_top_level:
