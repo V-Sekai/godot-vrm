@@ -118,7 +118,7 @@ func _export_post(gltf_state: GLTFState):
 		if constraint.target_node is Skeleton3D:
 			for gltf_skel in skeletons:
 				if gltf_skel.get_godot_skeleton() == constraint.target_node:
-					target_node_index = gltf_skel.godot_bone_node[constraint.target_node.find_bone(constraint.target_bone_index)]
+					target_node_index = gltf_skel.godot_bone_node[constraint.target_bone_index]
 		else:
 			target_node_index = node_to_index[constraint.target_node]
 		var json_nodes: Array = gltf_state.json["nodes"]
