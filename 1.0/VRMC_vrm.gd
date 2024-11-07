@@ -737,7 +737,6 @@ const required_bones = ["hips", "spine", "head", "leftUpperLeg", "leftLowerLeg",
 
 
 func _export_preflight(gstate: GLTFState, root: Node) -> Error:
-	return ERR_SKIP
 	if gstate.get_meta("vrm", "") != "1.0":
 		return ERR_INVALID_DATA
 	if root.script != vrm_top_level:
@@ -867,27 +866,8 @@ func _export_post(gstate: GLTFState) -> Error:
 	for i in range(len(json_gltf_nodes)):
 		if json_gltf_nodes[i].has("extensions") and json_gltf_nodes[i]["extensions"].is_empty():
 			json_gltf_nodes[i].erase("extensions")
-		if json_gltf_nodes[i]["name"] == "Root":
-			print("Found a Root at index " + str(i))
-		if json_gltf_nodes[i]["name"] == "BoneNodeConstraintApplier":
-			print("Found a BoneNodeConstraintApplier at index " + str(i))
-			json_gltf_nodes[i]["name"] = "_unused_applier"
 	var root_node: Node3D = gstate.get_meta("vrm_root")
 	var json: Dictionary = gstate.json
-
-	# HACK: Avoid extra root node to make sure export/import is idempotent.
-	var gltf_root_nodes: Array = json["scenes"][0]["nodes"]
-	if len(gltf_root_nodes) == 1 and json.get("extensionsUsed", []).count("GODOT_single_root") == 0:
-		var orig_gltf_root_node: Dictionary = json["nodes"][gltf_root_nodes[0]]
-		var orig_children: Array = orig_gltf_root_node["children"]
-		#print("Orig root: " + orig_gltf_root_node["name"])
-		#print("First child: " + json["nodes"][orig_children[0]]["name"])
-		orig_gltf_root_node["name"] = "_unused"  # Removing nodes in glTF is very difficulty.
-		orig_gltf_root_node.erase("children")
-		gltf_root_nodes.clear()
-		gltf_root_nodes.append_array(orig_children)
-		#print(gltf_root_nodes)
-		#print(orig_children)
 
 	var gltf_nodes: Array[GLTFNode] = gstate.nodes
 	var godot_node_to_gltf_mesh_node_idx: Dictionary = {}
