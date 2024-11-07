@@ -110,7 +110,7 @@ func reassign_owner(new_owner: Node, orig_node: Node, node: Node):
 		node.owner = new_owner
 		#print(node.name + " assigned to owner " + node.owner.name)
 	#print("Node " + str(node.name) + " orig child " + str(orig_node.get_child_count()) + " new child " + str(node.get_child_count()))
-	for i in range(node.get_child_count()):
+	for i in range(node.get_child_count() - 1, -1, -1):
 		reassign_owner(new_owner, orig_node.get_child(i), node.get_child(i))
 
 
@@ -143,18 +143,16 @@ func _export_vrm_dialog_action(path: String):
 	reassign_owner(new_root, root, new_root)
 	root = new_root
 	print("After duplicate")
-	var secondary: Node3D
-	if not root.has_node("secondary"):
+	var secondary := root.get_node_or_null("secondary") as Node3D
+	if secondary == null:
 		secondary = Node3D.new()
 		secondary.owner = root
 		root.add_child(secondary)
-	else:
-		secondary = root.get_node("secondary") as Node3D
 	if secondary.script == null:
 		secondary.script = vrm_secondary
 
 	var gltf_doc := GLTFDocument.new()
-	gltf_doc.set(&"root_node_mode", 1) # GLTFDocument.ROOT_NODE_MODE_KEEP_ROOT
+	gltf_doc.set(&"root_node_mode", 2) # GLTFDocument.ROOT_NODE_MODE_MULTI_ROOT
 	var gltf_state := GLTFState.new()
 	gltf_state.set_meta("vrm", "1.0")
 	var flags := EditorSceneFormatImporter.IMPORT_USE_NAMED_SKIN_BINDS
