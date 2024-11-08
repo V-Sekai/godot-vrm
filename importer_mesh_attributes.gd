@@ -5,7 +5,7 @@ extends ImporterMeshInstance3D
 	get:
 		if typeof(get(&"layer_mask")) != TYPE_NIL:
 			return get(&"layer_mask")
-		return 0
+		return 1 # Default layer on older engine versions.
 
 @export var orig_shadow: int:
 	get:
