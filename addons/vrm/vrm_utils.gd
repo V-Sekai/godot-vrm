@@ -67,7 +67,6 @@ static func adjust_mesh_zforward(mesh: ImporterMesh, blendshapes: Array):
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
 		mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 
-
 static func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_set: Dictionary):
 	if p_node is Skeleton3D:
 		for bone_idx in range(p_node.get_bone_count()):
@@ -85,18 +84,34 @@ static func rotate_scene_180_inner(p_node: Node3D, mesh_set: Dictionary, skin_se
 		if child is Node3D:
 			rotate_scene_180_inner(child, mesh_set, skin_set)
 
+static func generate_mesh_index_to_meshinstance_mapping(gstate : GLTFState) -> Dictionary:
+	var nodes = gstate.get_nodes()
+	var mesh_idx_to_meshinstance : Dictionary = {}
+	for i in range(nodes.size()):
+		var gltfnode: GLTFNode = nodes[i]
+		var mesh_idx: int = gltfnode.mesh
+		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
+		if mesh_idx != -1:
+			var scenenode: ImporterMeshInstance3D = gstate.get_scene_node(i)
+			mesh_idx_to_meshinstance[mesh_idx] = scenenode
+			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
+	return mesh_idx_to_meshinstance
 
-static func rotate_scene_180(p_scene: Node3D, blend_shape_names: Dictionary):
+static func rotate_scene_180(p_scene: Node3D, blend_shape_names: Dictionary, gstate : GLTFState):
 	var mesh_set: Dictionary = {}
 	var skin_set: Dictionary = {}
 	rotate_scene_180_inner(p_scene, mesh_set, skin_set)
-	var mesh_index: int = 0
-	for mesh in mesh_set:
+
+	var mesh_idx_to_meshinstance : Dictionary = generate_mesh_index_to_meshinstance_mapping(gstate)
+
+	for mesh_index in mesh_idx_to_meshinstance.keys():
+		var mesh_node = mesh_idx_to_meshinstance[mesh_index]
+		var mesh = mesh_node.mesh
 		if mesh_index in blend_shape_names.keys():
 			adjust_mesh_zforward(mesh, blend_shape_names[mesh_index])
 		else:
 			adjust_mesh_zforward(mesh, [])
-		mesh_index += 1
+
 	for skin in skin_set:
 		for b in range(skin.get_bind_count()):
 			skin.set_bind_pose(b, ROTATE_180_TRANSFORM * skin.get_bind_pose(b) * ROTATE_180_TRANSFORM)
@@ -433,7 +448,6 @@ static func _generate_hide_bone_mesh(mesh: ImporterMesh, skin: Skin, bone_names_
 		var mat: Material = surf_data_by_mesh[surf_idx].get("mat")
 		new_mesh.add_surface(prim, arr, bsarr, lods, mat, name, fmt_compress_flags)
 	return new_mesh
-
 
 static func perform_head_hiding(gstate: GLTFState, mesh_annotations_by_node: Dictionary, head_relative_bones: Dictionary, node_to_head_hidden_node: Dictionary):
 	var meshes = gstate.get_meshes()
