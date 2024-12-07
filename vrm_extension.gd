@@ -480,21 +480,12 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	var nodes = gstate.get_nodes()
 	var blend_shape_groups = vrm_extension["blendShapeMaster"]["blendShapeGroups"]
 	# FIXME: Do we need to handle multiple references to the same mesh???
-	var mesh_idx_to_meshinstance: Dictionary = {}
+	var mesh_idx_to_meshinstance: Dictionary = vrm_utils.generate_mesh_index_to_meshinstance_mapping(gstate)
 	var material_name_to_mesh_and_surface_idx: Dictionary = {}
 	for i in range(meshes.size()):
 		var gltfmesh: GLTFMesh = meshes[i]
 		for j in range(gltfmesh.mesh.get_surface_count()):
 			material_name_to_mesh_and_surface_idx[gltfmesh.mesh.get_surface_material(j).resource_name] = [i, j]
-
-	for i in range(nodes.size()):
-		var gltfnode: GLTFNode = nodes[i]
-		var mesh_idx: int = gltfnode.mesh
-		#print("node idx " + str(i) + " node name " + gltfnode.resource_name + " mesh idx " + str(mesh_idx))
-		if mesh_idx != -1:
-			var scenenode: ImporterMeshInstance3D = gstate.get_scene_node(i)
-			mesh_idx_to_meshinstance[mesh_idx] = scenenode
-			#print("insert " + str(mesh_idx) + " node name " + scenenode.name)
 
 	var firstperson = vrm_extension["firstPerson"]
 
@@ -504,7 +495,6 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 	for shape in blend_shape_groups:
 		#print("Blend shape group: " + shape["name"])
 		var anim = Animation.new()
-
 		for matbind in shape["materialValues"]:
 			var mesh_and_surface_idx = material_name_to_mesh_and_surface_idx[matbind["materialName"]]
 			var node: ImporterMeshInstance3D = mesh_idx_to_meshinstance[mesh_and_surface_idx[0]]
@@ -936,7 +926,7 @@ func _import_post(gstate: GLTFState, node: Node) -> Error:
 	if is_vrm_0:
 		# VRM 0.0 has models facing backwards due to a spec error (flipped z instead of x)
 		var blend_shape_names: Dictionary = vrm_utils._extract_blendshape_names(gltf_json)
-		vrm_utils.rotate_scene_180(root_node, blend_shape_names)
+		vrm_utils.rotate_scene_180(root_node, blend_shape_names, gstate)
 
 	var do_retarget = true
 
