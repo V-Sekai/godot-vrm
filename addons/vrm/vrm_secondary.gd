@@ -277,8 +277,6 @@ func tick_spring_bones(delta: float) -> void:
 	# our setter syncs it the other direction.
 	if is_child_of_vrm:
 		var parent: Node = get_parent()
-	var parent: Node = get_parent()
-	if is_child_of_vrm:
 		if parent.springbone_gravity_rotation != springbone_gravity_rotation or parent.springbone_gravity_multiplier != springbone_gravity_multiplier or parent.springbone_add_force != springbone_add_force:
 			springbone_add_force = parent.springbone_add_force
 			springbone_gravity_rotation = parent.springbone_gravity_rotation
