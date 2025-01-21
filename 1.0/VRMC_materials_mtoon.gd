@@ -516,6 +516,6 @@ func _import_post(gstate, root):
 			if spatial_to_shader_mat.has(surfmat):
 				mesh.set_surface_material(surf_idx, spatial_to_shader_mat[surfmat])
 			else:
-				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
+				push_error("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
 
 	# FIXME: due to head duplication, do we now have some meshes which are not in gltf state?

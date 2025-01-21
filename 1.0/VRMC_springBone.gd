@@ -137,7 +137,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				# Note that we make an assumption that a given SpringBone object is
 				# only part of a single Skeleton*. This error might print if a given
 				# SpringBone references bones from multiple Skeleton's.
-				printerr("Failed to find node " + str(bone_node) + " in skel " + str(skeleton))
+				push_error("Failed to find node " + str(bone_node) + " in skel " + str(skeleton))
 			else:
 				spring_bone.joint_nodes.append(bone_name)
 
@@ -174,7 +174,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				spring_bone.center_bone = ""
 				spring_bone.center_node = (secondary_node.get_path_to(gstate.get_scene_node(int(center_node_idx))))
 				if spring_bone.center_node == NodePath():
-					printerr("Failed to find center scene node " + str(center_node_idx))
+					push_error("Failed to find center scene node " + str(center_node_idx))
 					spring_bone.center_node = secondary_node.get_path_to(secondary_node)  # Fallback
 
 		spring_bones.append(spring_bone)

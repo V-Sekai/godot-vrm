@@ -130,7 +130,7 @@ func evaluate_roll() -> void:
 	if source_node == null or target_node == null:
 		return
 	if aim_or_roll_axis < AimRollAxis.POSITIVE_X or aim_or_roll_axis > AimRollAxis.POSITIVE_Z:
-		printerr("BoneNodeConstraint: Roll axis not set! Must be positive X, Y, or Z.")
+		push_error("BoneNodeConstraint: Roll axis not set! Must be positive X, Y, or Z.")
 		return
 	# Gather axis-angle information from the source rotation.
 	var source_transform: Transform3D = _get_posed_source_transform()
@@ -172,7 +172,7 @@ static func from_dictionary(dict: Dictionary):  # -> BoneNodeConstraint:
 	elif constraint_type_string == "rotation":
 		ret.constraint_type = ConstraintType.ROTATION
 	else:
-		printerr("BoneNodeConstraint: Unknown constraint type: " + constraint_type_string)
+		push_error("BoneNodeConstraint: Unknown constraint type: " + constraint_type_string)
 	# Set up weight and source node index.
 	var constraint_parameters: Dictionary = constraint_dict[constraint_type_string]
 	ret.weight = constraint_dict.get("weight", 1.0)
@@ -292,7 +292,7 @@ func _aim_get_rest_direction(rest_basis: Basis) -> Vector3:
 			return -rest_basis.y
 		AimRollAxis.NEGATIVE_Z:
 			return -rest_basis.z
-	printerr("BoneNodeConstraint: Aim axis not set! Must be a valid value.")
+	push_error("BoneNodeConstraint: Aim axis not set! Must be a valid value.")
 	return Vector3.ZERO
 
 
@@ -310,7 +310,7 @@ static func _from_dictionary_get_aim_axis_from_string(aim_axis: String) -> AimRo
 			return AimRollAxis.NEGATIVE_Y
 		"NegativeZ":
 			return AimRollAxis.NEGATIVE_Z
-	printerr("BoneNodeConstraint: Unknown aim axis: " + aim_axis)
+	push_error("BoneNodeConstraint: Unknown aim axis: " + aim_axis)
 	return AimRollAxis.NONE
 
 
@@ -322,7 +322,7 @@ static func _from_dictionary_get_roll_axis_from_string(roll_axis: String) -> Aim
 			return AimRollAxis.POSITIVE_Y
 		"Z":
 			return AimRollAxis.POSITIVE_Z
-	printerr("BoneNodeConstraint: Unknown roll axis: " + roll_axis)
+	push_error("BoneNodeConstraint: Unknown roll axis: " + roll_axis)
 	return AimRollAxis.NONE
 
 
@@ -340,7 +340,7 @@ func _to_dictionary_get_string_from_aim_axis() -> String:
 			return "NegativeY"
 		AimRollAxis.NEGATIVE_Z:
 			return "NegativeZ"
-	printerr("BoneNodeConstraint: Invalid aim axis: " + str(aim_or_roll_axis))
+	push_error("BoneNodeConstraint: Invalid aim axis: " + str(aim_or_roll_axis))
 	return ""
 
 
@@ -352,5 +352,5 @@ func _to_dictionary_get_string_from_roll_axis() -> String:
 			return "Y"
 		AimRollAxis.POSITIVE_Z:
 			return "Z"
-	printerr("BoneNodeConstraint: Invalid roll axis: " + str(aim_or_roll_axis))
+	push_error("BoneNodeConstraint: Invalid roll axis: " + str(aim_or_roll_axis))
 	return ""

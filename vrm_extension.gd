@@ -100,7 +100,7 @@ func _process_vrm_material(orig_mat: Material, gstate: GLTFState, vrm_mat_props:
 		return orig_mat  # It's already correct!
 
 	if vrm_shader_name == "Standard" or vrm_shader_name == "UniGLTF/UniUnlit":
-		printerr("Unsupported legacy VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
+		push_error("Unsupported legacy VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
 		return orig_mat
 
 	var maintex_info: Dictionary = _vrm_get_texture_info(gstate, vrm_mat_props, "_MainTex")
@@ -123,7 +123,7 @@ func _process_vrm_material(orig_mat: Material, gstate: GLTFState, vrm_mat_props:
 		return orig_mat
 
 	if vrm_shader_name != "VRM/MToon":
-		printerr("Unknown VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
+		push_error("Unknown VRM shader " + vrm_shader_name + " on material " + str(orig_mat.resource_name))
 		return orig_mat
 
 	# Enum(Off,0,Front,1,Back,2) _CullMode
@@ -133,7 +133,7 @@ func _process_vrm_material(orig_mat: Material, gstate: GLTFState, vrm_mat_props:
 	var cull_mode = int(vrm_mat_props["floatProperties"].get("_CullMode", 2))
 	var outl_cull_mode = int(vrm_mat_props["floatProperties"].get("_OutlineCullMode", 1))
 	if cull_mode == int(CullMode.Front) || (outl_cull_mode != int(CullMode.Front) && outline_width_mode != int(OutlineWidthMode.None)):
-		printerr("VRM Material " + str(orig_mat.resource_name) + " has unsupported front-face culling mode: " + str(cull_mode) + "/" + str(outl_cull_mode))
+		push_error("VRM Material " + str(orig_mat.resource_name) + " has unsupported front-face culling mode: " + str(cull_mode) + "/" + str(outl_cull_mode))
 
 	var mtoon_shader_base_path = "res://addons/Godot-MToon-Shader/mtoon"
 
@@ -309,7 +309,7 @@ func _update_materials(vrm_extension: Dictionary, gstate: GLTFState) -> void:
 			if spatial_to_shader_mat.has(surfmat):
 				mesh.set_surface_material(surf_idx, spatial_to_shader_mat[surfmat])
 			else:
-				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
+				push_error("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
 
 
 func _get_skel_godot_node(gstate: GLTFState, nodes: Array, skeletons: Array, skel_id: int) -> Node:
@@ -524,20 +524,20 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 					if len(tv) >= 4:
 						newvalue = Color(tv[0], tv[1], tv[2], tv[3])
 					else:
-						printerr("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
+						push_error("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
 						newvalue = origvalue # Filler value for consistency.
 				elif matbind["propertyName"] == "_MainTex" or matbind["propertyName"] == "_MainTex_ST":
 					origvalue = param
 					if len(tv) >= 4:
 						newvalue = (Vector4(tv[2], tv[3], tv[0], tv[1]) if matbind["propertyName"] == "_MainTex" else Vector4(tv[0], tv[1], tv[2], tv[3]))
 					else:
-						printerr("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
+						push_error("Expected 4 values but got " + str(len(tv)) + " for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
 						newvalue = origvalue # Filler value for consistency.
 				elif param is float:
 					origvalue = param
 					newvalue = tv[0]
 				else:
-					printerr("Unknown type for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
+					push_error("Unknown type for parameter " + matbind["propertyName"] + " surface " + node.name + "/" + str(surface_idx))
 
 			if origvalue != null:
 				var animtrack: int = anim.add_track(Animation.TYPE_VALUE)
@@ -554,7 +554,7 @@ func _create_animation_player(animplayer: AnimationPlayer, vrm_extension: Dictio
 			var nodeMesh: ImporterMesh = node.mesh
 
 			if nodeMesh == null || bind["index"] < 0 || bind["index"] >= nodeMesh.get_blend_shape_count():
-				printerr("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
+				push_error("Invalid blend shape index in bind " + str(shape) + " for mesh " + str(node.name))
 				continue
 			var animtrack: int = anim.add_track(Animation.TYPE_BLEND_SHAPE)
 			# nodeMesh.set_blend_shape_name(int(bind["index"]), shape["name"] + "_" + str(bind["index"]))
@@ -791,7 +791,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 				center_bone = ""
 				center_node = (secondary_node.get_path_to(gstate.get_scene_node(int(center_node_idx))))
 				if center_node == NodePath():
-					printerr("Failed to find center scene node " + str(center_node_idx))
+					push_error("Failed to find center scene node " + str(center_node_idx))
 					center_node = secondary_node.get_path_to(secondary_node)  # Fallback
 
 		for chain in joint_chains:
