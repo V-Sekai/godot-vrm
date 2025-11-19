@@ -116,6 +116,39 @@ var spring_bones_cached: Array[spring_bone_class]
 func _on_recreate_collider():
 	colliders_changed = true
 
+# Helper function to get branch transform (port of 74659.patch get_branch_transform())
+# Works even when node is not in the tree by calculating transform relative to branch root
+func get_branch_transform_for_node(node: Node3D) -> Transform3D:
+	if node == null:
+		return Transform3D.IDENTITY
+	
+	# If in tree, branch transform is same as global_transform
+	if node.is_inside_tree():
+		return node.global_transform
+	
+	# If not in tree, calculate transform relative to branch root
+	# Walk up parent chain to find branch root and accumulate transforms
+	var current: Node3D = node
+	var result: Transform3D = current.transform
+	
+	while current.get_parent() != null:
+		var parent = current.get_parent()
+		if not parent is Node3D:
+			break
+		var parent_3d: Node3D = parent as Node3D
+		
+		# If parent is in tree, we've reached the branch root
+		# The branch root's transform in tree space is its global_transform
+		if parent_3d.is_inside_tree():
+			result = parent_3d.global_transform * result
+			break
+		else:
+			# Continue accumulating up the branch
+			result = parent_3d.transform * result
+			current = parent_3d
+	
+	return result
+
 # Collider state
 # TODO: explore packed data to make processing optimization such as c++ easier.
 #var collider_skel_positions: PackedVector3Array
@@ -185,7 +218,7 @@ func _ready() -> void:
 			center_transforms.push_back(Transform3D.IDENTITY)
 			center_transforms_inv.push_back(Transform3D.IDENTITY)
 
-	update_centers(skel.global_transform)
+	update_centers(get_branch_transform_for_node(skel))
 
 	collider_groups.clear()
 	collider_library.clear()
@@ -246,7 +279,7 @@ func update_centers(skel_transform: Transform3D):
 	var center_xform: Transform3D
 	var center_xform_inv: Transform3D
 	if default_springbone_center != null:
-		center_xform = default_springbone_center.global_transform
+		center_xform = get_branch_transform_for_node(default_springbone_center)
 		center_xform_inv = center_xform.affine_inverse()
 	for center_i in range(len(center_nodes)):
 		var center_node: Node3D = center_nodes[center_i]
@@ -257,8 +290,9 @@ func update_centers(skel_transform: Transform3D):
 				center_transforms[center_i] = center_xform_inv * center_transforms[center_i]
 				center_transforms_inv[center_i] = center_transforms_inv[center_i] * center_xform
 		elif center_bones[center_i] == -1 and center_node != null:
-			center_transforms[center_i] = center_node.global_transform.affine_inverse() * skel_transform
-			center_transforms_inv[center_i] = skel_transform_inv * center_node.global_transform
+			var center_node_transform = get_branch_transform_for_node(center_node)
+			center_transforms[center_i] = center_node_transform.affine_inverse() * skel_transform
+			center_transforms_inv[center_i] = skel_transform_inv * center_node_transform
 		else:
 			center_transforms[center_i] = skel.get_bone_global_pose(center_bones[center_i])
 			center_transforms_inv[center_i] = center_transforms[center_i].affine_inverse()
@@ -269,7 +303,7 @@ func tick_spring_bones(delta: float) -> void:
 
 	if skel == null:
 		return
-	var skel_transform: Transform3D = skel.global_transform
+	var skel_transform: Transform3D = get_branch_transform_for_node(skel)
 
 	update_centers(skel_transform)
 
@@ -347,7 +381,7 @@ func do_process(delta: float) -> void:
 	elif Engine.is_editor_hint():
 		if secondary_gizmo != null:
 			if skel != null:
-				var skel_transform: Transform3D = skel.global_transform
+				var skel_transform: Transform3D = get_branch_transform_for_node(skel)
 				update_centers(skel_transform)
 				for collider_i in range(len(colliders_internal)):
 					colliders_internal[collider_i].update(skel_transform, center_transforms[colliders_centers[collider_i]], skel)
