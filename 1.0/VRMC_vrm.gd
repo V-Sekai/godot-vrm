@@ -100,7 +100,12 @@ func _export_meta(vrm_meta: vrm_meta_class, vrm_extension: Dictionary, gstate: G
 	meta_obj["authors"] = Array(vrm_meta.authors)
 	meta_obj["contactInformation"] = vrm_meta.contact_information
 	meta_obj["references"] = Array(vrm_meta.references)
-	#FIXME: var tex: int = vrm_extension["meta"].get("thumbnailImage", -1) vrm_meta.thumbnailImage
+	if vrm_meta.thumbnail_image:
+		var images: Array[Texture2D] = gstate.get_images()
+		images.append(vrm_meta.thumbnail_image as Texture2D)
+		gstate.set_images(images)
+		meta_obj["thumbnailImage"] = images.size() - 1
+
 	var avatar_permission_map_rev = {"OnlyAuthor": "onlyAuthor", "ExplicitlyLicensedPerson": "onlySeparatelyLicensedPerson", "Everyone": "everyone"}
 	var commercial_usage_map_rev = {"PersonalNonProfit": "personalNonProfit", "PersonalProfit": "personalProfit", "AllowCorporation": "corporation"}
 	var credit_notation_map_rev = {"Required": "required", "Unnecessary": "unnecessary"}
@@ -861,6 +866,17 @@ static func _validate_humanoid(root_node: Node3D) -> Dictionary:
 	return vrm_bone_mapping
 
 
+func _export_preserialize(gstate: GLTFState) -> Error:
+	var vrm_extension: Dictionary = gstate.get_meta("vrm_extension")
+	vrm_extension["specVersion"] = "1.0"
+	if not gstate.json.has("extensions"):
+		gstate.json["extensions"] = {}
+	gstate.json["extensions"]["VRMC_vrm"] = vrm_extension
+	var root_node: Node3D = gstate.get_meta("vrm_root")
+	_export_meta(root_node.vrm_meta, vrm_extension, gstate)
+	return OK
+
+
 func _export_post(gstate: GLTFState) -> Error:
 	var json_gltf_nodes: Array = gstate.json["nodes"]
 	for i in range(len(json_gltf_nodes)):
@@ -876,11 +892,6 @@ func _export_post(gstate: GLTFState) -> Error:
 			godot_node_to_gltf_mesh_node_idx[gstate.get_scene_node(i)] = i
 
 	var vrm_extension: Dictionary = gstate.get_meta("vrm_extension")
-	vrm_extension["specVersion"] = "1.0"
-	if not json.has("extensions"):
-		json["extensions"] = {}
-	json["extensions"]["VRMC_vrm"] = vrm_extension
-	_export_meta(root_node.vrm_meta, vrm_extension, gstate)
 	# FIXME: despite more than one material in use, only one material is in json["materials"]
 
 	var orig_bone_map: BoneMap = root_node.vrm_meta.humanoid_bone_mapping
