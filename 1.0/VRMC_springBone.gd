@@ -122,7 +122,7 @@ func _parse_secondary_node(secondary_node: Node, vrm_extension: Dictionary, gsta
 		for sjoint in sbone["joints"]:
 			spring_bone.hit_radius.append(float(sjoint.get("hitRadius", 0.0)))
 			spring_bone.hit_radius_scale = max(spring_bone.hit_radius_scale, spring_bone.hit_radius[-1])
-			spring_bone.stiffness_force.append(float(sjoint.get("stiffiness", 1.0)))
+			spring_bone.stiffness_force.append(float(sjoint.get("stiffness", 1.0)))
 			spring_bone.stiffness_scale = max(spring_bone.stiffness_scale, spring_bone.stiffness_force[-1])
 			spring_bone.gravity_power.append(float(sjoint.get("gravityPower", 0.0)))
 			spring_bone.gravity_scale = max(spring_bone.gravity_scale, spring_bone.gravity_power[-1])
