@@ -434,3 +434,4 @@ func _export_post(state: GLTFState):
 		json_springs.push_back(spring)
 	sbone_extension["springs"] = json_springs
 	sbone_extension["specVersion"] = "1.0"
+	return OK

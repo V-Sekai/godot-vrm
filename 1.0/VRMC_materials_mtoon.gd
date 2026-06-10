@@ -519,3 +519,4 @@ func _import_post(gstate, root):
 				printerr("Mesh " + str(i) + " material " + str(surf_idx) + " name " + str(surfmat.resource_name) + " has no replacement material.")
 
 	# FIXME: due to head duplication, do we now have some meshes which are not in gltf state?
+	return OK
