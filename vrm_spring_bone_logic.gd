@@ -1,3 +1,4 @@
+@tool
 extends RefCounted
 
 const vrm_collider = preload("./vrm_collider.gd")

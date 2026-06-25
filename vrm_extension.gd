@@ -1,3 +1,4 @@
+@tool
 extends GLTFDocumentExtension
 
 const vrm_constants_class = preload("./vrm_constants.gd")
