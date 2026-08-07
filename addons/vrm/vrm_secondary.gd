@@ -269,9 +269,13 @@ func tick_spring_bones(delta: float) -> void:
 
 	if skel == null:
 		return
-	var skel_transform: Transform3D = skel.global_transform
-
-	update_centers(skel_transform)
+	var skel_transform: Transform3D
+	
+	if is_inside_tree():
+		skel_transform = skel.global_transform
+		update_centers(skel_transform)
+	else:
+		return
 
 	var needs_reintialize: bool = false
 	# our setter syncs it the other direction.
