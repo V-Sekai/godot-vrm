@@ -89,6 +89,8 @@ const collider_group_class = preload("./vrm_collider_group.gd")
 
 var skel: Skeleton3D
 var internal_modifier_node: Node3D
+var native_simulator: Node3D
+var native_colliders: Array[Node3D]
 
 # Props
 
@@ -131,7 +133,7 @@ func _ready() -> void:
 	if skel == null:
 		return  # Not supported.
 
-	if ClassDB.class_exists(&"SkeletonModifier3D"):
+	if not ClassDB.class_exists(&"SpringBoneSimulator3D") and ClassDB.class_exists(&"SkeletonModifier3D"):
 		if internal_modifier_node != null:
 			if internal_modifier_node.get_parent() != null:
 				internal_modifier_node.get_parent().remove_child(internal_modifier_node)
@@ -153,6 +155,9 @@ func _ready() -> void:
 		gizmo_spring_bone = get_parent().get("gizmo_spring_bone")
 		disable_colliders = get_parent().get("disable_colliders")
 
+	if ClassDB.class_exists(&"SpringBoneSimulator3D"):
+		_setup_native_simulator()
+		return
 	if secondary_gizmo == null and (Engine.is_editor_hint() or gizmo_spring_bone):
 		secondary_gizmo = SecondaryGizmo.new(self)
 		skel.add_child(secondary_gizmo, true, Node.INTERNAL_MODE_FRONT)
@@ -230,6 +235,103 @@ func _ready() -> void:
 		springs_centers.append(center_idx)
 
 
+func _setup_native_simulator() -> void:
+	if native_simulator != null:
+		native_simulator.queue_free()
+	native_simulator = ClassDB.instantiate(&"SpringBoneSimulator3D")
+	native_simulator.name = "VRM_native_spring_bone_simulator"
+	skel.add_child(native_simulator, false, Node.INTERNAL_MODE_BACK)
+	native_simulator.set(&"mutable_bone_axes", false)
+	native_colliders.clear()
+
+	var collider_nodes: Dictionary = {}
+	for spring_bone in spring_bones:
+		if spring_bone == null or spring_bone.joint_nodes.size() < 2:
+			continue
+		for collider_group in spring_bone.collider_groups:
+			for collider in collider_group.colliders:
+				if collider_nodes.has(collider):
+					continue
+				var collision_class := "SpringBoneCollisionCapsule3D" if collider.is_capsule else "SpringBoneCollisionSphere3D"
+				var collision: Node3D = ClassDB.instantiate(collision_class)
+				collision.name = "VRM_native_collision_%d" % native_colliders.size()
+				native_simulator.add_child(collision, false)
+				collider_nodes[collider] = collision
+				native_colliders.append(collision)
+				if collider.bone != "":
+					collision.set(&"bone_name", collider.bone)
+				if collider.is_capsule:
+					var axis := collider.tail - collider.offset
+					collision.set(&"height", axis.length() + collider.radius * 2.0)
+					collision.set(&"radius", collider.radius)
+					collision.set(&"position_offset", (collider.offset + collider.tail) * 0.5)
+					if not axis.is_zero_approx():
+						collision.set(&"rotation_offset", Quaternion(Vector3.UP, axis.normalized()))
+				else:
+					collision.set(&"radius", collider.radius)
+					collision.set(&"position_offset", collider.offset)
+				if collider.bone == "" and collider.node_path != NodePath():
+					var source: Node3D = get_node(collider.node_path)
+					if source != null:
+						collision.global_transform = source.global_transform
+
+		native_simulator.call(&"set_setting_count", native_simulator.get(&"setting_count") + 1)
+		var setting := int(native_simulator.get(&"setting_count")) - 1
+		native_simulator.call(&"set_root_bone_name", setting, spring_bone.joint_nodes[0])
+		var terminal_bone := spring_bone.joint_nodes[-1]
+		if terminal_bone.is_empty():
+			native_simulator.call(&"set_end_bone_name", setting, spring_bone.joint_nodes[-2])
+			native_simulator.call(&"set_extend_end_bone", setting, true)
+			native_simulator.call(&"set_end_bone_length", setting, 0.07)
+		else:
+			native_simulator.call(&"set_end_bone_name", setting, terminal_bone)
+			native_simulator.call(&"set_extend_end_bone", setting, false)
+			var terminal_idx := skel.find_bone(terminal_bone)
+			if terminal_idx == -1:
+				native_simulator.call(&"set_end_bone_name", setting, spring_bone.joint_nodes[-2])
+				native_simulator.call(&"set_extend_end_bone", setting, true)
+				native_simulator.call(&"set_end_bone_length", setting, 0.07)
+		native_simulator.call(&"set_individual_config", setting, true)
+		native_simulator.call(&"set_enable_all_child_collisions", setting, false)
+		if disable_colliders:
+			native_simulator.call(&"set_collision_count", setting, 0)
+		var center_from := 0
+		if spring_bone.center_bone != "":
+			var center_bone := skel.find_bone(spring_bone.center_bone)
+			if center_bone != -1:
+				center_from = 2
+				native_simulator.call(&"set_center_bone", setting, center_bone)
+		elif spring_bone.center_node != NodePath():
+			center_from = 1
+			native_simulator.call(&"set_center_node", setting, native_simulator.get_path_to(get_node(spring_bone.center_node)))
+		else:
+			center_from = 0
+		native_simulator.call(&"set_center_from", setting, center_from)
+
+		for collider_group in spring_bone.collider_groups:
+			for collider in collider_group.colliders:
+				if not disable_colliders:
+					var collision_index := int(native_simulator.call(&"get_collision_count", setting))
+					native_simulator.call(&"set_collision_count", setting, collision_index + 1)
+					native_simulator.call(&"set_collision_path", setting, collision_index, native_simulator.get_path_to(collider_nodes[collider]))
+
+		var joint_count := spring_bone.joint_nodes.size() - 1
+		for joint in range(joint_count):
+			native_simulator.call(&"set_joint_stiffness", setting, joint, _spring_value(spring_bone.stiffness_force, spring_bone.stiffness_scale, joint, 1.0))
+			native_simulator.call(&"set_joint_drag", setting, joint, _spring_value(spring_bone.drag_force, spring_bone.drag_force_scale, joint, 0.5))
+			var gravity_dir: Vector3 = spring_bone.gravity_dir[joint] if joint < spring_bone.gravity_dir.size() else spring_bone.gravity_dir_default
+			gravity_dir = springbone_gravity_rotation * gravity_dir
+			native_simulator.call(&"set_joint_gravity_direction", setting, joint, gravity_dir)
+			var gravity := _spring_value(spring_bone.gravity_power, spring_bone.gravity_scale, joint, 0.0) * springbone_gravity_multiplier
+			native_simulator.call(&"set_joint_gravity", setting, joint, gravity)
+			native_simulator.call(&"set_joint_radius", setting, joint, _spring_value(spring_bone.hit_radius, spring_bone.hit_radius_scale, joint, 0.0))
+	native_simulator.set(&"external_force", springbone_add_force)
+
+
+func _spring_value(values: PackedFloat64Array, scale: float, index: int, default_value: float) -> float:
+	return scale * (default_value if values.is_empty() else values[index] if index < values.size() else values[-1])
+
+
 func check_for_editor_update() -> bool:
 	if not Engine.is_editor_hint():
 		return false
@@ -268,6 +370,8 @@ func tick_spring_bones(delta: float) -> void:
 	# force update skeleton
 
 	if skel == null:
+		return
+	if native_simulator != null:
 		return
 	var skel_transform: Transform3D = skel.global_transform
 
@@ -331,6 +435,9 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_secondary_process_modification_processed() -> void:
+	if native_simulator != null:
+		return
+
 	var delta: float
 	# MODIFIER_CALLBACK_MODE_PROCESS_PHYSICS = 0
 	if skel.modifier_callback_mode_process == 0:
