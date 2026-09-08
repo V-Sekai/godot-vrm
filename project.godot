@@ -8,11 +8,15 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="VRM Project (Godot 4.x)"
 run/main_scene="res://vrm_samples/sample_scene.tscn"
-config/features=PackedStringArray("4.2")
+config/features=PackedStringArray("4.7")
 config/icon="res://icon.png"
 enabled=PackedStringArray("vrm")
 
@@ -22,6 +26,10 @@ window/size/width=1920
 window/size/height=1080
 window/size/test_width=1280
 window/size/test_height=720
+
+[dotnet]
+
+project/assembly_name="VRM Project (Godot 4.x)"
 
 [editor_plugins]
 
