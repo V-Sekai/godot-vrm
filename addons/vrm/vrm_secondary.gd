@@ -304,19 +304,22 @@ func _setup_native_simulator() -> void:
 
 		var joint_count: int = spring_bone.joint_nodes.size() - 1
 		for joint in joint_count:
-			native_simulator.call(&"set_joint_stiffness", setting, joint, _spring_value(spring_bone.stiffness_force, spring_bone.stiffness_scale, joint, 1.0))
-			native_simulator.call(&"set_joint_drag", setting, joint, _spring_value(spring_bone.drag_force, spring_bone.drag_force_scale, joint, 0.5))
-			var gravity_dir: Vector3 = spring_bone.gravity_dir[joint] if joint < spring_bone.gravity_dir.size() else spring_bone.gravity_dir_default
-			gravity_dir = springbone_gravity_rotation * gravity_dir
+			var stiffness: float = (spring_bone.stiffness_force[joint] if joint < spring_bone.stiffness_force.size() else 1.0) * spring_bone.stiffness_scale
+			native_simulator.call(&"set_joint_stiffness", setting, joint, stiffness)
+			
+			var drag: float = (spring_bone.drag_force[joint] if joint < spring_bone.drag_force.size() else 0.0) * spring_bone.drag_force_scale
+			native_simulator.call(&"set_joint_drag", setting, joint, drag)
+			
+			var gravity_dir: Vector3 = springbone_gravity_rotation * (spring_bone.gravity_dir[joint] if joint < spring_bone.gravity_dir.size() else spring_bone.gravity_dir_default)
 			native_simulator.call(&"set_joint_gravity_direction", setting, joint, gravity_dir)
-			var gravity: float = _spring_value(spring_bone.gravity_power, spring_bone.gravity_scale, joint, 0.0) * springbone_gravity_multiplier
+			
+			var gravity: float = (spring_bone.gravity_power[joint] if joint < spring_bone.gravity_power.size() else 0.0) * spring_bone.gravity_scale * springbone_gravity_multiplier
 			native_simulator.call(&"set_joint_gravity", setting, joint, gravity)
-			native_simulator.call(&"set_joint_radius", setting, joint, _spring_value(spring_bone.hit_radius, spring_bone.hit_radius_scale, joint, 0.0))
+			
+			var radius: float = (spring_bone.hit_radius[joint] if joint < spring_bone.hit_radius.size() else 0.1) * spring_bone.hit_radius_scale
+			native_simulator.call(&"set_joint_radius", setting, joint, radius)
+
 	native_simulator.set(&"external_force", springbone_add_force)
-
-
-func _spring_value(values: PackedFloat64Array, scale: float, index: int, default_value: float) -> float:
-	return scale * (default_value if values.is_empty() else values[index] if index < values.size() else values[-1])
 
 
 func check_for_editor_update() -> bool:
