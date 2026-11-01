@@ -300,16 +300,18 @@ func _get_file_axis() -> Vector3:
 	return Vector3.ZERO
 
 
-# In VRM 1.0 nodes have no rotation in the rest pose, so the axis in the file is a model-space axis.
-# Godot re-orients the bone rest axes on import, so convert it into the local frame of the Godot bone.
-# For nodes that are not bones the axis is used as it is, like before.
+# The axis is given in the node's rest frame from the file. The importer re-orients the bone rests and
+# stores the rotation per bone in "vrm_pose_diffs", so use it to get the axis in the Godot bone's frame.
 func _get_local_axis(node: Node3D, bone: int) -> Vector3:
 	var axis: Vector3 = _get_file_axis()
 	var skeleton := node as Skeleton3D
-	if skeleton == null or bone == -1:
+	if skeleton == null or bone == -1 or not skeleton.has_meta("vrm_pose_diffs"):
 		return axis
-	var global_rest_rotation: Quaternion = skeleton.get_bone_global_rest(bone).basis.get_rotation_quaternion()
-	return (global_rest_rotation.inverse() * axis).normalized()
+	var pose_diffs: Array = skeleton.get_meta("vrm_pose_diffs")
+	if bone >= pose_diffs.size():
+		return axis
+	var pose_diff: Basis = pose_diffs[bone]
+	return (pose_diff * axis).normalized()
 
 
 static func _from_dictionary_get_aim_axis_from_string(aim_axis: String) -> AimRollAxis:
