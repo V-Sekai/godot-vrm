@@ -138,12 +138,10 @@ func evaluate_roll() -> void:
 	var source_axis: Vector3 = source_quat.get_axis()
 	var source_angle: float = source_quat.get_angle()
 	# Calculate what we need to apply to the target.
-	var axis_index: int = aim_or_roll_axis - 1  # Vector3.Axis
-	var axis_value: float = source_axis[axis_index]
+	var axis_value: float = source_axis.dot(_get_local_axis(source_node, source_bone))
 	var rotation_quat := Quaternion.IDENTITY
 	if not is_zero_approx(axis_value):
-		var target_axis := Vector3.ZERO
-		target_axis[axis_index] = 1.0
+		var target_axis: Vector3 = _get_local_axis(target_node, target_bone)
 		rotation_quat = Quaternion(target_axis, source_angle * axis_value)
 	_set_weighted_posed_target_rotation(rotation_quat)
 
@@ -279,21 +277,41 @@ func _set_weighted_global_target_rotation(rotation_quat: Quaternion) -> void:
 
 
 func _aim_get_rest_direction(rest_basis: Basis) -> Vector3:
+	var axis: Vector3 = _get_local_axis(target_node, target_bone)
+	if axis == Vector3.ZERO:
+		push_error("BoneNodeConstraint: Aim axis not set! Must be a valid value.")
+	return rest_basis * axis
+
+
+func _get_file_axis() -> Vector3:
 	match aim_or_roll_axis:
 		AimRollAxis.POSITIVE_X:
-			return rest_basis.x
+			return Vector3.RIGHT
 		AimRollAxis.POSITIVE_Y:
-			return rest_basis.y
+			return Vector3.UP
 		AimRollAxis.POSITIVE_Z:
-			return rest_basis.z
+			return Vector3.BACK
 		AimRollAxis.NEGATIVE_X:
-			return -rest_basis.x
+			return Vector3.LEFT
 		AimRollAxis.NEGATIVE_Y:
-			return -rest_basis.y
+			return Vector3.DOWN
 		AimRollAxis.NEGATIVE_Z:
-			return -rest_basis.z
-	push_error("BoneNodeConstraint: Aim axis not set! Must be a valid value.")
+			return Vector3.FORWARD
 	return Vector3.ZERO
+
+
+# The axis is given in the node's rest frame from the file. The importer re-orients the bone rests and
+# stores the rotation per bone in "vrm_pose_diffs", so use it to get the axis in the Godot bone's frame.
+func _get_local_axis(node: Node3D, bone: int) -> Vector3:
+	var axis: Vector3 = _get_file_axis()
+	var skeleton := node as Skeleton3D
+	if skeleton == null or bone == -1 or not skeleton.has_meta("vrm_pose_diffs"):
+		return axis
+	var pose_diffs: Array = skeleton.get_meta("vrm_pose_diffs")
+	if bone >= pose_diffs.size():
+		return axis
+	var pose_diff: Basis = pose_diffs[bone]
+	return (pose_diff * axis).normalized()
 
 
 static func _from_dictionary_get_aim_axis_from_string(aim_axis: String) -> AimRollAxis:
